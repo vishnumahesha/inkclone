@@ -1,0 +1,222 @@
+{
+  "0": [
+    "real_glyphs/0/0_1.png"
+  ],
+  "1": [
+    "real_glyphs/1/1_1.png"
+  ],
+  "2": [
+    "real_glyphs/2/2_1.png"
+  ],
+  "3": [
+    "real_glyphs/3/3_1.png"
+  ],
+  "4": [
+    "real_glyphs/4/4_1.png"
+  ],
+  "5": [
+    "real_glyphs/5/5_1.png"
+  ],
+  "6": [
+    "real_glyphs/6/6_1.png"
+  ],
+  "7": [
+    "real_glyphs/7/7_1.png"
+  ],
+  "8": [
+    "real_glyphs/8/8_1.png"
+  ],
+  "9": [
+    "real_glyphs/9/9_1.png"
+  ],
+  "P": [
+    "real_glyphs/P/P_6.png"
+  ],
+  "S": [
+    "real_glyphs/S/S_10.png"
+  ],
+  "T": [
+    "real_glyphs/T/T_6.png"
+  ],
+  "a": [
+    "real_glyphs/a/a_8.png",
+    "real_glyphs/a/a_9.png",
+    "real_glyphs/a/a_10.png",
+    "real_glyphs/a/a_11.png",
+    "real_glyphs/a/a_12.png",
+    "real_glyphs/a/a_13.png",
+    "real_glyphs/a/a_14.png",
+    "real_glyphs/a/a_15.png"
+  ],
+  "b": [
+    "real_glyphs/b/b_4.png",
+    "real_glyphs/b/b_5.png",
+    "real_glyphs/b/b_6.png",
+    "real_glyphs/b/b_7.png"
+  ],
+  "c": [
+    "real_glyphs/c/c_2.png",
+    "real_glyphs/c/c_3.png"
+  ],
+  "d": [
+    "real_glyphs/d/d_6.png",
+    "real_glyphs/d/d_7.png",
+    "real_glyphs/d/d_8.png",
+    "real_glyphs/d/d_9.png",
+    "real_glyphs/d/d_10.png",
+    "real_glyphs/d/d_11.png"
+  ],
+  "e": [
+    "real_glyphs/e/e_11.png",
+    "real_glyphs/e/e_12.png",
+    "real_glyphs/e/e_13.png",
+    "real_glyphs/e/e_14.png",
+    "real_glyphs/e/e_15.png",
+    "real_glyphs/e/e_16.png",
+    "real_glyphs/e/e_17.png",
+    "real_glyphs/e/e_18.png",
+    "real_glyphs/e/e_19.png",
+    "real_glyphs/e/e_20.png",
+    "real_glyphs/e/e_21.png"
+  ],
+  "f": [
+    "real_glyphs/f/f_4.png",
+    "real_glyphs/f/f_5.png",
+    "real_glyphs/f/f_6.png",
+    "real_glyphs/f/f_7.png"
+  ],
+  "g": [
+    "real_glyphs/g/g_3.png",
+    "real_glyphs/g/g_4.png",
+    "real_glyphs/g/g_5.png"
+  ],
+  "h": [
+    "real_glyphs/h/h_7.png",
+    "real_glyphs/h/h_8.png",
+    "real_glyphs/h/h_9.png",
+    "real_glyphs/h/h_10.png",
+    "real_glyphs/h/h_11.png",
+    "real_glyphs/h/h_12.png",
+    "real_glyphs/h/h_13.png"
+  ],
+  "i": [
+    "real_glyphs/i/i_11.png",
+    "real_glyphs/i/i_12.png",
+    "real_glyphs/i/i_13.png",
+    "real_glyphs/i/i_14.png",
+    "real_glyphs/i/i_15.png",
+    "real_glyphs/i/i_16.png",
+    "real_glyphs/i/i_17.png",
+    "real_glyphs/i/i_18.png",
+    "real_glyphs/i/i_19.png",
+    "real_glyphs/i/i_20.png",
+    "real_glyphs/i/i_21.png"
+  ],
+  "j": [
+    "real_glyphs/j/j_2.png",
+    "real_glyphs/j/j_3.png"
+  ],
+  "k": [
+    "real_glyphs/k/k_3.png",
+    "real_glyphs/k/k_4.png",
+    "real_glyphs/k/k_5.png"
+  ],
+  "l": [
+    "real_glyphs/l/l_4.png",
+    "real_glyphs/l/l_5.png",
+    "real_glyphs/l/l_6.png",
+    "real_glyphs/l/l_7.png"
+  ],
+  "m": [
+    "real_glyphs/m/m_3.png",
+    "real_glyphs/m/m_4.png",
+    "real_glyphs/m/m_5.png"
+  ],
+  "n": [
+    "real_glyphs/n/n_5.png",
+    "real_glyphs/n/n_6.png",
+    "real_glyphs/n/n_7.png",
+    "real_glyphs/n/n_8.png",
+    "real_glyphs/n/n_9.png"
+  ],
+  "o": [
+    "real_glyphs/o/o_12.png",
+    "real_glyphs/o/o_13.png",
+    "real_glyphs/o/o_14.png",
+    "real_glyphs/o/o_15.png",
+    "real_glyphs/o/o_16.png",
+    "real_glyphs/o/o_17.png",
+    "real_glyphs/o/o_18.png",
+    "real_glyphs/o/o_19.png",
+    "real_glyphs/o/o_20.png",
+    "real_glyphs/o/o_21.png",
+    "real_glyphs/o/o_22.png",
+    "real_glyphs/o/o_23.png"
+  ],
+  "p": [
+    "real_glyphs/p/p_5.png",
+    "real_glyphs/p/p_7.png",
+    "real_glyphs/p/p_8.png",
+    "real_glyphs/p/p_9.png"
+  ],
+  "q": [
+    "real_glyphs/q/q_2.png",
+    "real_glyphs/q/q_3.png"
+  ],
+  "r": [
+    "real_glyphs/r/r_6.png",
+    "real_glyphs/r/r_7.png",
+    "real_glyphs/r/r_8.png",
+    "real_glyphs/r/r_9.png",
+    "real_glyphs/r/r_10.png",
+    "real_glyphs/r/r_11.png"
+  ],
+  "s": [
+    "real_glyphs/s/s_7.png",
+    "real_glyphs/s/s_8.png",
+    "real_glyphs/s/s_9.png",
+    "real_glyphs/s/s_11.png",
+    "real_glyphs/s/s_12.png",
+    "real_glyphs/s/s_13.png"
+  ],
+  "t": [
+    "real_glyphs/t/t_7.png",
+    "real_glyphs/t/t_8.png",
+    "real_glyphs/t/t_9.png",
+    "real_glyphs/t/t_10.png",
+    "real_glyphs/t/t_11.png"
+  ],
+  "u": [
+    "real_glyphs/u/u_5.png",
+    "real_glyphs/u/u_6.png",
+    "real_glyphs/u/u_7.png",
+    "real_glyphs/u/u_8.png",
+    "real_glyphs/u/u_9.png"
+  ],
+  "v": [
+    "real_glyphs/v/v_3.png",
+    "real_glyphs/v/v_4.png",
+    "real_glyphs/v/v_5.png"
+  ],
+  "w": [
+    "real_glyphs/w/w_4.png",
+    "real_glyphs/w/w_5.png",
+    "real_glyphs/w/w_6.png",
+    "real_glyphs/w/w_7.png"
+  ],
+  "x": [
+    "real_glyphs/x/x_3.png",
+    "real_glyphs/x/x_4.png",
+    "real_glyphs/x/x_5.png"
+  ],
+  "y": [
+    "real_glyphs/y/y_4.png",
+    "real_glyphs/y/y_5.png",
+    "real_glyphs/y/y_6.png",
+    "real_glyphs/y/y_7.png"
+  ],
+  "z": [
+    "real_glyphs/z/z_2.png",
+    "real_glyphs/z/z_3.png"
+  ]
+}

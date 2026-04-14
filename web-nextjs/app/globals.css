@@ -1,0 +1,44 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 text-slate-900 antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
+  }
+  
+  .glow-border {
+    @apply relative before:absolute before:inset-0 before:rounded-lg before:padding-[1px] before:bg-gradient-to-r before:from-blue-500 before:to-purple-600 before:-z-10;
+  }
+
+  .text-gradient {
+    @apply bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); }
+  to { box-shadow: 0 0 40px rgba(59, 130, 246, 0.8); }
+}
