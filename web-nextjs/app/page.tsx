@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
+import { Separator } from '../components/ui/separator'
 import { 
   PenTool, 
   Download, 
@@ -13,30 +15,44 @@ import {
   Palette,
   Image as ImageIcon,
   ArrowRight,
-  CheckCircle
+  CheckCircle,
+  Github,
+  Star,
+  Settings,
+  Wand2,
+  Eye,
+  Grid
 } from 'lucide-react'
 
 const paperTypes = [
-  { id: 'college_ruled', name: 'College Ruled', emoji: '📝' },
-  { id: 'blank', name: 'Blank Paper', emoji: '📄' },
-  { id: 'dot_grid', name: 'Dot Grid', emoji: '⚡' },
-  { id: 'legal_pad', name: 'Legal Pad', emoji: '📋' },
-  { id: 'sticky_note', name: 'Sticky Note', emoji: '📝' },
+  { id: 'college_ruled', name: 'College Ruled', emoji: '📝', description: 'Standard ruled paper for notes' },
+  { id: 'blank', name: 'Blank Paper', emoji: '📄', description: 'Clean white paper' },
+  { id: 'dot_grid', name: 'Dot Grid', emoji: '⚡', description: 'Subtle dot pattern' },
+  { id: 'legal_pad', name: 'Legal Pad', emoji: '📋', description: 'Yellow legal pad style' },
+  { id: 'sticky_note', name: 'Sticky Note', emoji: '🟡', description: 'Small yellow note' },
+  { id: 'index_card', name: 'Index Card', emoji: '🗃️', description: '3x5 index card' },
 ]
 
 const inkColors = [
-  { id: 'black', name: 'Classic Black', color: 'bg-black' },
-  { id: 'blue', name: 'Royal Blue', color: 'bg-blue-600' },
-  { id: 'dark_blue', name: 'Navy Blue', color: 'bg-blue-900' },
-  { id: 'red', name: 'Crimson Red', color: 'bg-red-600' },
-  { id: 'green', name: 'Forest Green', color: 'bg-green-600' },
-  { id: 'pencil', name: 'Graphite', color: 'bg-gray-500' },
+  { id: 'black', name: 'Classic Black', color: 'bg-black', hex: '#000000' },
+  { id: 'blue', name: 'Royal Blue', color: 'bg-blue-600', hex: '#2563eb' },
+  { id: 'dark_blue', name: 'Navy Blue', color: 'bg-blue-900', hex: '#1e3a8a' },
+  { id: 'red', name: 'Crimson Red', color: 'bg-red-600', hex: '#dc2626' },
+  { id: 'green', name: 'Forest Green', color: 'bg-green-600', hex: '#16a34a' },
+  { id: 'pencil', name: 'Graphite', color: 'bg-gray-500', hex: '#6b7280' },
 ]
 
 const effects = [
-  { id: 'scan', name: 'Scanner Effect', description: 'Professional scan appearance' },
-  { id: 'phone', name: 'Phone Photo', description: 'Natural mobile capture look' },
-  { id: 'clean', name: 'Clean Digital', description: 'Crisp, clear output' },
+  { id: 'scan', name: 'Scanner Effect', description: 'Professional scan appearance', icon: Grid },
+  { id: 'phone', name: 'Phone Photo', description: 'Natural mobile capture look', icon: Eye },
+  { id: 'clean', name: 'Clean Digital', description: 'Crisp, clear output', icon: Sparkles },
+]
+
+const presets = [
+  { name: 'Student Notes', paper: 'college_ruled', ink: 'blue', effect: 'clean', neatness: 0.8 },
+  { name: 'Quick Sketch', paper: 'blank', ink: 'pencil', effect: 'phone', neatness: 0.6 },
+  { name: 'Professional', paper: 'legal_pad', ink: 'black', effect: 'scan', neatness: 0.9 },
+  { name: 'Casual', paper: 'sticky_note', ink: 'blue', effect: 'phone', neatness: 0.5 },
 ]
 
 export default function InkClonePro() {
@@ -75,6 +91,13 @@ export default function InkClonePro() {
     }
   }
 
+  const applyPreset = (preset: typeof presets[0]) => {
+    setPaper(preset.paper)
+    setInk(preset.ink)
+    setEffect(preset.effect)
+    setNeatness(preset.neatness)
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
       {/* Hero Section */}
@@ -93,6 +116,16 @@ export default function InkClonePro() {
               <h1 className="text-5xl font-bold text-gradient">
                 InkClone Pro
               </h1>
+              <motion.a
+                href="https://github.com/vishnu-mahesha/inkclone"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-2 glass rounded-lg hover:bg-white/80 transition-all"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Github className="w-6 h-6 text-slate-600" />
+              </motion.a>
             </div>
             <p className="text-xl text-slate-600 mb-8 leading-relaxed">
               Transform your text into beautiful, realistic handwritten documents.
@@ -100,19 +133,38 @@ export default function InkClonePro() {
               Professional quality with authentic handwriting simulation.
             </p>
             
-            <div className="flex items-center justify-center gap-6 text-sm text-slate-500">
+            <div className="flex items-center justify-center gap-6 text-sm text-slate-500 mb-8">
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Real handwriting glyphs</span>
+                <span>142 real glyphs</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>5 paper types</span>
+                <span>6 paper types</span>
               </div>
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-green-500" />
                 <span>Instant generation</span>
               </div>
+              <div className="flex items-center gap-2">
+                <Star className="w-4 h-4 text-yellow-500" />
+                <span>Open source</span>
+              </div>
+            </div>
+            
+            {/* Quick Presets */}
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              {presets.map((preset) => (
+                <motion.button
+                  key={preset.name}
+                  onClick={() => applyPreset(preset)}
+                  className="px-4 py-2 text-xs font-medium glass rounded-lg hover:bg-white/80 transition-all"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  ✨ {preset.name}
+                </motion.button>
+              ))}
             </div>
           </motion.div>
         </div>
@@ -140,107 +192,134 @@ export default function InkClonePro() {
                   <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    className="w-full h-32 p-4 glass rounded-xl border-0 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    className="w-full h-32 p-4 glass rounded-xl border-0 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-400"
                     placeholder="Type the text you want to render as handwriting..."
                   />
+                  <div className="mt-2 text-xs text-slate-500">
+                    {text.length} characters
+                  </div>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Palette className="w-5 h-5" />
-                    Paper & Style
+                    <Settings className="w-5 h-5" />
+                    Style Configuration
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Paper Types */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-3">Paper Type</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {paperTypes.map((paperType) => (
-                        <motion.button
-                          key={paperType.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setPaper(paperType.id)}
-                          className={`p-3 rounded-xl text-xs font-medium transition-all ${
-                            paper === paperType.id
-                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                              : 'glass hover:bg-white/80'
-                          }`}
-                        >
-                          <div className="text-lg mb-1">{paperType.emoji}</div>
-                          {paperType.name}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
+                <CardContent>
+                  <Tabs defaultValue="paper" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="paper">Paper</TabsTrigger>
+                      <TabsTrigger value="ink">Ink</TabsTrigger>
+                      <TabsTrigger value="effects">Effects</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="paper" className="mt-6">
+                      <div className="grid grid-cols-2 gap-3">
+                        {paperTypes.map((paperType) => (
+                          <motion.button
+                            key={paperType.id}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setPaper(paperType.id)}
+                            className={`p-4 rounded-xl text-left transition-all ${
+                              paper === paperType.id
+                                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                                : 'glass hover:bg-white/80'
+                            }`}
+                          >
+                            <div className="text-2xl mb-2">{paperType.emoji}</div>
+                            <div className="font-medium text-sm">{paperType.name}</div>
+                            <div className={`text-xs mt-1 ${paper === paperType.id ? 'text-blue-100' : 'text-slate-500'}`}>
+                              {paperType.description}
+                            </div>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </TabsContent>
 
-                  {/* Ink Colors */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-3">Ink Color</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {inkColors.map((inkColor) => (
-                        <motion.button
-                          key={inkColor.id}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          onClick={() => setInk(inkColor.id)}
-                          className={`p-3 rounded-xl text-xs font-medium transition-all ${
-                            ink === inkColor.id
-                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                              : 'glass hover:bg-white/80'
-                          }`}
-                        >
-                          <div className={`w-4 h-4 rounded-full mx-auto mb-1 ${inkColor.color}`}></div>
-                          {inkColor.name}
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
+                    <TabsContent value="ink" className="mt-6">
+                      <div className="grid grid-cols-2 gap-3">
+                        {inkColors.map((inkColor) => (
+                          <motion.button
+                            key={inkColor.id}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setInk(inkColor.id)}
+                            className={`p-4 rounded-xl text-left transition-all ${
+                              ink === inkColor.id
+                                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                                : 'glass hover:bg-white/80'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 mb-2">
+                              <div className={`w-5 h-5 rounded-full ${inkColor.color} shadow-sm`}></div>
+                              <div className="font-medium text-sm">{inkColor.name}</div>
+                            </div>
+                            <div className={`text-xs ${ink === inkColor.id ? 'text-blue-100' : 'text-slate-500'}`}>
+                              {inkColor.hex}
+                            </div>
+                          </motion.button>
+                        ))}
+                      </div>
+                    </TabsContent>
 
-                  {/* Effects */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-3">Effect</label>
-                    <div className="space-y-2">
-                      {effects.map((eff) => (
-                        <motion.button
-                          key={eff.id}
-                          whileHover={{ scale: 1.01 }}
-                          onClick={() => setEffect(eff.id)}
-                          className={`w-full p-3 rounded-xl text-left transition-all ${
-                            effect === eff.id
-                              ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                              : 'glass hover:bg-white/80'
-                          }`}
-                        >
-                          <div className="font-medium text-sm">{eff.name}</div>
-                          <div className={`text-xs ${effect === eff.id ? 'text-blue-100' : 'text-slate-500'}`}>
-                            {eff.description}
-                          </div>
-                        </motion.button>
-                      ))}
-                    </div>
-                  </div>
+                    <TabsContent value="effects" className="mt-6">
+                      <div className="space-y-3">
+                        {effects.map((eff) => {
+                          const IconComponent = eff.icon
+                          return (
+                            <motion.button
+                              key={eff.id}
+                              whileHover={{ scale: 1.01 }}
+                              onClick={() => setEffect(eff.id)}
+                              className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 ${
+                                effect === eff.id
+                                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                                  : 'glass hover:bg-white/80'
+                              }`}
+                            >
+                              <IconComponent className="w-5 h-5" />
+                              <div>
+                                <div className="font-medium text-sm">{eff.name}</div>
+                                <div className={`text-xs ${effect === eff.id ? 'text-blue-100' : 'text-slate-500'}`}>
+                                  {eff.description}
+                                </div>
+                              </div>
+                            </motion.button>
+                          )
+                        })}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
 
-                  {/* Neatness */}
+                  <Separator className="my-6" />
+
+                  {/* Neatness Slider */}
                   <div>
                     <label className="block text-sm font-medium text-slate-700 mb-3">
-                      Neatness: {Math.round(neatness * 100)}%
+                      Handwriting Neatness: {Math.round(neatness * 100)}%
                     </label>
-                    <input
-                      type="range"
-                      min="0"
-                      max="1"
-                      step="0.1"
-                      value={neatness}
-                      onChange={(e) => setNeatness(parseFloat(e.target.value))}
-                      className="w-full h-2 glass rounded-full appearance-none cursor-pointer"
-                    />
+                    <div className="relative">
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.1"
+                        value={neatness}
+                        onChange={(e) => setNeatness(parseFloat(e.target.value))}
+                        className="w-full h-2 glass rounded-full appearance-none cursor-pointer slider"
+                      />
+                      <div 
+                        className="absolute top-0 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full pointer-events-none"
+                        style={{ width: `${neatness * 100}%` }}
+                      />
+                    </div>
                     <div className="flex justify-between text-xs text-slate-500 mt-1">
-                      <span>Messy</span>
-                      <span>Perfect</span>
+                      <span>🖊️ Messy</span>
+                      <span>✨ Perfect</span>
                     </div>
                   </div>
                 </CardContent>
@@ -266,7 +345,7 @@ export default function InkClonePro() {
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
                       >
-                        <Sparkles className="w-5 h-5" />
+                        <Wand2 className="w-5 h-5" />
                       </motion.div>
                       Generating Handwriting...
                     </motion.div>
@@ -293,11 +372,19 @@ export default function InkClonePro() {
               animate={{ opacity: 1, x: 0 }}
               className="lg:sticky lg:top-6"
             >
-              <Card className="h-[600px] flex flex-col">
+              <Card className="h-[700px] flex flex-col">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <ImageIcon className="w-5 h-5" />
-                    Preview
+                  <CardTitle className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <ImageIcon className="w-5 h-5" />
+                      Live Preview
+                    </div>
+                    {result && (
+                      <Button variant="secondary" size="sm">
+                        <Download className="w-4 h-4 mr-2" />
+                        Download
+                      </Button>
+                    )}
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 flex items-center justify-center">
@@ -310,7 +397,7 @@ export default function InkClonePro() {
                         exit={{ opacity: 0, scale: 0.9 }}
                         className="w-full h-full flex flex-col"
                       >
-                        <div className="flex-1 flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden">
+                        <div className="flex-1 flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden border-2 border-slate-100">
                           <img
                             src={result}
                             alt="Generated handwriting"
@@ -320,7 +407,11 @@ export default function InkClonePro() {
                         <div className="mt-4 flex gap-2">
                           <Button variant="secondary" size="sm" className="flex-1">
                             <Download className="w-4 h-4 mr-2" />
-                            Download PNG
+                            PNG
+                          </Button>
+                          <Button variant="ghost" size="sm" className="flex-1">
+                            <Eye className="w-4 h-4 mr-2" />
+                            Zoom
                           </Button>
                         </div>
                       </motion.div>
@@ -332,7 +423,9 @@ export default function InkClonePro() {
                         exit={{ opacity: 0 }}
                         className="text-center text-slate-400"
                       >
-                        <FileText className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                        <div className="w-24 h-24 mx-auto mb-4 rounded-full glass flex items-center justify-center">
+                          <FileText className="w-12 h-12 opacity-50" />
+                        </div>
                         <p className="text-lg font-medium mb-2">Your document will appear here</p>
                         <p className="text-sm">Configure your settings and click generate</p>
                       </motion.div>
@@ -347,3 +440,25 @@ export default function InkClonePro() {
     </div>
   )
 }
+
+<style jsx global>{`
+  .slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #9333ea);
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+  
+  .slider::-moz-range-thumb {
+    height: 16px;
+    width: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #3b82f6, #9333ea);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+`}</style>
