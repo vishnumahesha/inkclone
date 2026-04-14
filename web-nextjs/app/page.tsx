@@ -1,464 +1,573 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Button } from '../components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
-import { Separator } from '../components/ui/separator'
-import { 
-  PenTool, 
-  Download, 
-  Sparkles, 
-  Zap, 
-  FileText,
-  Palette,
-  Image as ImageIcon,
-  ArrowRight,
-  CheckCircle,
-  Github,
-  Star,
-  Settings,
-  Wand2,
-  Eye,
-  Grid
-} from 'lucide-react'
+import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
-const paperTypes = [
-  { id: 'college_ruled', name: 'College Ruled', emoji: '📝', description: 'Standard ruled paper for notes' },
-  { id: 'blank', name: 'Blank Paper', emoji: '📄', description: 'Clean white paper' },
-  { id: 'dot_grid', name: 'Dot Grid', emoji: '⚡', description: 'Subtle dot pattern' },
-  { id: 'legal_pad', name: 'Legal Pad', emoji: '📋', description: 'Yellow legal pad style' },
-  { id: 'sticky_note', name: 'Sticky Note', emoji: '🟡', description: 'Small yellow note' },
-  { id: 'index_card', name: 'Index Card', emoji: '🗃️', description: '3x5 index card' },
-]
+const PAPERS = [
+  { id: "college_ruled", label: "College Ruled", desc: "Classic notebook", color: "#f8f6f2", accent: "#b4d2e6" },
+  { id: "blank", label: "Blank Paper", desc: "Clean white", color: "#faf8f5", accent: "#e8e6e3" },
+  { id: "graph", label: "Graph Paper", desc: "5mm grid", color: "#ffffff", accent: "#c8d0d8" },
+  { id: "legal_pad", label: "Legal Pad", desc: "Yellow ruled", color: "#fffccd", accent: "#8caac8" },
+  { id: "dot_grid", label: "Dot Grid", desc: "Bullet journal", color: "#ffffff", accent: "#d0d0d0" },
+  { id: "sticky_note", label: "Sticky Note", desc: "3×3 yellow", color: "#fff9a8", accent: "#e8d840" },
+];
 
-const inkColors = [
-  { id: 'black', name: 'Classic Black', color: 'bg-black', hex: '#000000' },
-  { id: 'blue', name: 'Royal Blue', color: 'bg-blue-600', hex: '#2563eb' },
-  { id: 'dark_blue', name: 'Navy Blue', color: 'bg-blue-900', hex: '#1e3a8a' },
-  { id: 'red', name: 'Crimson Red', color: 'bg-red-600', hex: '#dc2626' },
-  { id: 'green', name: 'Forest Green', color: 'bg-green-600', hex: '#16a34a' },
-  { id: 'pencil', name: 'Graphite', color: 'bg-gray-500', hex: '#6b7280' },
-]
+const INKS = [
+  { id: "black", label: "Black", hex: "#0a0a0a" },
+  { id: "blue", label: "Blue", hex: "#0f196e" },
+  { id: "dark_blue", label: "Navy", hex: "#050f50" },
+  { id: "green", label: "Green", hex: "#0a3c23" },
+  { id: "red", label: "Red", hex: "#820f0f" },
+  { id: "pencil", label: "Pencil", hex: "#505050" },
+];
 
-const effects = [
-  { id: 'scan', name: 'Scanner Effect', description: 'Professional scan appearance', icon: Grid },
-  { id: 'phone', name: 'Phone Photo', description: 'Natural mobile capture look', icon: Eye },
-  { id: 'clean', name: 'Clean Digital', description: 'Crisp, clear output', icon: Sparkles },
-]
+const EFFECTS = [
+  { id: "scan", label: "Scanned", desc: "Flatbed scanner look" },
+  { id: "phone", label: "Phone Photo", desc: "Camera capture feel" },
+  { id: "clean", label: "Clean Render", desc: "No artifacts" },
+];
 
-const presets = [
-  { name: 'Student Notes', paper: 'college_ruled', ink: 'blue', effect: 'clean', neatness: 0.8 },
-  { name: 'Quick Sketch', paper: 'blank', ink: 'pencil', effect: 'phone', neatness: 0.6 },
-  { name: 'Professional', paper: 'legal_pad', ink: 'black', effect: 'scan', neatness: 0.9 },
-  { name: 'Casual', paper: 'sticky_note', ink: 'blue', effect: 'phone', neatness: 0.5 },
-]
+// Fake preview lines that simulate handwriting layout
+function HandwritingPreview({ text, ink, paper, isGenerating }: any) {
+  const words = text.split(" ").filter(Boolean);
+  const lines = [];
+  let currentLine: string[] = [];
+  let lineWidth = 0;
 
-export default function InkClonePro() {
-  const [text, setText] = useState("The quick brown fox jumps over the lazy dog")
-  const [paper, setPaper] = useState('college_ruled')
-  const [ink, setInk] = useState('black')
-  const [effect, setEffect] = useState('scan')
-  const [neatness, setNeatness] = useState(0.7)
-  const [isGenerating, setIsGenerating] = useState(false)
-  const [result, setResult] = useState<string | null>(null)
-
-  const handleGenerate = async () => {
-    setIsGenerating(true)
-    
-    try {
-      const response = await fetch('/api/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          paper,
-          ink,
-          artifact: effect,
-          neatness,
-        }),
-      })
-      
-      const data = await response.json()
-      if (data.success) {
-        setResult(data.image)
-      }
-    } catch (error) {
-      console.error('Generation failed:', error)
-    } finally {
-      setIsGenerating(false)
+  words.forEach((word: string) => {
+    const wordWidth = word.length * 11;
+    if (lineWidth + wordWidth > 380 && currentLine.length > 0) {
+      lines.push(currentLine);
+      currentLine = [word];
+      lineWidth = wordWidth;
+    } else {
+      currentLine.push(word);
+      lineWidth += wordWidth + 14;
     }
-  }
-
-  const applyPreset = (preset: typeof presets[0]) => {
-    setPaper(preset.paper)
-    setInk(preset.ink)
-    setEffect(preset.effect)
-    setNeatness(preset.neatness)
-  }
+  });
+  if (currentLine.length > 0) lines.push(currentLine);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
-        <div className="relative px-6 pt-16 pb-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center max-w-4xl mx-auto"
-          >
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="p-3 glass rounded-2xl">
-                <PenTool className="w-8 h-8 text-blue-600" />
+    <div
+      className="relative overflow-hidden rounded-sm"
+      style={{
+        background: paper?.color || "#f8f6f2",
+        minHeight: 280,
+        fontFamily: "var(--font-caveat)",
+      }}
+    >
+      {/* Paper lines for ruled types */}
+      {(paper?.id === "college_ruled" || paper?.id === "legal_pad") && (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none" preserveAspectRatio="none">
+          {Array.from({ length: 10 }, (_, i) => (
+            <line
+              key={i}
+              x1="0" y1={42 + i * 28} x2="100%" y2={42 + i * 28}
+              stroke={paper?.accent || "#b4d2e6"}
+              strokeWidth="0.7"
+              opacity="0.6"
+            />
+          ))}
+          {paper?.id === "college_ruled" && (
+            <line x1="52" y1="0" x2="52" y2="100%" stroke="#dcaaaa" strokeWidth="0.7" opacity="0.5" />
+          )}
+        </svg>
+      )}
+
+      {/* Dot grid */}
+      {paper?.id === "dot_grid" && (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          {Array.from({ length: 12 }, (_, row) =>
+            Array.from({ length: 18 }, (_, col) => (
+              <circle key={`${row}-${col}`} cx={20 + col * 24} cy={20 + row * 24} r="0.8" fill="#c0c0c0" opacity="0.5" />
+            ))
+          )}
+        </svg>
+      )}
+
+      {/* Graph grid */}
+      {paper?.id === "graph" && (
+        <svg className="absolute inset-0 w-full h-full pointer-events-none">
+          {Array.from({ length: 20 }, (_, i) => (
+            <g key={i}>
+              <line x1={i * 24} y1="0" x2={i * 24} y2="100%" stroke="#d0d8e0" strokeWidth="0.4" />
+              <line x1="0" y1={i * 24} x2="100%" y2={i * 24} stroke="#d0d8e0" strokeWidth="0.4" />
+            </g>
+          ))}
+        </svg>
+      )}
+
+      {/* Handwriting text */}
+      <div className="relative z-10 p-6 pt-8" style={{ paddingLeft: paper?.id === "college_ruled" ? 62 : 24 }}>
+        <AnimatePresence mode="wait">
+          {isGenerating ? (
+            <motion.div
+              key="generating"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex items-center justify-center h-48"
+            >
+              <div className="flex gap-1.5">
+                {[0, 1, 2].map((i) => (
+                  <motion.div
+                    key={i}
+                    animate={{ y: [-4, 4, -4] }}
+                    transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                    className="w-2 h-2 rounded-full"
+                    style={{ background: ink?.hex || "#0a0a0a" }}
+                  />
+                ))}
               </div>
-              <h1 className="text-5xl font-bold text-gradient">
-                InkClone Pro
-              </h1>
-              <motion.a
-                href="https://github.com/vishnu-mahesha/inkclone"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 glass rounded-lg hover:bg-white/80 transition-all"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Github className="w-6 h-6 text-slate-600" />
-              </motion.a>
-            </div>
-            <p className="text-xl text-slate-600 mb-8 leading-relaxed">
-              Transform your text into beautiful, realistic handwritten documents.
-              <br />
-              Professional quality with authentic handwriting simulation.
-            </p>
-            
-            <div className="flex items-center justify-center gap-6 text-sm text-slate-500 mb-8">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>142 real glyphs</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>6 paper types</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-green-500" />
-                <span>Instant generation</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Star className="w-4 h-4 text-yellow-500" />
-                <span>Open source</span>
-              </div>
-            </div>
-            
-            {/* Quick Presets */}
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-              {presets.map((preset) => (
-                <motion.button
-                  key={preset.name}
-                  onClick={() => applyPreset(preset)}
-                  className="px-4 py-2 text-xs font-medium glass rounded-lg hover:bg-white/80 transition-all"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+            </motion.div>
+          ) : (
+            <motion.div key="text" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
+              {lines.map((line: string[], lineIdx: number) => (
+                <motion.div
+                  key={lineIdx}
+                  initial={{ opacity: 0, x: -8 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: lineIdx * 0.08, duration: 0.3 }}
+                  className="leading-7 text-lg tracking-wide"
+                  style={{
+                    color: ink?.hex || "#0a0a0a",
+                    transform: `rotate(${Math.sin(lineIdx * 1.3) * 0.3}deg) translateY(${Math.sin(lineIdx * 0.7) * 1.2}px)`,
+                    opacity: text ? 0.88 : 0.25,
+                  }}
                 >
-                  ✨ {preset.name}
-                </motion.button>
+                  {line.join(" ") || (lineIdx === 0 ? "Start typing to preview..." : "")}
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+export default function InkClone() {
+  const [text, setText] = useState("The quick brown fox jumps over the lazy dog");
+  const [paper, setPaper] = useState(PAPERS[0]);
+  const [ink, setInk] = useState(INKS[0]);
+  const [effect, setEffect] = useState(EFFECTS[0]);
+  const [neatness, setNeatness] = useState(0.7);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("paper");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleGenerate = async () => {
+    setIsGenerating(true);
+    setGeneratedImage(null);
+    try {
+      const res = await fetch("http://localhost:8000/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          paper: paper.id,
+          ink: ink.id,
+          artifact: effect.id,
+          neatness,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.image) {
+          setGeneratedImage(data.image);
+        }
+      }
+    } catch (e) {
+      console.error("Generation failed:", e);
+    }
+    setIsGenerating(false);
+  };
+
+  return (
+    <div
+      className="min-h-screen"
+      style={{
+        background: "#0c0c0f",
+        color: "#e8e6e3",
+        fontFamily: "var(--font-dm-sans)",
+      }}
+    >
+      {/* Subtle grain overlay */}
+      <div
+        className="fixed inset-0 pointer-events-none z-50 opacity-[0.03]"
+        style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: "repeat",
+        }}
+      />
+
+      <div className="relative z-10 max-w-5xl mx-auto px-6 py-12">
+        {/* Header */}
+        <motion.header
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="mb-16"
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-8 h-8 rounded-md flex items-center justify-center" style={{ background: "#1a1a2e" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c6fe0" strokeWidth="2.5" strokeLinecap="round">
+                <path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
+              </svg>
+            </div>
+            <h1 className="text-xl font-semibold tracking-tight" style={{ color: "#f0eee8" }}>
+              InkClone
+            </h1>
+            <span
+              className="text-[10px] font-medium px-2 py-0.5 rounded-full ml-1"
+              style={{ background: "#1a1a2e", color: "#7c6fe0" }}
+            >
+              BETA
+            </span>
+          </div>
+          <p className="text-sm" style={{ color: "#6b6970" }}>
+            Your handwriting, digitally replicated. Type anything and get a realistic handwritten document.
+          </p>
+        </motion.header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column — Controls */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="space-y-6"
+          >
+            {/* Text Input */}
+            <div>
+              <label className="text-xs font-medium mb-2 block" style={{ color: "#8a8890", letterSpacing: "0.06em" }}>
+                YOUR TEXT
+              </label>
+              <div className="relative">
+                <textarea
+                  ref={textareaRef}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-lg text-sm resize-none focus:outline-none transition-all duration-200"
+                  style={{
+                    background: "#141418",
+                    border: "1px solid #2a2a30",
+                    color: "#d8d6d0",
+                    fontFamily: "var(--font-dm-sans)",
+                  }}
+                  onFocus={(e) => ((e.target as HTMLTextAreaElement).style.borderColor = "#7c6fe0")}
+                  onBlur={(e) => ((e.target as HTMLTextAreaElement).style.borderColor = "#2a2a30")}
+                  placeholder="Type what you want handwritten..."
+                />
+                <span className="absolute bottom-2 right-3 text-[10px]" style={{ color: "#4a4850" }}>
+                  {text.length} chars
+                </span>
+              </div>
+            </div>
+
+            {/* Tab Navigation */}
+            <div className="flex gap-1 p-1 rounded-lg" style={{ background: "#141418" }}>
+              {["paper", "ink", "effects"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className="flex-1 py-2 px-3 rounded-md text-xs font-medium transition-all duration-200"
+                  style={{
+                    background: activeTab === tab ? "#1e1e28" : "transparent",
+                    color: activeTab === tab ? "#e8e6e3" : "#5a5860",
+                  }}
+                >
+                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
               ))}
             </div>
-          </motion.div>
-        </div>
-      </div>
 
-      {/* Main Interface */}
-      <div className="px-6 pb-16">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-8">
-            
-            {/* Controls Panel */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    Your Text
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <textarea
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    className="w-full h-32 p-4 glass rounded-xl border-0 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all placeholder:text-slate-400"
-                    placeholder="Type the text you want to render as handwriting..."
-                  />
-                  <div className="mt-2 text-xs text-slate-500">
-                    {text.length} characters
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Settings className="w-5 h-5" />
-                    Style Configuration
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Tabs defaultValue="paper" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="paper">Paper</TabsTrigger>
-                      <TabsTrigger value="ink">Ink</TabsTrigger>
-                      <TabsTrigger value="effects">Effects</TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="paper" className="mt-6">
-                      <div className="grid grid-cols-2 gap-3">
-                        {paperTypes.map((paperType) => (
-                          <motion.button
-                            key={paperType.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setPaper(paperType.id)}
-                            className={`p-4 rounded-xl text-left transition-all ${
-                              paper === paperType.id
-                                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                                : 'glass hover:bg-white/80'
-                            }`}
-                          >
-                            <div className="text-2xl mb-2">{paperType.emoji}</div>
-                            <div className="font-medium text-sm">{paperType.name}</div>
-                            <div className={`text-xs mt-1 ${paper === paperType.id ? 'text-blue-100' : 'text-slate-500'}`}>
-                              {paperType.description}
-                            </div>
-                          </motion.button>
-                        ))}
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="ink" className="mt-6">
-                      <div className="grid grid-cols-2 gap-3">
-                        {inkColors.map((inkColor) => (
-                          <motion.button
-                            key={inkColor.id}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            onClick={() => setInk(inkColor.id)}
-                            className={`p-4 rounded-xl text-left transition-all ${
-                              ink === inkColor.id
-                                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                                : 'glass hover:bg-white/80'
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className={`w-5 h-5 rounded-full ${inkColor.color} shadow-sm`}></div>
-                              <div className="font-medium text-sm">{inkColor.name}</div>
-                            </div>
-                            <div className={`text-xs ${ink === inkColor.id ? 'text-blue-100' : 'text-slate-500'}`}>
-                              {inkColor.hex}
-                            </div>
-                          </motion.button>
-                        ))}
-                      </div>
-                    </TabsContent>
-
-                    <TabsContent value="effects" className="mt-6">
-                      <div className="space-y-3">
-                        {effects.map((eff) => {
-                          const IconComponent = eff.icon
-                          return (
-                            <motion.button
-                              key={eff.id}
-                              whileHover={{ scale: 1.01 }}
-                              onClick={() => setEffect(eff.id)}
-                              className={`w-full p-4 rounded-xl text-left transition-all flex items-center gap-3 ${
-                                effect === eff.id
-                                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                                  : 'glass hover:bg-white/80'
-                              }`}
-                            >
-                              <IconComponent className="w-5 h-5" />
-                              <div>
-                                <div className="font-medium text-sm">{eff.name}</div>
-                                <div className={`text-xs ${effect === eff.id ? 'text-blue-100' : 'text-slate-500'}`}>
-                                  {eff.description}
-                                </div>
-                              </div>
-                            </motion.button>
-                          )
-                        })}
-                      </div>
-                    </TabsContent>
-                  </Tabs>
-
-                  <Separator className="my-6" />
-
-                  {/* Neatness Slider */}
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-3">
-                      Handwriting Neatness: {Math.round(neatness * 100)}%
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="range"
-                        min="0"
-                        max="1"
-                        step="0.1"
-                        value={neatness}
-                        onChange={(e) => setNeatness(parseFloat(e.target.value))}
-                        className="w-full h-2 glass rounded-full appearance-none cursor-pointer slider"
-                      />
-                      <div 
-                        className="absolute top-0 h-2 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full pointer-events-none"
-                        style={{ width: `${neatness * 100}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs text-slate-500 mt-1">
-                      <span>🖊️ Messy</span>
-                      <span>✨ Perfect</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Button
-                onClick={handleGenerate}
-                disabled={isGenerating || !text.trim()}
-                variant="primary"
-                size="lg"
-                className="w-full"
-              >
-                <AnimatePresence mode="wait">
-                  {isGenerating ? (
-                    <motion.div
-                      key="generating"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex items-center gap-2"
+            {/* Tab Content */}
+            <AnimatePresence mode="wait">
+              {activeTab === "paper" && (
+                <motion.div
+                  key="paper"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="grid grid-cols-3 gap-2"
+                >
+                  {PAPERS.map((p) => (
+                    <button
+                      key={p.id}
+                      onClick={() => setPaper(p)}
+                      className="group relative p-3 rounded-lg text-left transition-all duration-200"
+                      style={{
+                        background: paper.id === p.id ? "#1e1e28" : "#141418",
+                        border: `1px solid ${paper.id === p.id ? "#7c6fe044" : "#1e1e24"}`,
+                      }}
                     >
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      <div
+                        className="w-full h-8 rounded-sm mb-2 transition-transform duration-200 group-hover:scale-105"
+                        style={{
+                          background: p.color,
+                          boxShadow: "inset 0 1px 3px rgba(0,0,0,0.08)",
+                        }}
                       >
-                        <Wand2 className="w-5 h-5" />
-                      </motion.div>
-                      Generating Handwriting...
-                    </motion.div>
-                  ) : (
-                    <motion.div
-                      key="generate"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex items-center gap-2"
+                        {(p.id === "college_ruled" || p.id === "legal_pad" || p.id === "sticky_note") && (
+                          <svg className="w-full h-full">
+                            {[0, 1, 2].map((i) => (
+                              <line
+                                key={i}
+                                x1="8" y1={10 + i * 9} x2="92%" y2={10 + i * 9}
+                                stroke={p.accent}
+                                strokeWidth="0.5"
+                                opacity="0.5"
+                              />
+                            ))}
+                          </svg>
+                        )}
+                      </div>
+                      <div className="text-[11px] font-medium" style={{ color: paper.id === p.id ? "#e8e6e3" : "#8a8890" }}>
+                        {p.label}
+                      </div>
+                      <div className="text-[9px]" style={{ color: "#4a4850" }}>
+                        {p.desc}
+                      </div>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+
+              {activeTab === "ink" && (
+                <motion.div
+                  key="ink"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex gap-3 flex-wrap"
+                >
+                  {INKS.map((i) => (
+                    <button
+                      key={i.id}
+                      onClick={() => setInk(i)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 rounded-lg transition-all duration-200"
+                      style={{
+                        background: ink.id === i.id ? "#1e1e28" : "#141418",
+                        border: `1px solid ${ink.id === i.id ? "#7c6fe044" : "#1e1e24"}`,
+                      }}
                     >
-                      <Zap className="w-5 h-5" />
-                      Generate Document
-                      <ArrowRight className="w-4 h-4" />
+                      <div className="w-3.5 h-3.5 rounded-full ring-1 ring-white/10" style={{ background: i.hex }} />
+                      <span className="text-xs font-medium" style={{ color: ink.id === i.id ? "#e8e6e3" : "#6b6970" }}>
+                        {i.label}
+                      </span>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+
+              {activeTab === "effects" && (
+                <motion.div
+                  key="effects"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-2"
+                >
+                  {EFFECTS.map((e) => (
+                    <button
+                      key={e.id}
+                      onClick={() => setEffect(e)}
+                      className="w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200"
+                      style={{
+                        background: effect.id === e.id ? "#1e1e28" : "#141418",
+                        border: `1px solid ${effect.id === e.id ? "#7c6fe044" : "#1e1e24"}`,
+                      }}
+                    >
+                      <div>
+                        <div className="text-xs font-medium" style={{ color: effect.id === e.id ? "#e8e6e3" : "#8a8890" }}>
+                          {e.label}
+                        </div>
+                        <div className="text-[10px]" style={{ color: "#4a4850" }}>
+                          {e.desc}
+                        </div>
+                      </div>
+                      {effect.id === e.id && (
+                        <motion.div
+                          layoutId="effectCheck"
+                          className="w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{ background: "#7c6fe0" }}
+                        >
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </motion.div>
+                      )}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Neatness Slider */}
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-xs font-medium" style={{ color: "#8a8890", letterSpacing: "0.06em" }}>
+                  NEATNESS
+                </label>
+                <span className="text-[10px] tabular-nums" style={{ color: "#4a4850" }}>
+                  {Math.round(neatness * 100)}%
+                </span>
+              </div>
+              <input
+                type="range"
+                min="0"
+                max="1"
+                step="0.05"
+                value={neatness}
+                onChange={(e) => setNeatness(parseFloat(e.target.value))}
+                className="w-full h-1 rounded-full appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #7c6fe0 ${neatness * 100}%, #2a2a30 ${neatness * 100}%)`,
+                }}
+              />
+              <div className="flex justify-between mt-1">
+                <span className="text-[9px]" style={{ color: "#4a4850" }}>Messy</span>
+                <span className="text-[9px]" style={{ color: "#4a4850" }}>Pristine</span>
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <motion.button
+              onClick={handleGenerate}
+              disabled={isGenerating || !text.trim()}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full py-3 rounded-lg text-sm font-semibold transition-all duration-200 disabled:opacity-40"
+              style={{
+                background: "linear-gradient(135deg, #7c6fe0, #5a4fc0)",
+                color: "#ffffff",
+                boxShadow: "0 4px 20px rgba(124, 111, 224, 0.25)",
+              }}
+            >
+              {isGenerating ? (
+                <span className="flex items-center justify-center gap-2">
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                  />
+                  Generating...
+                </span>
+              ) : (
+                "Generate Document"
+              )}
+            </motion.button>
+          </motion.div>
+
+          {/* Right Column — Preview */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <label className="text-xs font-medium mb-2 block" style={{ color: "#8a8890", letterSpacing: "0.06em" }}>
+              PREVIEW
+            </label>
+            <div
+              className="rounded-lg overflow-hidden"
+              style={{
+                background: "#141418",
+                border: "1px solid #1e1e24",
+                boxShadow: "0 8px 40px rgba(0,0,0,0.3)",
+              }}
+            >
+              <div className="p-4">
+                <AnimatePresence mode="wait">
+                  {generatedImage ? (
+                    <motion.img
+                      key="generated"
+                      src={generatedImage}
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.4 }}
+                      className="w-full rounded-sm"
+                      alt="Generated handwriting"
+                    />
+                  ) : (
+                    <motion.div key="preview" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                      <HandwritingPreview text={text} ink={ink} paper={paper} isGenerating={isGenerating} />
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </Button>
-            </motion.div>
+              </div>
 
-            {/* Preview Panel */}
+              {generatedImage && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="px-4 pb-4 flex gap-2"
+                >
+                  <a
+                    href={generatedImage}
+                    download="inkclone-output.png"
+                    className="flex-1 py-2 rounded-md text-xs font-medium text-center transition-all duration-200"
+                    style={{ background: "#1e1e28", color: "#8a8890", border: "1px solid #2a2a30" }}
+                  >
+                    Download PNG
+                  </a>
+                  <button
+                    onClick={() => setGeneratedImage(null)}
+                    className="px-4 py-2 rounded-md text-xs font-medium transition-all duration-200"
+                    style={{ background: "#1e1e28", color: "#5a5860", border: "1px solid #2a2a30" }}
+                  >
+                    Clear
+                  </button>
+                </motion.div>
+              )}
+            </div>
+
+            {/* Stats */}
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="lg:sticky lg:top-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="grid grid-cols-3 gap-3 mt-4"
             >
-              <Card className="h-[700px] flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <ImageIcon className="w-5 h-5" />
-                      Live Preview
-                    </div>
-                    {result && (
-                      <Button variant="secondary" size="sm">
-                        <Download className="w-4 h-4 mr-2" />
-                        Download
-                      </Button>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 flex items-center justify-center">
-                  <AnimatePresence mode="wait">
-                    {result ? (
-                      <motion.div
-                        key="result"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="w-full h-full flex flex-col"
-                      >
-                        <div className="flex-1 flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden border-2 border-slate-100">
-                          <img
-                            src={result}
-                            alt="Generated handwriting"
-                            className="max-w-full max-h-full object-contain"
-                          />
-                        </div>
-                        <div className="mt-4 flex gap-2">
-                          <Button variant="secondary" size="sm" className="flex-1">
-                            <Download className="w-4 h-4 mr-2" />
-                            PNG
-                          </Button>
-                          <Button variant="ghost" size="sm" className="flex-1">
-                            <Eye className="w-4 h-4 mr-2" />
-                            Zoom
-                          </Button>
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        key="placeholder"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="text-center text-slate-400"
-                      >
-                        <div className="w-24 h-24 mx-auto mb-4 rounded-full glass flex items-center justify-center">
-                          <FileText className="w-12 h-12 opacity-50" />
-                        </div>
-                        <p className="text-lg font-medium mb-2">Your document will appear here</p>
-                        <p className="text-sm">Configure your settings and click generate</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </CardContent>
-              </Card>
+              {[
+                { label: "Glyphs", value: "142" },
+                { label: "Characters", value: "39" },
+                { label: "Papers", value: "6" },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className="p-3 rounded-lg text-center"
+                  style={{ background: "#141418", border: "1px solid #1e1e24" }}
+                >
+                  <div className="text-lg font-semibold" style={{ color: "#7c6fe0" }}>
+                    {stat.value}
+                  </div>
+                  <div className="text-[9px] font-medium" style={{ color: "#4a4850", letterSpacing: "0.08em" }}>
+                    {stat.label.toUpperCase()}
+                  </div>
+                </div>
+              ))}
             </motion.div>
-          </div>
+          </motion.div>
         </div>
+
+        {/* Footer */}
+        <motion.footer
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="mt-20 pt-6 text-center text-[10px]"
+          style={{ borderTop: "1px solid #1a1a20", color: "#3a3840" }}
+        >
+          InkClone — Built by Vishnu Mahesha
+        </motion.footer>
       </div>
     </div>
-  )
+  );
 }
-
-<style jsx global>{`
-  .slider::-webkit-slider-thumb {
-    appearance: none;
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #9333ea);
-    cursor: pointer;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  }
-  
-  .slider::-moz-range-thumb {
-    height: 16px;
-    width: 16px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #3b82f6, #9333ea);
-    cursor: pointer;
-    border: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  }
-`}</style>

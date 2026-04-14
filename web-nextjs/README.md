@@ -1,100 +1,36 @@
-# InkClone Pro - Premium Web Interface
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-**Built with UI UX Pro Max skill + 21st.dev components**
+## Getting Started
 
-## Features
-
-✨ **Premium Design**
-- Glassmorphism UI with backdrop blur
-- Gradient backgrounds and text effects
-- Framer Motion animations
-- Professional typography (Inter font)
-
-🎨 **UI Components**
-- Responsive grid layout
-- Animated buttons and cards
-- Real-time preview
-- Smooth transitions
-
-⚡ **Performance**
-- Next.js App Router
-- TypeScript for type safety
-- Tailwind CSS for styling
-- Component-based architecture
-
-## Quick Start
+First, run the development server:
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
 npm run dev
-
-# Build for production
-npm run build
-npm start
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
 ```
 
-## Architecture
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-```
-/app
-├── layout.tsx          # Root layout with fonts
-├── page.tsx            # Main interface (glassmorphism)
-├── globals.css         # Tailwind + custom styles
-└── api/generate/
-    └── route.ts        # API proxy to FastAPI backend
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-/components/ui
-├── button.tsx          # Animated button with variants
-└── card.tsx            # Glass card components
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-/lib
-└── utils.ts            # Class merging utilities
-```
+## Learn More
 
-## Design System
+To learn more about Next.js, take a look at the following resources:
 
-### Colors
-- **Primary**: Blue gradient (blue-600 to purple-600)
-- **Background**: Multi-layer gradients (slate-50 to indigo-50)
-- **Glass**: White with 70% opacity + backdrop blur
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-### Typography
-- **Font**: Inter (Google Fonts)
-- **Gradient text**: Blue to purple gradient
-- **Hierarchy**: 5xl hero, 2xl cards, base body
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-### Animation
-- **Framer Motion**: Scale animations on interaction
-- **CSS**: Fade-in, slide-up, glow effects
-- **Timing**: 0.5s transitions, smooth easing
+## Deploy on Vercel
 
-## Backend Integration
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-Connects to existing FastAPI backend at `http://127.0.0.1:8000/generate`
-
-Start backend first:
-```bash
-cd ~/Projects/inkclone
-source venv/bin/activate
-python3 web/app.py
-```
-
-Then start Next.js:
-```bash
-cd web-nextjs
-npm run dev
-```
-
-## Premium Features
-
-1. **Glass Morphism Cards** - Modern design trend
-2. **Gradient Text Effects** - Eye-catching headings  
-3. **Animated Interactions** - Micro-animations on hover/click
-4. **Professional Layout** - Two-column responsive grid
-5. **Real-time Validation** - Dynamic button states
-6. **Smooth Transitions** - All state changes animated
-
-Built with UI UX Pro Max design intelligence! 🎨
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
