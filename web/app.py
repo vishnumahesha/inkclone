@@ -142,10 +142,21 @@ async def generate_document(request: GenerateRequest):
         raise HTTPException(status_code=400, detail="Neatness must be 0.0–1.0")
 
     try:
+        # Use half-resolution (1200×1600) so the 1 GB container isn't OOM-killed
+        # when numpy allocates multiple large intermediate arrays.
+        PAGE_W, PAGE_H = 1200, 1600
         bank = _get_glyph_bank(request.profile_id)
         renderer = HandwritingRenderer(bank, seed=request.seed)
-        text_img = renderer.render(request.text, neatness=request.neatness)
-        paper    = PAPERS[request.paper]()
+        text_img = renderer.render(
+            request.text,
+            page_width=PAGE_W, page_height=PAGE_H,
+            neatness=request.neatness,
+        )
+        _fixed_size = {"sticky_note", "dot_grid"}
+        if request.paper in _fixed_size:
+            paper = PAPERS[request.paper]()
+        else:
+            paper = PAPERS[request.paper](width=PAGE_W, height=PAGE_H)
         result   = composite(text_img, paper, ink_color=INK_COLORS[ink])
         final    = ARTIFACTS[request.artifact](result)
 
