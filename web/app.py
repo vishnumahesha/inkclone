@@ -302,6 +302,13 @@ async def create_profile(images: List[UploadFile] = File(...)):
         dst.write_bytes(contents)
         saved_paths.append(dst)
 
+    # ── 1b. Image quality gate ─────────────────────────────────────────────────
+    all_warnings: list[str] = []
+    for idx, p in enumerate(saved_paths):
+        page_warnings = _check_image_quality(p)
+        for w in page_warnings:
+            all_warnings.append(f"Page {idx+1}: {w}" if len(saved_paths) > 1 else w)
+
     # ── 2-6. Extract glyphs ────────────────────────────────────────────────────
     profile_id  = f"profile_{ts}"
     profile_dir = _PROFILES_DIR / profile_id
@@ -323,13 +330,18 @@ async def create_profile(images: List[UploadFile] = File(...)):
         )
 
     # ── 7. Save glyphs to disk + write profile.json ────────────────────────────
+    # glyph_bank: {char: [(PIL.Image, confidence, is_weak), ...]}
     saved_chars: dict[str, list] = {}
-    for char, imgs in glyph_bank.items():
+    for char, variants in glyph_bank.items():
         char_name = _char_to_stem(char)
-        for v_idx, glyph_img in enumerate(imgs):
+        for v_idx, (glyph_img, confidence, is_weak) in enumerate(variants):
             fname = f"{char_name}_{v_idx}.png"
             glyph_img.save(str(glyphs_dir / fname))
-            saved_chars.setdefault(char, []).append(f"glyphs/{fname}")
+            saved_chars.setdefault(char, []).append({
+                "path":       f"glyphs/{fname}",
+                "confidence": confidence,
+                "is_weak":    is_weak,
+            })
 
     _write_profile_json(profile_dir, profile_id, saved_chars, saved_paths)
 
@@ -337,30 +349,153 @@ async def create_profile(images: List[UploadFile] = File(...)):
     _generate_contact_sheet(profile_id)
 
     # ── 9. Response ────────────────────────────────────────────────────────────
-    total_glyphs = sum(len(v) for v in saved_chars.values())
+    total_glyphs    = sum(len(v) for v in saved_chars.values())
     lowercase_chars = sum(1 for c in saved_chars if c.islower())
     uppercase_chars = sum(1 for c in saved_chars if c.isupper())
     digit_chars     = sum(1 for c in saved_chars if c.isdigit())
 
-    coverage_pct = round(lowercase_chars / 26 * 100, 1) if lowercase_chars else 0.0
+    coverage_pct  = round(lowercase_chars / 26 * 100, 1) if lowercase_chars else 0.0
     uppercase_pct = round(uppercase_chars / 26 * 100, 1)
     digits_pct    = round(digit_chars / 10 * 100, 1)
+
+    weak_chars = sorted(
+        c for c, variants in saved_chars.items()
+        if any(v["is_weak"] for v in variants)
+    )
+
+    lc_label = f"{coverage_pct:.0f}%" if lowercase_chars else "auto-generated"
+    uc_label = f"{uppercase_pct:.0f}%" if uppercase_chars else "auto-generated"
+    dg_label = f"{digits_pct:.0f}%"    if digit_chars     else "auto-generated"
+    coverage_report = f"Lowercase: {lc_label} | Uppercase: {uc_label} | Digits: {dg_label}"
 
     # Invalidate cache so next render picks up new profile
     _GLYPH_BANKS.pop(profile_id, None)
 
     return JSONResponse({
-        "profile_id":       profile_id,
-        "total_glyphs":     total_glyphs,
-        "coverage_pct":     coverage_pct,
-        "uppercase_pct":    uppercase_pct,
-        "digits_pct":       digits_pct,
-        "weak_chars":       [],
+        "profile_id":        profile_id,
+        "total_glyphs":      total_glyphs,
+        "coverage_pct":      coverage_pct,
+        "uppercase_pct":     uppercase_pct,
+        "digits_pct":        digits_pct,
+        "weak_chars":        weak_chars,
+        "coverage_report":   coverage_report,
+        "warnings":          all_warnings,
         "contact_sheet_url": f"/profiles/{profile_id}/contact_sheet.png",
     })
 
 
 # ── Extraction pipeline ────────────────────────────────────────────────────────
+
+def _check_image_quality(img_path: Path) -> list:
+    """Return user-facing warning strings for sharpness, brightness, and aspect ratio."""
+    import cv2
+
+    img_cv = cv2.imread(str(img_path))
+    if img_cv is None:
+        return []
+
+    gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+    h, w = gray.shape
+    warnings_out = []
+
+    # Sharpness: Laplacian variance < 50 → blurry
+    lap_var = float(cv2.Laplacian(gray, cv2.CV_64F).var())
+    if lap_var < 50:
+        warnings_out.append("Photo is blurry — try holding steadier")
+
+    # Brightness: mean pixel value
+    mean_val = float(gray.mean())
+    if mean_val < 80:
+        warnings_out.append("Photo is too dark")
+    elif mean_val > 220:
+        warnings_out.append("Photo is overexposed")
+
+    # Aspect ratio: letter paper portrait ≈ 8.5/11 = 0.773
+    portrait_ratio = min(w, h) / max(w, h)
+    if abs(portrait_ratio - 0.773) > 0.15:
+        warnings_out.append("Photo may be cropped incorrectly")
+
+    return warnings_out
+
+
+def _score_cell_quality(cell_bin: "np.ndarray") -> dict:
+    """
+    Score glyph quality from a binary cell crop.
+
+    Metrics (weights):
+      ink_density       0.20 — fill ratio within tight ink bbox
+      centering_score   0.15 — how centred the ink is in the cell
+      size_score        0.25 — ink bbox / cell area, ideal 0.2-0.7
+      noise_score       0.20 — penalises tiny disconnected fragments
+      stroke_continuity 0.20 — largest component / total ink
+
+    Returns confidence 0-1, component scores, and is_weak flag.
+    """
+    import cv2
+    import numpy as np
+
+    h, w = cell_bin.shape
+    cell_area = h * w
+    total_ink = int((cell_bin > 0).sum())
+
+    if total_ink == 0 or cell_area == 0:
+        return {"confidence": 0.0, "is_weak": True}
+
+    rows = np.any(cell_bin > 0, axis=1)
+    cols = np.any(cell_bin > 0, axis=0)
+    rmin = int(np.where(rows)[0][0]);  rmax = int(np.where(rows)[0][-1])
+    cmin = int(np.where(cols)[0][0]);  cmax = int(np.where(cols)[0][-1])
+    ink_bbox_area = (rmax - rmin + 1) * (cmax - cmin + 1)
+
+    # ink_density: fill ratio within tight ink bbox
+    tight_ink = int((cell_bin[rmin:rmax+1, cmin:cmax+1] > 0).sum())
+    ink_density = tight_ink / max(1, ink_bbox_area)
+
+    # centering_score: how close the ink centre is to the cell centre
+    center_r = (rmin + rmax) / 2.0 / max(1, h)
+    center_c = (cmin + cmax) / 2.0 / max(1, w)
+    centering_score = max(0.0, 1.0 - 2.0 * max(abs(center_r - 0.5), abs(center_c - 0.5)))
+
+    # size_score: ink bbox area / cell area, ideal 0.2-0.7
+    size_ratio = ink_bbox_area / max(1, cell_area)
+    if 0.2 <= size_ratio <= 0.7:
+        size_score = 1.0
+    elif size_ratio < 0.2:
+        size_score = size_ratio / 0.2
+    else:
+        size_score = max(0.0, 1.0 - (size_ratio - 0.7) / 0.3)
+
+    # Connected-component analysis
+    n_labels, _, stats, _ = cv2.connectedComponentsWithStats(cell_bin, connectivity=8)
+    if n_labels <= 1:
+        return {"confidence": 0.0, "is_weak": True}
+
+    comp_areas  = [int(stats[i, cv2.CC_STAT_AREA]) for i in range(1, n_labels)]
+    largest_area = max(comp_areas)
+    small_count  = sum(1 for a in comp_areas if a < max(1, total_ink) * 0.05)
+
+    noise_score       = max(0.0, 1.0 - small_count / max(1, len(comp_areas)))
+    stroke_continuity = largest_area / max(1, total_ink)
+
+    confidence = (
+        ink_density       * 0.20 +
+        centering_score   * 0.15 +
+        size_score        * 0.25 +
+        noise_score       * 0.20 +
+        stroke_continuity * 0.20
+    )
+    confidence = min(1.0, max(0.0, confidence))
+
+    return {
+        "confidence":        round(confidence, 3),
+        "is_weak":           confidence < 0.5,
+        "ink_density":       round(ink_density, 4),
+        "centering_score":   round(centering_score, 3),
+        "size_score":        round(size_score, 3),
+        "noise_score":       round(noise_score, 3),
+        "stroke_continuity": round(stroke_continuity, 3),
+    }
+
 
 def _extract_glyphs_pipeline(image_paths: list, glyphs_dir: Path) -> dict:
     """
@@ -405,8 +540,8 @@ def _extract_glyphs_pipeline(image_paths: list, glyphs_dir: Path) -> dict:
         else:
             extracted = _extract_freeform_components(gray, binary)
 
-        for char, glyph_rgba in extracted:
-            bank.setdefault(char, []).append(glyph_rgba)
+        for char, glyph_rgba, confidence, is_weak in extracted:
+            bank.setdefault(char, []).append((glyph_rgba, confidence, is_weak))
 
     return bank
 
@@ -532,11 +667,21 @@ def _extract_template_cells(gray, binary, img_cv) -> list:
                 continue
 
             cell_gray = gray[y0:y1, x0:x1]
-            cell_bin  = binary[y0:y1, x0:x1]
+            if cell_gray.size == 0:
+                continue
+
+            # Per-cell Otsu threshold handles uneven lighting across the page
+            _, cell_bin = cv2.threshold(
+                cell_gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+            )
+
+            quality = _score_cell_quality(cell_bin)
+            if quality["confidence"] < 0.3:
+                continue  # unusable — skip entirely
 
             glyph = _cell_to_rgba(cell_bin, cell_gray)
             if glyph is not None:
-                extracted.append((char, glyph))
+                extracted.append((char, glyph, quality["confidence"], quality["is_weak"]))
 
     return extracted
 
@@ -610,9 +755,13 @@ def _extract_freeform_components(gray, binary) -> list:
         if char is None:
             continue
 
+        quality = _score_cell_quality(cell_bin)
+        if quality["confidence"] < 0.3:
+            continue
+
         glyph = _cell_to_rgba(cell_bin, cell_gray)
         if glyph is not None:
-            extracted.append((char, glyph))
+            extracted.append((char, glyph, quality["confidence"], quality["is_weak"]))
 
     return extracted
 
@@ -841,65 +990,73 @@ def _write_profile_json(profile_dir: Path, profile_id: str,
 
     glyphs_dir = profile_dir / "glyphs"
 
-    for char, rel_paths in saved_chars.items():
-        widths, heights, densities = [], [], []
-        for rel in rel_paths:
+    # saved_chars: {char: [{"path": str, "confidence": float, "is_weak": bool}, ...]}
+    for char, variants in saved_chars.items():
+        widths, heights, confidences = [], [], []
+        rel_paths = []
+        for v in variants:
+            rel_paths.append(v["path"])
+            confidences.append(v["confidence"])
             try:
-                img = Image.open(glyphs_dir / Path(rel).name)
+                img = Image.open(glyphs_dir / Path(v["path"]).name)
                 if img.mode != "RGBA":
                     img = img.convert("RGBA")
-                arr   = np.array(img)
-                w, h  = img.size
-                dens  = float((arr[:, :, 3] > 10).sum()) / max(1, arr[:, :, 3].size)
+                w, h = img.size
+                arr  = np.array(img)
+                dens = float((arr[:, :, 3] > 10).sum()) / max(1, arr[:, :, 3].size)
                 widths.append(w)
                 heights.append(h)
-                densities.append(dens)
+                all_densities.append(dens)
             except Exception:
                 pass
 
-        avg_d = float(np.mean(densities)) if densities else 0.05
-        conf  = min(0.95, max(0.2, avg_d * 6))
+        max_conf = max(confidences) if confidences else 0.2
+        is_weak  = max_conf < 0.5
 
         per_character[char] = {
-            "variants":           rel_paths,
-            "avg_width":          round(float(np.mean(widths)), 2)  if widths  else 0.0,
-            "avg_height":         round(float(np.mean(heights)), 2) if heights else 0.0,
-            "confidence":         round(conf, 3),
-            "extraction_method":  "template_cell",
+            "variants":          rel_paths,
+            "avg_width":         round(float(np.mean(widths)),  2) if widths  else 0.0,
+            "avg_height":        round(float(np.mean(heights)), 2) if heights else 0.0,
+            "confidence":        round(max_conf, 3),
+            "is_weak":           is_weak,
+            "extraction_method": "template_cell",
         }
         all_widths.extend(widths)
         all_heights.extend(heights)
-        all_densities.extend(densities)
 
     standard = LOWERCASE | UPPERCASE | DIGITS | PUNCTUATION
     missing  = sorted(standard - chars)
-    weak     = sorted(c for c, e in per_character.items() if e["confidence"] < 0.5)
+    weak     = sorted(c for c, e in per_character.items() if e["is_weak"])
 
     profile = {
-        "profile_id":   profile_id,
-        "created_at":   datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "profile_id":    profile_id,
+        "created_at":    datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "source_method": "template",
         "source_images": [str(p) for p in source_images],
         "character_coverage": {
-            "lowercase_pct":  round(len(lc) / 26  * 100, 1),
-            "uppercase_pct":  round(len(uc) / 26  * 100, 1),
-            "digits_pct":     round(len(dg) / 10  * 100, 1),
-            "punctuation_pct":round(len(pu) / 10  * 100, 1),
+            "lowercase_pct":   round(len(lc) / 26 * 100, 1),
+            "uppercase_pct":   round(len(uc) / 26 * 100, 1),
+            "digits_pct":      round(len(dg) / 10 * 100, 1),
+            "punctuation_pct": round(len(pu) / 10 * 100, 1),
             "total_characters": len(chars),
             "total_variants":   total_variants,
+            "lowercase_complete":   len(lc) == 26,
+            "uppercase_complete":   len(uc) == 26,
+            "digits_complete":      len(dg) == 10,
         },
         "per_character": per_character,
         "style_metrics": {
-            "avg_glyph_width":       round(float(np.mean(all_widths)),   2) if all_widths   else 0.0,
-            "median_x_height":       128.0,
-            "baseline_offset":       0.0,
+            "avg_glyph_width":        round(float(np.mean(all_widths)),    2) if all_widths    else 0.0,
+            "median_x_height":        128.0,
+            "baseline_offset":        0.0,
             "slant_estimate_degrees": 0.0,
-            "avg_stroke_width":      8.0,
-            "ink_density":           round(float(np.mean(all_densities)), 4) if all_densities else 0.0,
+            "avg_stroke_width":       8.0,
+            "ink_density":            round(float(np.mean(all_densities)), 4) if all_densities else 0.0,
         },
         "missing_characters": missing,
         "weak_characters":    weak,
-        "usable":             len(lc) >= 20,
+        # Partial profiles are immediately usable — fallback_dummy fills gaps
+        "usable":             len(lc) >= 1,
     }
 
     (profile_dir / "profile.json").write_text(
