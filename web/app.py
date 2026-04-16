@@ -361,7 +361,7 @@ def _extract_glyphs_pipeline(image_paths: list, glyphs_dir: Path) -> dict:
 
     bank: dict[str, list] = {}
 
-    for img_path in image_paths:
+    for page_idx, img_path in enumerate(image_paths):
         img_cv = cv2.imread(str(img_path))
         if img_cv is None:
             continue
@@ -381,7 +381,7 @@ def _extract_glyphs_pipeline(image_paths: list, glyphs_dir: Path) -> dict:
         is_template = _detect_template_grid(binary)
 
         if is_template:
-            extracted = _extract_template_cells(gray, binary, img_cv)
+            extracted = _extract_template_cells(gray, binary, img_cv, page_idx)
         else:
             extracted = _extract_freeform_components(gray, binary)
 
@@ -423,21 +423,26 @@ def _detect_template_grid(binary: "np.ndarray") -> bool:
     return runs >= 6
 
 
-def _extract_template_cells(gray, binary, img_cv) -> list:
+def _extract_template_cells(gray, binary, img_cv, page_idx: int = 0) -> list:
     """
     Extract glyph cells from a filled-in InkClone template photo.
 
-    Template layout (from template_generator_v2.py, letter paper at ~150 DPI):
-      Page 1: lowercase a-z, 5 cells per char → 130 cells, row-major
-      Cell: 1.2cm wide × 1.5cm tall
-      Margin: 1.5cm
-
-    We first auto-detect the usable region using the grid lines,
-    then divide into cells at computed positions.
+    page_idx selects which template page layout to use (0=lowercase,
+    1=uppercase, 2=digits+punctuation) via the shared template_layout module.
+    Cell dimensions and grid layout are detected automatically from the image.
     """
     import cv2
     import numpy as np
     from PIL import Image
+    sys.path.insert(0, str(_ROOT))
+    from template_layout import TEMPLATE_PAGES
+
+    if page_idx >= len(TEMPLATE_PAGES):
+        return _extract_freeform_components(gray, binary)
+
+    page_spec      = TEMPLATE_PAGES[page_idx]
+    chars          = page_spec["characters"]
+    cells_per_char = page_spec["cells_per_char"]
 
     H, W = gray.shape
 
@@ -449,13 +454,11 @@ def _extract_template_cells(gray, binary, img_cv) -> list:
     line_ys  = [i for i, v in enumerate(col_sum) if v > threshold]
 
     if len(line_ys) < 4:
-        return _extract_freeform_components(gray, binary)  # fallback
+        return _extract_freeform_components(gray, binary)
 
-    top_y    = line_ys[0]
-    bottom_y = line_ys[-1]
+    top_y = line_ys[0]
 
-    # ── Estimate cell dimensions ──────────────────────────────────────────
-    # Group line_ys into distinct bands
+    # ── Estimate cell height from distinct horizontal band positions ───────
     bands = []
     prev = line_ys[0]
     band_start = prev
@@ -473,7 +476,7 @@ def _extract_template_cells(gray, binary, img_cv) -> list:
     if cell_h < 10:
         return _extract_freeform_components(gray, binary)
 
-    # Estimate margin + cell width from vertical projection
+    # ── Estimate left/right margins from vertical projection ──────────────
     v_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, cell_h // 2))
     v_lines  = cv2.morphologyEx(binary, cv2.MORPH_OPEN, v_kernel)
     row_sum  = v_lines.sum(axis=0)
@@ -488,27 +491,24 @@ def _extract_template_cells(gray, binary, img_cv) -> list:
         right_x = int(W * 0.95)
 
     usable_w = right_x - left_x
-    # Estimate cells per row: for template ~15 cells/row at typical phone photo res
-    cell_w = max(10, usable_w // 15)
-
-    # ── Build cell map for lowercase a-z (Page 1) ─────────────────────────
-    CHARS_PAGE1 = list("abcdefghijklmnopqrstuvwxyz")
-    CELLS_PER_CHAR = 5
+    # Template always has 15 cells per row (1.2 cm cells, 1.5 cm margins, letter paper)
+    cell_w        = max(10, usable_w // 15)
     cells_per_row = max(1, usable_w // cell_w)
 
+    # ── Walk cell grid in row-major order, matching chars × variants ───────
     extracted = []
-    cell_idx = 0
-    for char in CHARS_PAGE1:
-        for variant in range(CELLS_PER_CHAR):
+    cell_idx  = 0
+    for char in chars:
+        for _variant in range(cells_per_char):
             row = cell_idx // cells_per_row
             col = cell_idx % cells_per_row
-            x0 = left_x  + col * cell_w
-            y0 = top_y   + row * cell_h
-            x1 = min(W, x0 + cell_w)
-            y1 = min(H, y0 + cell_h)
+            x0  = left_x + col * cell_w
+            y0  = top_y  + row * cell_h
+            x1  = min(W, x0 + cell_w)
+            y1  = min(H, y0 + cell_h)
             cell_idx += 1
 
-            if y1 > H or x1 > W:
+            if y0 >= H or x0 >= W:
                 continue
 
             cell_gray = gray[y0:y1, x0:x1]
@@ -686,9 +686,22 @@ def _generate_contact_sheet(profile_id: str):
     sheet = Image.new("RGB", (sheet_w, sheet_h), bg_color)
     draw  = ImageDraw.Draw(sheet)
 
-    try:
-        font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 10)
-    except Exception:
+    _FONT_CANDIDATES = [
+        "/System/Library/Fonts/Helvetica.ttc",                          # macOS
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",             # Debian/Ubuntu
+        "/usr/share/fonts/dejavu/DejaVuSans.ttf",                      # Fedora/RHEL
+        "/usr/share/fonts/truetype/freefont/FreeSans.ttf",             # other Linux
+        "/usr/share/fonts/liberation/LiberationSans-Regular.ttf",      # CentOS/RHEL
+        "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf",
+    ]
+    font = None
+    for _fp in _FONT_CANDIDATES:
+        try:
+            font = ImageFont.truetype(_fp, 10)
+            break
+        except Exception:
+            continue
+    if font is None:
         font = ImageFont.load_default()
 
     for idx, png in enumerate(pngs):

@@ -710,15 +710,15 @@
         <!-- Stats row -->
         <div class="stats-row">
           <div class="stat-card">
-            <span class="stat-number">135</span>
+            <span class="stat-number" id="stat-glyphs">—</span>
             <span class="stat-label">Glyphs</span>
           </div>
           <div class="stat-card">
-            <span class="stat-number">36</span>
+            <span class="stat-number" id="stat-chars">—</span>
             <span class="stat-label">Characters</span>
           </div>
           <div class="stat-card">
-            <span class="stat-number">6</span>
+            <span class="stat-number" id="stat-papers">7</span>
             <span class="stat-label">Papers</span>
           </div>
         </div>
@@ -737,6 +737,7 @@
     // State
     const state = { paper: 'college_ruled', ink: 'black', effect: 'scan', neatness: 0.7, profileId: '' };
     let currentDataUrl = null;
+    let _profiles = [];
 
     // DOM refs
     const textInput          = document.getElementById('text-input');
@@ -751,21 +752,33 @@
     const downloadBtn        = document.getElementById('download-btn');
     const clearBtn           = document.getElementById('clear-btn');
     const profileSelect      = document.getElementById('profile-select');
+    const statGlyphs         = document.getElementById('stat-glyphs');
+    const statChars          = document.getElementById('stat-chars');
+
+    function updateStats(profile) {
+      if (!profile) { statGlyphs.textContent = '—'; statChars.textContent = '—'; return; }
+      const cov = profile.character_coverage || {};
+      statGlyphs.textContent = cov.total_variants   != null ? cov.total_variants   : '—';
+      statChars.textContent  = cov.total_characters != null ? cov.total_characters : '—';
+    }
 
     // Profile selector
-    profileSelect.addEventListener('change', () => { state.profileId = profileSelect.value; });
+    profileSelect.addEventListener('change', () => {
+      state.profileId = profileSelect.value;
+      updateStats(_profiles.find(p => p.profile_id === profileSelect.value) || null);
+    });
 
     async function loadProfiles() {
       try {
         const res = await fetch('/profiles');
         if (!res.ok) throw new Error('Failed to fetch profiles');
-        const profiles = await res.json();
+        _profiles = await res.json();
         profileSelect.innerHTML = '';
-        if (profiles.length === 0) {
+        if (_profiles.length === 0) {
           profileSelect.innerHTML = '<option value="">No profiles — create one</option>';
           return;
         }
-        profiles.forEach(p => {
+        _profiles.forEach(p => {
           const opt = document.createElement('option');
           opt.value = p.profile_id;
           const cov = p.character_coverage;
@@ -776,10 +789,11 @@
         // Handle ?profile_id= URL param
         const urlParams = new URLSearchParams(window.location.search);
         const urlProfile = urlParams.get('profile_id');
-        if (urlProfile && profiles.find(p => p.profile_id === urlProfile)) {
+        if (urlProfile && _profiles.find(p => p.profile_id === urlProfile)) {
           profileSelect.value = urlProfile;
         }
         state.profileId = profileSelect.value;
+        updateStats(_profiles.find(p => p.profile_id === profileSelect.value) || null);
       } catch (e) {
         profileSelect.innerHTML = '<option value="">Could not load profiles</option>';
       }
