@@ -1,5 +1,5 @@
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 def composite(text_image: Image.Image,
               background: Image.Image,
@@ -25,6 +25,11 @@ def composite(text_image: Image.Image,
     # Ensure same size
     if text_image.size != background.size:
         text_image = text_image.resize(background.size, Image.LANCZOS)
+
+    # Ink bleed: blur alpha channel slightly to simulate ink spreading into paper fibers
+    r, g, b, a = text_image.split()
+    a = a.filter(ImageFilter.GaussianBlur(radius=0.4))
+    text_image = Image.merge('RGBA', (r, g, b, a))
 
     # Convert to numpy arrays
     bg = np.array(background).astype(float)

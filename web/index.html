@@ -502,6 +502,7 @@
             <button class="tab-btn active" data-tab="paper">Paper</button>
             <button class="tab-btn" data-tab="ink">Ink</button>
             <button class="tab-btn" data-tab="effects">Effects</button>
+            <button class="tab-btn" data-tab="realism">Realism</button>
           </div>
 
           <!-- Paper panel -->
@@ -661,6 +662,62 @@
 
             </div>
           </div><!-- /panel-effects -->
+
+          <!-- Realism panel -->
+          <div class="tab-panel" id="panel-realism">
+            <div class="effects-list">
+
+              <button class="effect-btn selected" data-realism="perfect">
+                <div class="effect-info">
+                  <span class="effect-name">Perfect</span>
+                  <span class="effect-desc">No realism effects</span>
+                </div>
+                <div class="check-circle">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </button>
+
+              <button class="effect-btn" data-realism="natural">
+                <div class="effect-info">
+                  <span class="effect-name">Natural</span>
+                  <span class="effect-desc">Subtle human imperfections</span>
+                </div>
+                <div class="check-circle">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </button>
+
+              <button class="effect-btn" data-realism="rushed">
+                <div class="effect-info">
+                  <span class="effect-name">Rushed</span>
+                  <span class="effect-desc">Written in a hurry</span>
+                </div>
+                <div class="check-circle">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </button>
+
+              <button class="effect-btn" data-realism="messy">
+                <div class="effect-info">
+                  <span class="effect-name">Messy</span>
+                  <span class="effect-desc">Fatigued, wandering script</span>
+                </div>
+                <div class="check-circle">
+                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                    <path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </div>
+              </button>
+
+            </div>
+          </div><!-- /panel-realism -->
+
         </div><!-- /tab section -->
 
         <!-- Neatness -->
@@ -735,7 +792,7 @@
 
   <script>
     // State
-    const state = { paper: 'college_ruled', ink: 'black', effect: 'scan', neatness: 0.7, profileId: '' };
+    const state = { paper: 'college_ruled', ink: 'black', effect: 'scan', neatness: 0.7, profileId: '', realism: 'perfect' };
     let currentDataUrl = null;
 
     // DOM refs
@@ -818,11 +875,20 @@
     });
 
     // Effect selection
-    document.querySelectorAll('.effect-btn').forEach(btn => {
+    document.querySelectorAll('#panel-effects .effect-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.effect-btn').forEach(b => b.classList.remove('selected'));
+        document.querySelectorAll('#panel-effects .effect-btn').forEach(b => b.classList.remove('selected'));
         btn.classList.add('selected');
         state.effect = btn.dataset.effect;
+      });
+    });
+
+    // Realism selection
+    document.querySelectorAll('#panel-realism .effect-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#panel-realism .effect-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        state.realism = btn.dataset.realism;
       });
     });
 
@@ -868,6 +934,7 @@
             artifact:   state.effect,
             neatness:   state.neatness,
             profile_id: state.profileId || null,
+            realism:    state.realism,
           }),
         });
 

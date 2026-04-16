@@ -33,6 +33,7 @@ from paper_backgrounds import (generate_blank_paper, generate_college_ruled,
                                generate_dot_grid, generate_sticky_note)
 from compositor import composite, INK_COLORS
 from artifact_simulator import simulate_scan, simulate_phone_photo, simulate_clean
+from realism import apply_realism, PRESETS as REALISM_PRESETS
 
 # ── Directories ────────────────────────────────────────────────────────────────
 _PROFILES_DIR = _ROOT / "profiles"
@@ -102,7 +103,8 @@ class GenerateRequest(BaseModel):
     artifact:   str   = "scan"
     neatness:   float = 0.5
     seed:       int   = None
-    profile_id: str   = None    # NEW: which profile to use
+    profile_id: str   = None
+    realism:    str   = "perfect"
 
     def get_ink(self) -> str:
         return self.ink_color or self.ink or "black"
@@ -140,6 +142,8 @@ async def generate_document(request: GenerateRequest):
         raise HTTPException(status_code=400, detail=f"Invalid artifact type: {request.artifact}")
     if not 0.0 <= request.neatness <= 1.0:
         raise HTTPException(status_code=400, detail="Neatness must be 0.0–1.0")
+    if request.realism not in REALISM_PRESETS:
+        raise HTTPException(status_code=400, detail=f"Invalid realism preset: {request.realism}")
 
     try:
         # Use half-resolution (1200×1600) so the 1 GB container isn't OOM-killed
@@ -152,6 +156,7 @@ async def generate_document(request: GenerateRequest):
             page_width=PAGE_W, page_height=PAGE_H,
             neatness=request.neatness,
         )
+        text_img = apply_realism(text_img, request.realism)
         _fixed_size = {"sticky_note", "dot_grid"}
         if request.paper in _fixed_size:
             paper = PAPERS[request.paper]()
