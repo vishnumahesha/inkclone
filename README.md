@@ -1,8 +1,35 @@
-# InkClone — Unified Handwriting Replication System
+# InkClone — Handwriting Replication Engine
 
-Complete AI system for capturing, extracting, and rendering handwriting as authentic document images.
+Replicate any handwriting style from a single photo. Generate authentic handwritten documents on realistic paper backgrounds with scan and photo artifacts.
 
-**Status**: ✅ **PRODUCTION READY** (April 14, 2026)
+**Live demo**: [https://inkclone-pro.fly.dev/](https://inkclone-pro.fly.dev/)
+
+**Status**: ✅ Deployed — April 2026
+
+---
+
+## Features
+
+- **Profile extraction** — photograph a filled template, extract individual glyphs per character with alpha cleaning
+- **Realism engine** — baseline drift, rotation jitter, scale variance, ligature kerning, page-progression fatigue
+- **Paper backgrounds** — college ruled, blank, legal pad, graph, dot grid, index card, sticky note
+- **Artifact simulation** — scan, phone photo, clean render modes
+- **Web UI** — FastAPI + browser interface, generate documents in one click
+- **Dockerized** — single `docker run` to start locally
+- **CLI** — `python3 cli.py generate "text" --paper college_ruled --ink blue --artifact scan`
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Language | Python 3.11 |
+| Web framework | FastAPI + Uvicorn |
+| Image processing | Pillow, OpenCV (headless), NumPy |
+| OCR (eval) | Tesseract via pytesseract |
+| Containerization | Docker |
+| Hosting | Fly.io (shared-cpu-1x, 1 GB RAM) |
 
 ---
 

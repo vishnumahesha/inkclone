@@ -2,6 +2,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 import math
 import random
+import os
+import warnings
 
 # Common ligatures and their spacing adjustments
 LIGATURES = {
@@ -49,11 +51,156 @@ class VariantSelector:
 class HandwritingRenderer:
     """Renders typed text as a handwriting image using a glyph bank."""
 
+    @classmethod
+    def from_profile(cls, profile_id: str, seed: int = None,
+                     fallback_dummy: bool = True) -> "HandwritingRenderer":
+        """
+        Create a HandwritingRenderer from a named profile.
+
+        Loads the canonical profile.json, validates it, extracts style_metrics
+        for default render parameters, and builds the glyph bank.
+
+        Args:
+            profile_id: Profile directory name, e.g. "freeform_vishnu".
+            seed: Random seed for reproducible rendering.
+            fallback_dummy: If True, missing glyphs fall back to dummy shapes.
+
+        Returns:
+            HandwritingRenderer with glyph_bank and profile_style populated.
+
+        Raises:
+            FileNotFoundError: If profile does not exist or lacks profile.json.
+            ValueError: If profile fails schema validation.
+        """
+        try:
+            from profiles.loader import load_profile, load_profile_glyphs_from_schema
+        except ImportError:
+            raise ImportError(
+                "profiles.loader not importable. Ensure the project root is in "
+                "sys.path and profiles/loader.py exists."
+            )
+
+        print(f"[HandwritingRenderer] Loading profile: {profile_id}")
+        profile = load_profile(profile_id)   # raises loudly on invalid
+
+        bank = load_profile_glyphs_from_schema(profile)
+        if not bank:
+            raise ValueError(
+                f"Profile '{profile_id}' loaded but produced an empty glyph bank. "
+                f"Check that variant paths in profile.json resolve to existing files."
+            )
+
+        n_chars = len(bank)
+        n_variants = sum(len(v) for v in bank.values())
+        print(f"[HandwritingRenderer] Loaded {n_chars} chars, {n_variants} variants "
+              f"from profile '{profile_id}'")
+
+        if fallback_dummy:
+            dummy = create_dummy_glyph_bank()
+            n_added = 0
+            for ch, variants in dummy.items():
+                if ch not in bank:
+                    bank[ch] = variants
+                    n_added += 1
+            if n_added:
+                print(f"[HandwritingRenderer] Added {n_added} dummy fallback chars")
+
+        renderer = cls(bank, seed=seed)
+        renderer.profile_id = profile_id
+        renderer.profile_style = profile.get("style_metrics", {})
+        renderer.profile = profile
+
+        usable = profile.get("usable", False)
+        if not usable:
+            warnings.warn(
+                f"Profile '{profile_id}' is marked usable=False "
+                f"(character coverage below threshold). Rendering may have gaps.",
+                UserWarning,
+                stacklevel=2,
+            )
+
+        return renderer
+
+    def _render_kwargs_from_profile(self, **overrides) -> dict:
+        """
+        Build render() keyword arguments seeded from profile style_metrics.
+        Any explicit override keyword takes priority.
+
+        Returns dict suitable for **kwargs in render().
+        """
+        sm = getattr(self, "profile_style", {})
+        meta_layout = {}
+        if hasattr(self, "profile"):
+            old_meta_path = (
+                __import__("pathlib").Path(__file__).parent
+                / "profiles" / self.profile_id / "metadata.json"
+            )
+            if old_meta_path.exists():
+                import json as _json
+                try:
+                    old = _json.loads(old_meta_path.read_text())
+                    meta_layout = old.get("layout", {})
+                except Exception:
+                    pass
+
+        kwargs = {}
+
+        # char_height from median x_height (scaled to render canvas)
+        x_height = sm.get("median_x_height") or meta_layout.get("x_height_px") or 50
+        # x_height in profiles is at 128px canonical; scale to ~50px render height
+        if x_height > 80:
+            x_height = round(x_height * 50 / 128)
+        kwargs["char_height"] = int(x_height) or 50
+
+        # inter-letter spacing
+        kwargs["inter_letter_mean"] = meta_layout.get("inter_letter_gap_mean", 3.0)
+        kwargs["inter_letter_std"]  = meta_layout.get("inter_letter_gap_std",  2.0)
+
+        # inter-word spacing
+        kwargs["inter_word_mean"] = meta_layout.get("inter_word_gap_mean", 22.0)
+        kwargs["inter_word_std"]  = meta_layout.get("inter_word_gap_std",  5.0)
+
+        # baseline drift
+        kwargs["baseline_amplitude"] = meta_layout.get("baseline_drift_amplitude", 2.0)
+
+        # slant → rotation
+        slant = sm.get("slant_estimate_degrees", 0.0)
+        kwargs["rotation_max_deg"] = min(3.0, max(0.5, abs(slant) + 1.0))
+
+        # Apply any caller overrides
+        kwargs.update(overrides)
+        return kwargs
+
     def __init__(self, glyph_bank: dict, seed: int = None):
         self.glyph_bank = glyph_bank
         self.selector = VariantSelector()
         self.rng = random.Random(seed)
         self.np_rng = np.random.RandomState(seed)
+
+    def _get_ink_bbox(self, img: Image.Image):
+        """Return tight bounding box (x0,y0,x1,y1) around non-transparent pixels, or None."""
+        arr = np.array(img)
+        alpha = arr[:, :, 3]
+        rows = np.any(alpha > 10, axis=1)
+        cols = np.any(alpha > 10, axis=0)
+        if not rows.any():
+            return None
+        rmin, rmax = np.where(rows)[0][[0, -1]]
+        cmin, cmax = np.where(cols)[0][[0, -1]]
+        return (int(cmin), int(rmin), int(cmax + 1), int(rmax + 1))
+
+    def _compute_norm_scale(self, char_height: int) -> float:
+        """Compute scale factor so median ink height matches char_height."""
+        ink_heights = []
+        for variants in self.glyph_bank.values():
+            for g in variants[:1]:
+                bbox = self._get_ink_bbox(g)
+                if bbox:
+                    ink_heights.append(bbox[3] - bbox[1])
+        if not ink_heights:
+            return 1.0
+        median_ink_h = float(np.median(ink_heights))
+        return char_height / median_ink_h if median_ink_h > 0 else 1.0
 
     def _get_glyph(self, char: str) -> Image.Image:
         if char == ' ':
@@ -64,6 +211,13 @@ class HandwritingRenderer:
             alt = char.upper() if char.islower() else char.lower()
             variants = self.glyph_bank.get(alt, [])
             if not variants:
+                # Log missing glyph at most once per character per renderer
+                if not hasattr(self, "_missing_logged"):
+                    self._missing_logged = set()
+                if char not in self._missing_logged:
+                    print(f"[HandwritingRenderer] FALLBACK: no glyph for '{char}' "
+                          f"(profile={getattr(self, 'profile_id', 'unknown')})")
+                    self._missing_logged.add(char)
                 return None
 
         idx = self.selector.select(char, len(variants))
@@ -150,19 +304,33 @@ class HandwritingRenderer:
                rotation_max_deg: float = 1.5,
                scale_variance: float = 0.03,
                ink_darkness: float = 0.85,
-               neatness: float = 0.5) -> Image.Image:
+               neatness: float = 0.5,
+               baseline_y_positions: list = None,
+               margin_left_x: int = None) -> Image.Image:
         """Render text as handwriting with improved features."""
-        
+        if margin_left_x is not None:
+            margin_left = margin_left_x
+
         self.selector.reset()
         jitter_factor = 1.5 - neatness
         canvas = Image.new('RGBA', (page_width, page_height), (0, 0, 0, 0))
         words = text.split()
-        
+
+        # 3a: compute normalization scale from median ink height
+        norm_scale = self._compute_norm_scale(char_height)
+
+        # Estimate avg ink width for word spacing
+        avg_ink_width = int(char_height * 0.55)
+
         cursor_x = margin_left
-        cursor_y = margin_top
+        # 3e: snap starting y to first rule line if provided
+        if baseline_y_positions:
+            cursor_y = baseline_y_positions[0] if baseline_y_positions else margin_top
+        else:
+            cursor_y = margin_top
         line_idx = 0
         usable_width = page_width - margin_left - margin_right
-        
+
         avg_char_width = char_height * 0.6
         chars_per_line = usable_width / (avg_char_width + inter_letter_mean)
         total_lines = max(1, len(text) / chars_per_line)
@@ -175,8 +343,12 @@ class HandwritingRenderer:
                                      margin_left, char_height, inter_letter_mean):
                 if cursor_x > margin_left + 50:
                     cursor_x = margin_left + self.rng.gauss(0, 3 * jitter_factor)
-                    cursor_y += line_height
                     line_idx += 1
+                    # 3e: snap to rule line
+                    if baseline_y_positions and line_idx < len(baseline_y_positions):
+                        cursor_y = baseline_y_positions[line_idx]
+                    else:
+                        cursor_y += line_height
             
             if cursor_y + char_height > page_height - 100:
                 break
@@ -202,51 +374,61 @@ class HandwritingRenderer:
                     char_idx += 1
                     continue
                 
-                # Scale glyph
-                scale = (char_height / max(glyph.height, 1)) * prog["size_scale"]
+                # 3a: Scale using normalized scale (ink-height-based)
+                scale = norm_scale * prog["size_scale"]
                 scale *= (1.0 + self.rng.uniform(-scale_variance, scale_variance) * jitter_factor)
                 new_w = max(1, int(glyph.width * scale))
                 new_h = max(1, int(glyph.height * scale))
                 glyph = glyph.resize((new_w, new_h), Image.LANCZOS)
-                
+
                 # Apply ink darkness
                 arr = np.array(glyph)
                 arr[:, :, 3] = (arr[:, :, 3] * ink_darkness).astype(np.uint8)
                 glyph = Image.fromarray(arr)
-                
-                # Position with jitter and baseline drift
-                jx = self.rng.gauss(0, inter_letter_std * jitter_factor) if char_idx > 0 else 0
-                jy = self.rng.gauss(0, 1.0 * jitter_factor)
+
+                # 3d: Reduced jitter (40% less position, 50% less rotation)
+                jx = self.rng.gauss(0, inter_letter_std * jitter_factor * 0.6) if char_idx > 0 else 0
+                jy = self.rng.gauss(0, 1.0 * jitter_factor * 0.6)
                 baseline = self._baseline_drift(cursor_x, line_idx, baseline_amplitude * jitter_factor)
-                
+
+                # 3c: Align ink bottom to cursor_y (baseline alignment)
+                bbox = self._get_ink_bbox(glyph)
+                if bbox:
+                    ink_bottom = bbox[3]
+                    descender = char.lower() in 'gjpqy'
+                    descend_offset = int(char_height * 0.25) if descender else 0
+                    y_offset = new_h - ink_bottom + descend_offset
+                    y = int(cursor_y - y_offset + baseline + jy)
+                else:
+                    y = int(cursor_y + baseline + jy)
+
                 x = int(cursor_x + jx)
-                y = int(cursor_y + baseline + jy)
-                
-                # Apply rotation
-                angle = self.rng.uniform(-rotation_max_deg, rotation_max_deg) * jitter_factor
+
+                # 3d: Rotation jitter reduced 50%
+                angle = self.rng.uniform(-rotation_max_deg, rotation_max_deg) * jitter_factor * 0.5
                 if abs(angle) > 0.1:
                     glyph = glyph.rotate(angle, expand=True, resample=Image.BICUBIC,
                                        fillcolor=(0, 0, 0, 0))
-                
+
                 # Paste glyph
                 if 0 <= x < page_width and 0 <= y < page_height:
                     paste_x = max(0, x)
                     paste_y = max(0, y)
                     canvas.paste(glyph, (paste_x, paste_y), glyph)
-                    
+
                     # Add i-dot/t-cross for specific characters
                     if char.lower() in 'it':
                         self._add_i_dot(canvas, paste_x + new_w // 2, paste_y, char_height, jitter_factor)
-                
-                # Advance cursor
-                cursor_x += new_w + inter_letter_mean * prog["spacing_scale"]
+
+                # 3b: Proportional advance (glyph-width based)
+                cursor_x += new_w * 1.1 + self.rng.gauss(0, 2.0 * jitter_factor)
                 cursor_x += self.rng.gauss(0, inter_letter_std * jitter_factor * 0.5)
                 
                 char_idx += 1
             
-            # Word spacing
-            word_gap = self.rng.gauss(inter_word_mean, inter_word_std * jitter_factor)
-            cursor_x += max(5, word_gap) * prog["spacing_scale"]
+            # 3b: Word spacing proportional to avg ink width
+            word_gap = avg_ink_width * 2.5 + self.rng.gauss(0, 4.0 * jitter_factor)
+            cursor_x += max(avg_ink_width, word_gap) * prog["spacing_scale"]
         
         return canvas
 

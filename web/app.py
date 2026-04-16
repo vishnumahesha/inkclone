@@ -5,532 +5,874 @@ FastAPI server for handwriting document generation
 
 import sys
 import os
+import json
+import shutil
+import time
+import uuid
 from pathlib import Path
 from io import BytesIO
 import base64
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, JSONResponse
+from datetime import datetime, timezone
+from typing import List, Optional
+
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 
 # Add parent directory to path to import inkclone modules
-sys.path.insert(0, str(Path(__file__).parent.parent))
+_WEB_DIR    = Path(__file__).parent
+_ROOT       = _WEB_DIR.parent
+sys.path.insert(0, str(_ROOT))
 
 from render_engine import HandwritingRenderer, create_dummy_glyph_bank
+from glyph_loader import load_profile_glyphs
 from paper_backgrounds import (generate_blank_paper, generate_college_ruled,
-                               generate_wide_ruled, generate_graph_paper, generate_legal_pad)
+                               generate_wide_ruled, generate_graph_paper, generate_legal_pad,
+                               generate_dot_grid, generate_sticky_note)
 from compositor import composite, INK_COLORS
 from artifact_simulator import simulate_scan, simulate_phone_photo, simulate_clean
 
-# Create FastAPI app
+# ── Directories ────────────────────────────────────────────────────────────────
+_PROFILES_DIR = _ROOT / "profiles"
+_DATA_DIR     = _ROOT / "data"
+_UPLOADS_DIR  = _DATA_DIR / "uploads"
+_STATIC_DIR   = _WEB_DIR / "static"
+
+_UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
+_STATIC_DIR.mkdir(parents=True, exist_ok=True)
+
+# ── App ────────────────────────────────────────────────────────────────────────
 app = FastAPI(title="InkClone", description="Handwriting document generator")
+app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
-# Initialize glyph bank
-GLYPH_BANK = create_dummy_glyph_bank()
+# ── Default glyph bank ─────────────────────────────────────────────────────────
+_DEFAULT_PROFILE = "freeform_vishnu"
+_PROFILE_DIR     = _PROFILES_DIR / _DEFAULT_PROFILE
+_GLYPH_BANKS: dict = {}   # cache: profile_id → glyph_bank dict
 
-# Paper and artifact mappings
+
+def _get_glyph_bank(profile_id: str | None = None) -> dict:
+    """Load (and cache) a glyph bank for the given profile ID."""
+    pid = profile_id or _DEFAULT_PROFILE
+    if pid not in _GLYPH_BANKS:
+        profile_path = _PROFILES_DIR / pid
+        if not profile_path.exists():
+            pid = _DEFAULT_PROFILE
+            profile_path = _PROFILES_DIR / pid
+        try:
+            _GLYPH_BANKS[pid] = load_profile_glyphs(profile_path, fallback_dummy=True)
+        except Exception:
+            _GLYPH_BANKS[pid] = create_dummy_glyph_bank()
+    return _GLYPH_BANKS[pid]
+
+
+# Warm up default bank at startup
+try:
+    _GLYPH_BANKS[_DEFAULT_PROFILE] = load_profile_glyphs(_PROFILE_DIR, fallback_dummy=True)
+except Exception as exc:
+    print(f"[startup] Warning: could not load default profile: {exc}")
+    _GLYPH_BANKS[_DEFAULT_PROFILE] = create_dummy_glyph_bank()
+
+# ── Paper / artifact maps ──────────────────────────────────────────────────────
 PAPERS = {
-    "blank": generate_blank_paper,
-    "college_ruled": generate_college_ruled,
-    "wide_ruled": generate_wide_ruled,
-    "graph": generate_graph_paper,
-    "legal_pad": generate_legal_pad,
+    "blank":          generate_blank_paper,
+    "college_ruled":  generate_college_ruled,
+    "wide_ruled":     generate_wide_ruled,
+    "graph":          generate_graph_paper,
+    "legal_pad":      generate_legal_pad,
+    "dot_grid":       generate_dot_grid,
+    "sticky_note":    generate_sticky_note,
 }
 
 ARTIFACTS = {
     "clean": simulate_clean,
-    "scan": simulate_scan,
+    "scan":  simulate_scan,
     "phone": simulate_phone_photo,
 }
 
+
+# ── Models ─────────────────────────────────────────────────────────────────────
 class GenerateRequest(BaseModel):
-    text: str
-    paper: str = "college_ruled"
-    ink: str = "black"
-    artifact: str = "scan"
-    neatness: float = 0.5
-    seed: int = None
+    text:       str
+    paper:      str   = "college_ruled"
+    ink_color:  str   = "black"
+    ink:        str   = None    # legacy alias
+    artifact:   str   = "scan"
+    neatness:   float = 0.5
+    seed:       int   = None
+    profile_id: str   = None    # NEW: which profile to use
+
+    def get_ink(self) -> str:
+        return self.ink_color or self.ink or "black"
+
+
+# ── Routes ─────────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
 async def get_index():
-    """Serve the main HTML interface"""
-    return get_html_page()
+    html_file = _WEB_DIR / "index.html"
+    if html_file.exists():
+        return html_file.read_text(encoding="utf-8")
+    return "<h1>InkClone</h1><p>index.html not found</p>"
+
+
+@app.get("/setup", response_class=HTMLResponse)
+async def get_setup():
+    setup_file = _WEB_DIR / "setup.html"
+    if setup_file.exists():
+        return setup_file.read_text(encoding="utf-8")
+    return "<h1>Setup</h1><p>setup.html not found</p>"
+
 
 @app.post("/generate")
 async def generate_document(request: GenerateRequest):
-    """Generate a handwritten document"""
+    """Generate a handwritten document."""
+    if not request.text or not request.text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    if request.paper not in PAPERS:
+        raise HTTPException(status_code=400, detail=f"Invalid paper type: {request.paper}")
+    ink = request.get_ink()
+    if ink not in INK_COLORS:
+        raise HTTPException(status_code=400, detail=f"Invalid ink color: {ink}")
+    if request.artifact not in ARTIFACTS:
+        raise HTTPException(status_code=400, detail=f"Invalid artifact type: {request.artifact}")
+    if not 0.0 <= request.neatness <= 1.0:
+        raise HTTPException(status_code=400, detail="Neatness must be 0.0–1.0")
+
     try:
-        # Validate inputs
-        if not request.text or len(request.text.strip()) == 0:
-            raise HTTPException(status_code=400, detail="Text cannot be empty")
-        
-        if request.paper not in PAPERS:
-            raise HTTPException(status_code=400, detail=f"Invalid paper type: {request.paper}")
-        
-        if request.ink not in INK_COLORS:
-            raise HTTPException(status_code=400, detail=f"Invalid ink color: {request.ink}")
-        
-        if request.artifact not in ARTIFACTS:
-            raise HTTPException(status_code=400, detail=f"Invalid artifact type: {request.artifact}")
-        
-        if not 0.0 <= request.neatness <= 1.0:
-            raise HTTPException(status_code=400, detail="Neatness must be between 0.0 and 1.0")
-        
-        # Step 1: Render text
-        renderer = HandwritingRenderer(GLYPH_BANK, seed=request.seed)
+        bank = _get_glyph_bank(request.profile_id)
+        renderer = HandwritingRenderer(bank, seed=request.seed)
         text_img = renderer.render(request.text, neatness=request.neatness)
-        
-        # Step 2: Generate paper
-        paper = PAPERS[request.paper]()
-        
-        # Step 3: Composite
-        result = composite(text_img, paper, ink_color=INK_COLORS[request.ink])
-        
-        # Step 4: Apply artifact simulation
-        final = ARTIFACTS[request.artifact](result)
-        
-        # Step 5: Convert to base64 for response
-        img_buffer = BytesIO()
-        final.save(img_buffer, format='PNG')
-        img_buffer.seek(0)
-        img_base64 = base64.b64encode(img_buffer.getvalue()).decode('utf-8')
-        
+        paper    = PAPERS[request.paper]()
+        result   = composite(text_img, paper, ink_color=INK_COLORS[ink])
+        final    = ARTIFACTS[request.artifact](result)
+
+        buf = BytesIO()
+        final.save(buf, format="PNG")
+        buf.seek(0)
+        img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
+
         return JSONResponse({
-            "success": True,
-            "image": f"data:image/png;base64,{img_base64}",
-            "width": final.width,
-            "height": final.height,
-            "paper": request.paper,
-            "ink": request.ink,
-            "artifact": request.artifact,
-            "neatness": request.neatness,
+            "success":    True,
+            "image":      f"data:image/png;base64,{img_b64}",
+            "width":      final.width,
+            "height":     final.height,
+            "paper":      request.paper,
+            "ink_color":  ink,
+            "artifact":   request.artifact,
+            "neatness":   request.neatness,
+            "profile_id": request.profile_id or _DEFAULT_PROFILE,
         })
-    
     except HTTPException:
         raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating document: {str(e)}")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error generating document: {exc}")
 
-def get_html_page():
-    """Return the HTML interface"""
-    return """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>InkClone — Handwriting Document Generator</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-        
-        .container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            max-width: 1400px;
-            width: 100%;
-        }
-        
-        @media (max-width: 1000px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        .panel {
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        }
-        
-        .panel h1 {
-            color: #333;
-            margin-bottom: 10px;
-            font-size: 28px;
-        }
-        
-        .panel .subtitle {
-            color: #666;
-            margin-bottom: 25px;
-            font-size: 14px;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            color: #333;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 14px;
-        }
-        
-        textarea {
-            width: 100%;
-            min-height: 120px;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-family: 'Monaco', 'Courier New', monospace;
-            font-size: 14px;
-            resize: vertical;
-            transition: border-color 0.3s;
-        }
-        
-        textarea:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        select {
-            width: 100%;
-            padding: 10px 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 14px;
-            background: white;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
-        
-        select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-        
-        .slider-group {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        input[type="range"] {
-            flex: 1;
-            height: 6px;
-            border-radius: 3px;
-            background: #ddd;
-            outline: none;
-            -webkit-appearance: none;
-        }
-        
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-        
-        input[type="range"]::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: #667eea;
-            cursor: pointer;
-            border: none;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-        }
-        
-        .neatness-value {
-            min-width: 40px;
-            text-align: right;
-            color: #667eea;
-            font-weight: 600;
-            font-size: 14px;
-        }
-        
-        button {
-            width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 16px;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-top: 10px;
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-        
-        .loading {
-            display: none;
-            text-align: center;
-            color: #666;
-            margin: 20px 0;
-            font-size: 14px;
-        }
-        
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #ddd;
-            border-top-color: #667eea;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-right: 10px;
-            vertical-align: middle;
-        }
-        
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-        
-        .output-section h2 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 20px;
-        }
-        
-        .preview-container {
-            background: #f5f5f5;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            min-height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .preview-container img {
-            max-width: 100%;
-            max-height: 600px;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-        
-        .preview-info {
-            color: #999;
-            font-size: 14px;
-            margin-top: 15px;
-        }
-        
-        .error {
-            background: #fee;
-            color: #c33;
-            padding: 12px;
-            border-radius: 8px;
-            margin: 15px 0;
-            font-size: 14px;
-            display: none;
-        }
-        
-        .error.show {
-            display: block;
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <!-- Input Panel -->
-        <div class="panel">
-            <h1>InkClone</h1>
-            <p class="subtitle">Transform text into handwritten documents</p>
-            
-            <form id="generateForm">
-                <div class="form-group">
-                    <label for="textInput">Your Text</label>
-                    <textarea id="textInput" placeholder="Type the text you want to render as handwriting..." required></textarea>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="paperSelect">Paper Type</label>
-                        <select id="paperSelect">
-                            <option value="college_ruled">College Ruled</option>
-                            <option value="blank">Blank</option>
-                            <option value="wide_ruled">Wide Ruled</option>
-                            <option value="graph">Graph</option>
-                            <option value="legal_pad">Legal Pad</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="inkSelect">Ink Color</label>
-                        <select id="inkSelect">
-                            <option value="black">Black</option>
-                            <option value="blue">Blue</option>
-                            <option value="dark_blue">Dark Blue</option>
-                            <option value="green">Green</option>
-                            <option value="red">Red</option>
-                            <option value="pencil">Pencil</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="artifactSelect">Effect</label>
-                        <select id="artifactSelect">
-                            <option value="scan">Scan</option>
-                            <option value="phone">Phone Photo</option>
-                            <option value="clean">Clean</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="form-group">
-                    <label>Neatness</label>
-                    <div class="slider-group">
-                        <input type="range" id="neatnessSlider" min="0" max="100" value="50" step="1">
-                        <span class="neatness-value" id="neatnessValue">0.50</span>
-                    </div>
-                    <p class="preview-info">0 = Messy, 1 = Neat</p>
-                </div>
-                
-                <div class="error" id="errorMessage"></div>
-                
-                <button type="submit" id="generateBtn">Generate Document</button>
-                <div class="loading" id="loading">
-                    <span class="spinner"></span>
-                    <span>Generating your document...</span>
-                </div>
-            </form>
-        </div>
-        
-        <!-- Output Panel -->
-        <div class="panel output-section">
-            <h2>Preview</h2>
-            <div class="preview-container" id="previewContainer">
-                <p style="color: #999;">Your generated document will appear here</p>
-            </div>
-        </div>
-    </div>
-    
-    <script>
-        const form = document.getElementById('generateForm');
-        const textInput = document.getElementById('textInput');
-        const paperSelect = document.getElementById('paperSelect');
-        const inkSelect = document.getElementById('inkSelect');
-        const artifactSelect = document.getElementById('artifactSelect');
-        const neatnessSlider = document.getElementById('neatnessSlider');
-        const neatnessValue = document.getElementById('neatnessValue');
-        const generateBtn = document.getElementById('generateBtn');
-        const loading = document.getElementById('loading');
-        const errorMessage = document.getElementById('errorMessage');
-        const previewContainer = document.getElementById('previewContainer');
-        
-        // Update neatness display
-        neatnessSlider.addEventListener('input', (e) => {
-            neatnessValue.textContent = (parseInt(e.target.value) / 100).toFixed(2);
-        });
-        
-        // Handle form submission
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const text = textInput.value.trim();
-            if (!text) {
-                showError('Please enter some text');
-                return;
-            }
-            
-            try {
-                showError('');
-                generateBtn.disabled = true;
-                loading.style.display = 'block';
-                previewContainer.innerHTML = '<p style="color: #999;">Generating...</p>';
-                
-                const response = await fetch('/generate', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        text: text,
-                        paper: paperSelect.value,
-                        ink: inkSelect.value,
-                        artifact: artifactSelect.value,
-                        neatness: parseInt(neatnessSlider.value) / 100,
-                    })
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.detail || 'Failed to generate document');
-                }
-                
-                const data = await response.json();
-                
-                if (data.success) {
-                    previewContainer.innerHTML = `
-                        <div>
-                            <img src="${data.image}" alt="Generated document">
-                            <div class="preview-info">
-                                <strong>${data.paper}</strong> • ${data.ink} ink • ${data.artifact}
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    throw new Error(data.error || 'Unknown error');
-                }
-            } catch (error) {
-                showError(error.message);
-                previewContainer.innerHTML = '<p style="color: #999;">Failed to generate document</p>';
-            } finally {
-                generateBtn.disabled = false;
-                loading.style.display = 'none';
-            }
-        });
-        
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.classList.toggle('show', !!message);
-        }
-        
-        // Auto-generate on load for demo
-        window.addEventListener('load', () => {
-            textInput.value = 'The quick brown fox jumps over the lazy dog';
-        });
-    </script>
-</body>
-</html>
-"""
 
+# ── Profile listing ────────────────────────────────────────────────────────────
+
+@app.get("/profiles")
+async def list_profiles():
+    """List all available profiles with stats."""
+    results = []
+    for entry in sorted(_PROFILES_DIR.iterdir()):
+        if not entry.is_dir() or entry.name.startswith(".") or entry.name == "schema":
+            continue
+
+        profile_json = entry / "profile.json"
+        glyph_count  = 0
+        coverage_pct = 0.0
+        created_at   = None
+
+        if profile_json.exists():
+            try:
+                data = json.loads(profile_json.read_text(encoding="utf-8"))
+                cc   = data.get("character_coverage", {})
+                glyph_count  = cc.get("total_variants", 0)
+                coverage_pct = round(
+                    (cc.get("lowercase_pct", 0) +
+                     cc.get("uppercase_pct", 0) +
+                     cc.get("digits_pct", 0)) / 3, 1
+                )
+                created_at = data.get("created_at")
+            except Exception:
+                pass
+        else:
+            # Count PNGs as a fallback
+            glyphs_dir = entry / "glyphs"
+            if glyphs_dir.exists():
+                glyph_count = len(list(glyphs_dir.glob("*.png")))
+
+        results.append({
+            "id":           entry.name,
+            "name":         entry.name.replace("_", " ").title(),
+            "glyph_count":  glyph_count,
+            "coverage_pct": coverage_pct,
+            "created_at":   created_at,
+            "has_schema":   profile_json.exists(),
+        })
+
+    return JSONResponse(results)
+
+
+@app.get("/profiles/{profile_id}/contact_sheet.png")
+async def get_contact_sheet(profile_id: str):
+    """Serve a profile's contact sheet image."""
+    sheet = _PROFILES_DIR / profile_id / "contact_sheet.png"
+    if not sheet.exists():
+        # Generate one on-demand if it doesn't exist
+        try:
+            _generate_contact_sheet(profile_id)
+        except Exception:
+            raise HTTPException(status_code=404, detail="Contact sheet not found")
+    if not sheet.exists():
+        raise HTTPException(status_code=404, detail="Contact sheet not found")
+    return FileResponse(str(sheet), media_type="image/png")
+
+
+# ── Profile creation ───────────────────────────────────────────────────────────
+
+@app.post("/profiles/create")
+async def create_profile(images: List[UploadFile] = File(...)):
+    """
+    Accept 1–3 handwriting template photos, extract glyphs, build a profile.
+
+    Extraction pipeline:
+    1. Save uploaded images to data/uploads/{timestamp}/
+    2. Preprocess each image (grayscale, denoise, Otsu threshold)
+    3. Detect template grid structure; extract glyph cells
+    4. Clean each cell: morph-close → crop tight → RGBA (ink=240, bg=0) → 128px height
+    5. Score quality (ink_density, bbox_fill); skip noise glyphs
+    6. Save glyphs to profiles/{id}/glyphs/
+    7. Write profile.json via migrate.py logic
+    8. Generate contact_sheet.png
+    9. Return profile stats
+    """
+    if not images:
+        raise HTTPException(status_code=400, detail="No images provided")
+    if len(images) > 3:
+        raise HTTPException(status_code=400, detail="Maximum 3 images allowed")
+
+    # ── 1. Save uploads ────────────────────────────────────────────────────────
+    ts        = datetime.now().strftime("%Y%m%d_%H%M%S")
+    upload_dir = _UPLOADS_DIR / ts
+    upload_dir.mkdir(parents=True, exist_ok=True)
+
+    saved_paths = []
+    for img_file in images:
+        ext      = Path(img_file.filename or "image.jpg").suffix.lower() or ".jpg"
+        dst      = upload_dir / f"page_{len(saved_paths)+1}{ext}"
+        contents = await img_file.read()
+        dst.write_bytes(contents)
+        saved_paths.append(dst)
+
+    # ── 2-6. Extract glyphs ────────────────────────────────────────────────────
+    profile_id  = f"profile_{ts}"
+    profile_dir = _PROFILES_DIR / profile_id
+    glyphs_dir  = profile_dir / "glyphs"
+    glyphs_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        glyph_bank = _extract_glyphs_pipeline(saved_paths, glyphs_dir)
+    except Exception as exc:
+        shutil.rmtree(profile_dir, ignore_errors=True)
+        raise HTTPException(status_code=500, detail=f"Extraction failed: {exc}")
+
+    if not glyph_bank:
+        shutil.rmtree(profile_dir, ignore_errors=True)
+        raise HTTPException(
+            status_code=422,
+            detail="No legible glyphs could be extracted. "
+                   "Ensure good lighting, shoot straight above the page, and use a dark pen."
+        )
+
+    # ── 7. Save glyphs to disk + write profile.json ────────────────────────────
+    saved_chars: dict[str, list] = {}
+    for char, imgs in glyph_bank.items():
+        char_name = _char_to_stem(char)
+        for v_idx, glyph_img in enumerate(imgs):
+            fname = f"{char_name}_{v_idx}.png"
+            glyph_img.save(str(glyphs_dir / fname))
+            saved_chars.setdefault(char, []).append(f"glyphs/{fname}")
+
+    _write_profile_json(profile_dir, profile_id, saved_chars, saved_paths)
+
+    # ── 8. Contact sheet ───────────────────────────────────────────────────────
+    _generate_contact_sheet(profile_id)
+
+    # ── 9. Response ────────────────────────────────────────────────────────────
+    total_glyphs = sum(len(v) for v in saved_chars.values())
+    lowercase_chars = sum(1 for c in saved_chars if c.islower())
+    uppercase_chars = sum(1 for c in saved_chars if c.isupper())
+    digit_chars     = sum(1 for c in saved_chars if c.isdigit())
+
+    coverage_pct = round(lowercase_chars / 26 * 100, 1) if lowercase_chars else 0.0
+    uppercase_pct = round(uppercase_chars / 26 * 100, 1)
+    digits_pct    = round(digit_chars / 10 * 100, 1)
+
+    # Invalidate cache so next render picks up new profile
+    _GLYPH_BANKS.pop(profile_id, None)
+
+    return JSONResponse({
+        "profile_id":       profile_id,
+        "total_glyphs":     total_glyphs,
+        "coverage_pct":     coverage_pct,
+        "uppercase_pct":    uppercase_pct,
+        "digits_pct":       digits_pct,
+        "weak_chars":       [],
+        "contact_sheet_url": f"/profiles/{profile_id}/contact_sheet.png",
+    })
+
+
+# ── Extraction pipeline ────────────────────────────────────────────────────────
+
+def _extract_glyphs_pipeline(image_paths: list, glyphs_dir: Path) -> dict:
+    """
+    Main glyph extraction pipeline.
+
+    For each image:
+    - Preprocess to binary (Otsu)
+    - Detect if template (regular grid lines present)
+    - If template: extract cells at known grid positions
+    - If freeform: connected-component extraction with OCR labelling
+    - Clean each component: morph-close, crop, RGBA, resize 128px
+    - Score quality; discard noise
+    Returns: {char: [PIL.Image (RGBA), ...]}
+    """
+    import cv2
+    import numpy as np
+    from PIL import Image
+
+    bank: dict[str, list] = {}
+
+    for img_path in image_paths:
+        img_cv = cv2.imread(str(img_path))
+        if img_cv is None:
+            continue
+
+        gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+
+        # Mild denoise
+        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+
+        # Otsu threshold → ink=255 (inverted)
+        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+        # Morphological closing to connect broken strokes
+        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+
+        is_template = _detect_template_grid(binary)
+
+        if is_template:
+            extracted = _extract_template_cells(gray, binary, img_cv)
+        else:
+            extracted = _extract_freeform_components(gray, binary)
+
+        for char, glyph_rgba in extracted:
+            bank.setdefault(char, []).append(glyph_rgba)
+
+    return bank
+
+
+def _detect_template_grid(binary: "np.ndarray") -> bool:
+    """
+    Return True if the image contains a regular grid pattern
+    characteristic of the InkClone template.
+
+    Heuristic: detect long horizontal lines via Hough transform.
+    A template page has 10+ parallel horizontal lines.
+    """
+    import cv2
+    import numpy as np
+
+    h, w = binary.shape
+    # Erode vertically to isolate horizontal lines
+    h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (w // 8, 1))
+    h_lines  = cv2.morphologyEx(binary, cv2.MORPH_OPEN, h_kernel)
+
+    # Count distinct horizontal line bands
+    col_sum  = h_lines.sum(axis=1)          # sum across each row
+    threshold = w * 0.3                      # line present if >30% of row is ink
+    line_rows = col_sum > threshold
+    # Count runs of True
+    runs = 0
+    in_run = False
+    for v in line_rows:
+        if v and not in_run:
+            runs += 1
+            in_run = True
+        elif not v:
+            in_run = False
+    return runs >= 6
+
+
+def _extract_template_cells(gray, binary, img_cv) -> list:
+    """
+    Extract glyph cells from a filled-in InkClone template photo.
+
+    Template layout (from template_generator_v2.py, letter paper at ~150 DPI):
+      Page 1: lowercase a-z, 5 cells per char → 130 cells, row-major
+      Cell: 1.2cm wide × 1.5cm tall
+      Margin: 1.5cm
+
+    We first auto-detect the usable region using the grid lines,
+    then divide into cells at computed positions.
+    """
+    import cv2
+    import numpy as np
+    from PIL import Image
+
+    H, W = gray.shape
+
+    # ── Find the grid bounding box from horizontal lines ──────────────────
+    h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (W // 8, 1))
+    h_lines  = cv2.morphologyEx(binary, cv2.MORPH_OPEN, h_kernel)
+    col_sum  = h_lines.sum(axis=1)
+    threshold = W * 0.25
+    line_ys  = [i for i, v in enumerate(col_sum) if v > threshold]
+
+    if len(line_ys) < 4:
+        return _extract_freeform_components(gray, binary)  # fallback
+
+    top_y    = line_ys[0]
+    bottom_y = line_ys[-1]
+
+    # ── Estimate cell dimensions ──────────────────────────────────────────
+    # Group line_ys into distinct bands
+    bands = []
+    prev = line_ys[0]
+    band_start = prev
+    for y in line_ys[1:]:
+        if y - prev > 5:
+            bands.append((band_start + prev) // 2)
+            band_start = y
+        prev = y
+    bands.append((band_start + prev) // 2)
+
+    if len(bands) < 3:
+        return _extract_freeform_components(gray, binary)
+
+    cell_h = int(np.median([bands[i+1] - bands[i] for i in range(len(bands)-1)]))
+    if cell_h < 10:
+        return _extract_freeform_components(gray, binary)
+
+    # Estimate margin + cell width from vertical projection
+    v_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, cell_h // 2))
+    v_lines  = cv2.morphologyEx(binary, cv2.MORPH_OPEN, v_kernel)
+    row_sum  = v_lines.sum(axis=0)
+    vthresh  = cell_h * 0.3
+    vline_xs = [i for i, v in enumerate(row_sum) if v > vthresh]
+
+    if vline_xs:
+        left_x  = vline_xs[0]
+        right_x = vline_xs[-1]
+    else:
+        left_x  = int(W * 0.05)
+        right_x = int(W * 0.95)
+
+    usable_w = right_x - left_x
+    # Estimate cells per row: for template ~15 cells/row at typical phone photo res
+    cell_w = max(10, usable_w // 15)
+
+    # ── Build cell map for lowercase a-z (Page 1) ─────────────────────────
+    CHARS_PAGE1 = list("abcdefghijklmnopqrstuvwxyz")
+    CELLS_PER_CHAR = 5
+    cells_per_row = max(1, usable_w // cell_w)
+
+    extracted = []
+    cell_idx = 0
+    for char in CHARS_PAGE1:
+        for variant in range(CELLS_PER_CHAR):
+            row = cell_idx // cells_per_row
+            col = cell_idx % cells_per_row
+            x0 = left_x  + col * cell_w
+            y0 = top_y   + row * cell_h
+            x1 = min(W, x0 + cell_w)
+            y1 = min(H, y0 + cell_h)
+            cell_idx += 1
+
+            if y1 > H or x1 > W:
+                continue
+
+            cell_gray = gray[y0:y1, x0:x1]
+            cell_bin  = binary[y0:y1, x0:x1]
+
+            glyph = _cell_to_rgba(cell_bin, cell_gray)
+            if glyph is not None:
+                extracted.append((char, glyph))
+
+    return extracted
+
+
+def _extract_freeform_components(gray, binary) -> list:
+    """
+    Extract individual glyphs from a freeform handwriting image using
+    connected components + Tesseract OCR for character labelling.
+    """
+    import cv2
+    import numpy as np
+    from PIL import Image
+
+    try:
+        import pytesseract
+        ocr_available = True
+    except ImportError:
+        ocr_available = False
+
+    H, W = binary.shape
+    n_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
+        binary, connectivity=8
+    )
+
+    extracted = []
+    for i in range(1, n_labels):
+        x, y, w, h, area = stats[i]
+
+        # Size filters
+        if area < 80:                               # too small → noise
+            continue
+        if w > W * 0.25 or h > H * 0.25:           # too large → not a single char
+            continue
+        if w < 6 or h < 10:                         # too skinny
+            continue
+        aspect = w / max(1, h)
+        if aspect > 3.5 or aspect < 0.08:           # weird aspect → not a letter
+            continue
+
+        pad  = max(4, min(w, h) // 8)
+        x0   = max(0, x - pad)
+        y0   = max(0, y - pad)
+        x1   = min(W, x + w + pad)
+        y1   = min(H, y + h + pad)
+
+        cell_bin  = binary[y0:y1, x0:x1]
+        cell_gray = gray[y0:y1, x0:x1]
+
+        # OCR to label the glyph
+        char = None
+        if ocr_available:
+            # Upscale for better OCR accuracy
+            scale    = max(1.0, 64.0 / max(w, h))
+            ocr_img  = cv2.resize(cell_bin, None, fx=scale, fy=scale,
+                                  interpolation=cv2.INTER_LINEAR)
+            whitelist = (
+                "abcdefghijklmnopqrstuvwxyz"
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                "0123456789.,!?'-:"
+            )
+            try:
+                raw = pytesseract.image_to_string(
+                    ocr_img,
+                    config=f"--psm 10 --oem 3 -c tessedit_char_whitelist={whitelist}"
+                ).strip()
+                if len(raw) == 1 and raw.isprintable() and not raw.isspace():
+                    char = raw
+            except Exception:
+                pass
+
+        if char is None:
+            continue
+
+        glyph = _cell_to_rgba(cell_bin, cell_gray)
+        if glyph is not None:
+            extracted.append((char, glyph))
+
+    return extracted
+
+
+def _cell_to_rgba(cell_bin, cell_gray) -> "PIL.Image | None":
+    """
+    Convert a binary cell crop to a clean RGBA glyph at 128px height.
+
+    Steps:
+    1. Find ink bounding box; skip if ink < 5% of cell
+    2. Crop tight with 3px padding
+    3. Build RGBA: ink pixels → (0,0,0,240), rest → transparent
+    4. Resize to 128px height preserving aspect ratio
+    """
+    import cv2
+    import numpy as np
+    from PIL import Image
+
+    h, w = cell_bin.shape
+    ink_pixels = cell_bin.sum() // 255
+    total_px   = h * w
+    if ink_pixels < total_px * 0.05:    # <5% ink → noise/empty cell
+        return None
+    if ink_pixels < 20:                 # absolute minimum
+        return None
+
+    # Tight crop
+    rows = np.any(cell_bin > 0, axis=1)
+    cols = np.any(cell_bin > 0, axis=0)
+    if not rows.any():
+        return None
+    rmin, rmax = np.where(rows)[0][[0, -1]]
+    cmin, cmax = np.where(cols)[0][[0, -1]]
+    pad  = 3
+    rmin = max(0, rmin - pad)
+    rmax = min(h - 1, rmax + pad)
+    cmin = max(0, cmin - pad)
+    cmax = min(w - 1, cmax + pad)
+    cropped = cell_bin[rmin:rmax+1, cmin:cmax+1]
+
+    ch, cw = cropped.shape
+
+    # Resize to 128px height
+    target_h = 128
+    scale    = target_h / max(1, ch)
+    target_w = max(1, int(round(cw * scale)))
+    resized  = cv2.resize(cropped, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+
+    # RGBA: ink→black+alpha, background→transparent
+    ink_mask = resized > 128
+    arr = np.zeros((target_h, target_w, 4), dtype=np.uint8)
+    arr[ink_mask, 3] = 240       # alpha: ink is opaque
+    # RGB stays 0 (black ink)
+
+    return Image.fromarray(arr, "RGBA")
+
+
+# ── Contact sheet generation ───────────────────────────────────────────────────
+
+def _generate_contact_sheet(profile_id: str):
+    """
+    Build a contact sheet PNG showing all glyphs in the profile, arranged
+    in a grid of 128px-high thumbnails with character labels.
+    """
+    import numpy as np
+    from PIL import Image, ImageDraw, ImageFont
+
+    profile_dir = _PROFILES_DIR / profile_id
+    glyphs_dir  = profile_dir / "glyphs"
+    if not glyphs_dir.exists():
+        return
+
+    pngs = sorted(glyphs_dir.glob("*.png"))
+    if not pngs:
+        return
+
+    # Layout parameters
+    thumb_h    = 64
+    thumb_w    = 80
+    label_h    = 16
+    cols       = 16
+    bg_color   = (18, 18, 24)
+    ink_color  = (200, 200, 210)
+    label_col  = (100, 100, 120)
+    border_col = (40, 40, 55)
+
+    rows = (len(pngs) + cols - 1) // cols
+    sheet_w = cols  * (thumb_w + 2) + 2
+    sheet_h = rows  * (thumb_h + label_h + 4) + 4
+
+    sheet = Image.new("RGB", (sheet_w, sheet_h), bg_color)
+    draw  = ImageDraw.Draw(sheet)
+
+    try:
+        font = ImageFont.truetype("/System/Library/Fonts/Helvetica.ttc", 10)
+    except Exception:
+        font = ImageFont.load_default()
+
+    for idx, png in enumerate(pngs):
+        col = idx % cols
+        row = idx // cols
+        cx  = col * (thumb_w + 2) + 2
+        cy  = row * (thumb_h + label_h + 4) + 4
+
+        # Draw cell border
+        draw.rectangle([cx-1, cy-1, cx+thumb_w, cy+thumb_h+label_h+1], outline=border_col)
+
+        # Load glyph and composite onto dark background
+        try:
+            glyph = Image.open(png)
+            if glyph.mode != "RGBA":
+                glyph = glyph.convert("RGBA")
+
+            # Scale to fit thumbnail
+            gw, gh = glyph.size
+            scale  = min(thumb_w / max(1, gw), thumb_h / max(1, gh))
+            nw     = max(1, int(gw * scale))
+            nh     = max(1, int(gh * scale))
+            glyph  = glyph.resize((nw, nh), Image.LANCZOS)
+
+            # Center in cell
+            ox = cx + (thumb_w - nw) // 2
+            oy = cy + (thumb_h - nh) // 2
+
+            # Tint alpha channel to light ink color
+            cell_bg = Image.new("RGB", (thumb_w, thumb_h), bg_color)
+            arr = np.array(glyph)
+            alpha = arr[:, :, 3:4] / 255.0
+            tinted = np.array(cell_bg.crop((0, 0, thumb_w, thumb_h)))
+            # Place glyph at offset
+            place = Image.new("RGB", (thumb_w, thumb_h), bg_color)
+            glyph_rgb = Image.new("RGB", (nw, nh), ink_color)
+            glyph_rgb.putalpha(Image.fromarray(arr[:, :, 3]))
+            place.paste(glyph_rgb, (ox - cx, oy - cy), glyph_rgb)
+            sheet.paste(place, (cx, cy))
+        except Exception:
+            pass
+
+        # Character label below thumbnail
+        from profiles.loader import _parse_glyph_stem  # noqa: reuse existing parser
+        try:
+            char = _parse_glyph_stem_local(png.stem)
+        except Exception:
+            char = png.stem[:3]
+
+        label = char if char else png.stem[:4]
+        lx = cx + thumb_w // 2
+        ly = cy + thumb_h + 2
+        draw.text((lx, ly), label, fill=label_col, font=font, anchor="mt")
+
+    sheet.save(str(profile_dir / "contact_sheet.png"))
+
+
+def _parse_glyph_stem_local(stem: str) -> str:
+    """Minimal stem→char converter (mirrors glyph_loader._parse_glyph_stem)."""
+    working = stem
+    if working.endswith("_fallback"):
+        working = working[:-9]
+    _PUNCT = {
+        "period": ".", "comma": ",", "exclaim": "!", "question": "?",
+        "apostrophe": "'", "hyphen": "-", "colon": ":", "semicolon": ";",
+        "lparen": "(", "rparen": ")", "hash": "#", "at": "@",
+        "ampersand": "&", "slash": "/", "quote": '"',
+    }
+    for key, ch in _PUNCT.items():
+        if working == key or working.startswith(key + "_"):
+            return ch
+    if working.startswith("upper_"):
+        rest = working[6:]
+        parts = rest.split("_")
+        if parts and len(parts[0]) == 1:
+            return parts[0]
+        return "?"
+    if working.startswith("digit_"):
+        rest = working[6:]
+        parts = rest.split("_")
+        if parts and parts[0].isdigit():
+            return parts[0]
+        return "?"
+    parts = working.split("_")
+    if parts and len(parts[0]) == 1:
+        return parts[0]
+    return "?"
+
+
+def _char_to_stem(char: str) -> str:
+    """Map a character to its canonical filename stem."""
+    _SPECIAL = {
+        ".": "period", ",": "comma", "!": "exclaim", "?": "question",
+        "'": "apostrophe", "-": "hyphen", ":": "colon", ";": "semicolon",
+        "(": "lparen", ")": "rparen", "#": "hash", "@": "at",
+        "&": "ampersand", "/": "slash", '"': "quote",
+    }
+    if char in _SPECIAL:
+        return _SPECIAL[char]
+    if char.isupper():
+        return f"upper_{char}"
+    if char.isdigit():
+        return f"digit_{char}"
+    return char
+
+
+# ── Profile.json writer ────────────────────────────────────────────────────────
+
+def _write_profile_json(profile_dir: Path, profile_id: str,
+                        saved_chars: dict, source_images: list):
+    """Write a canonical profile.json for a newly created profile."""
+    import numpy as np
+    from PIL import Image
+
+    LOWERCASE   = set("abcdefghijklmnopqrstuvwxyz")
+    UPPERCASE   = set("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+    DIGITS      = set("0123456789")
+    PUNCTUATION = set(".,!?'-:;()")
+
+    chars = set(saved_chars.keys())
+    lc    = chars & LOWERCASE
+    uc    = chars & UPPERCASE
+    dg    = chars & DIGITS
+    pu    = chars & PUNCTUATION
+
+    total_variants = sum(len(v) for v in saved_chars.values())
+
+    per_character = {}
+    all_widths, all_heights, all_densities = [], [], []
+
+    glyphs_dir = profile_dir / "glyphs"
+
+    for char, rel_paths in saved_chars.items():
+        widths, heights, densities = [], [], []
+        for rel in rel_paths:
+            try:
+                img = Image.open(glyphs_dir / Path(rel).name)
+                if img.mode != "RGBA":
+                    img = img.convert("RGBA")
+                arr   = np.array(img)
+                w, h  = img.size
+                dens  = float((arr[:, :, 3] > 10).sum()) / max(1, arr[:, :, 3].size)
+                widths.append(w)
+                heights.append(h)
+                densities.append(dens)
+            except Exception:
+                pass
+
+        avg_d = float(np.mean(densities)) if densities else 0.05
+        conf  = min(0.95, max(0.2, avg_d * 6))
+
+        per_character[char] = {
+            "variants":           rel_paths,
+            "avg_width":          round(float(np.mean(widths)), 2)  if widths  else 0.0,
+            "avg_height":         round(float(np.mean(heights)), 2) if heights else 0.0,
+            "confidence":         round(conf, 3),
+            "extraction_method":  "template_cell",
+        }
+        all_widths.extend(widths)
+        all_heights.extend(heights)
+        all_densities.extend(densities)
+
+    standard = LOWERCASE | UPPERCASE | DIGITS | PUNCTUATION
+    missing  = sorted(standard - chars)
+    weak     = sorted(c for c, e in per_character.items() if e["confidence"] < 0.5)
+
+    profile = {
+        "profile_id":   profile_id,
+        "created_at":   datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "source_method": "template",
+        "source_images": [str(p) for p in source_images],
+        "character_coverage": {
+            "lowercase_pct":  round(len(lc) / 26  * 100, 1),
+            "uppercase_pct":  round(len(uc) / 26  * 100, 1),
+            "digits_pct":     round(len(dg) / 10  * 100, 1),
+            "punctuation_pct":round(len(pu) / 10  * 100, 1),
+            "total_characters": len(chars),
+            "total_variants":   total_variants,
+        },
+        "per_character": per_character,
+        "style_metrics": {
+            "avg_glyph_width":       round(float(np.mean(all_widths)),   2) if all_widths   else 0.0,
+            "median_x_height":       128.0,
+            "baseline_offset":       0.0,
+            "slant_estimate_degrees": 0.0,
+            "avg_stroke_width":      8.0,
+            "ink_density":           round(float(np.mean(all_densities)), 4) if all_densities else 0.0,
+        },
+        "missing_characters": missing,
+        "weak_characters":    weak,
+        "usable":             len(lc) >= 20,
+    }
+
+    (profile_dir / "profile.json").write_text(
+        json.dumps(profile, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+
+
+# ── Entry point ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)
