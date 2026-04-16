@@ -3,11 +3,14 @@ __pycache__/
 *.pyc
 output/
 test_images/
-# profiles/ intentionally committed for deployment
 .pytest_cache/
 node_modules/
 .next/
 .env.local
 *.log
 .DS_Store
+*.jpg
+*.png
+real_glyphs/
+profiles/*/glyphs/
 
