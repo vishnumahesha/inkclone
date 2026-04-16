@@ -340,6 +340,10 @@ class HandwritingRenderer:
             
             prog = self._page_progression(line_idx, total_lines)
             
+            # Task 2.5: word-level coherence — uniform scale and slant per word
+            word_scale = self.rng.uniform(0.97, 1.03)
+            word_slant = self.rng.uniform(-0.5, 0.5)  # degrees
+
             char_idx = 0
             while char_idx < len(word):
                 char = word[char_idx]
@@ -355,8 +359,8 @@ class HandwritingRenderer:
                     char_idx += 1
                     continue
                 
-                # 3a: Scale using normalized scale (ink-height-based)
-                scale = norm_scale * prog["size_scale"]
+                # 3a: Scale using normalized scale (ink-height-based) + word-level scale
+                scale = norm_scale * prog["size_scale"] * word_scale
                 scale *= (1.0 + self.rng.uniform(-0.15, 0.15) * jitter_factor)
                 new_w = max(1, int(glyph.width * scale))
                 new_h = max(1, int(glyph.height * scale))
@@ -384,7 +388,7 @@ class HandwritingRenderer:
 
                 x = int(cursor_x + jx)
 
-                angle = self.rng.uniform(-8.0, 8.0) * jitter_factor
+                angle = self.rng.uniform(-8.0, 8.0) * jitter_factor + word_slant
                 if abs(angle) > 0.1:
                     glyph = glyph.rotate(angle, expand=True, resample=Image.BICUBIC,
                                        fillcolor=(0, 0, 0, 0))

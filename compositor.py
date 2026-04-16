@@ -34,8 +34,10 @@ def composite(text_image: Image.Image,
     alpha = text_arr[:, :, 3] / 255.0 * opacity
     alpha = alpha[:, :, np.newaxis]  # broadcast to 3 channels
 
-    # Create ink color layer
+    # Create ink color layer with per-character color variation (±6 per RGB channel)
     ink = np.full_like(bg, ink_color, dtype=float)
+    noise = np.random.randint(-6, 7, ink.shape).astype(float)
+    ink = np.clip(ink + noise, 0, 255)
 
     # Alpha compositing
     result = bg * (1.0 - alpha) + ink * alpha
