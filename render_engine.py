@@ -312,7 +312,7 @@ class HandwritingRenderer:
             margin_left = margin_left_x
 
         self.selector.reset()
-        jitter_factor = 1.5 - neatness
+        jitter_factor = 1.0 - neatness  # 0.0 = perfectly neat, 1.0 = maximum mess
         canvas = Image.new('RGBA', (page_width, page_height), (0, 0, 0, 0))
         words = text.split()
 
@@ -342,7 +342,7 @@ class HandwritingRenderer:
             if self._smart_line_break(words, word_i, cursor_x, page_width, margin_right,
                                      margin_left, char_height, inter_letter_mean):
                 if cursor_x > margin_left + 50:
-                    cursor_x = margin_left + self.rng.gauss(0, 3 * jitter_factor)
+                    cursor_x = margin_left + self.rng.gauss(0, 8.0 * jitter_factor)
                     line_idx += 1
                     # 3e: snap to rule line
                     if baseline_y_positions and line_idx < len(baseline_y_positions):
@@ -359,15 +359,11 @@ class HandwritingRenderer:
             while char_idx < len(word):
                 char = word[char_idx]
                 
-                # Check for ligatures
-                ligature, ligature_spacing = self._check_ligature(word, char_idx)
-                
-                if ligature:
-                    # Skip the ligature pair and apply tighter spacing
+                # Check for ligatures — tighten spacing but still render both chars
+                _, ligature_spacing = self._check_ligature(word, char_idx)
+                if ligature_spacing != 0:
                     cursor_x += ligature_spacing * prog["spacing_scale"]
-                    char_idx += len(ligature)
-                    continue
-                
+
                 glyph = self._get_glyph(char)
                 if glyph is None:
                     cursor_x += char_height * 0.3
@@ -376,7 +372,7 @@ class HandwritingRenderer:
                 
                 # 3a: Scale using normalized scale (ink-height-based)
                 scale = norm_scale * prog["size_scale"]
-                scale *= (1.0 + self.rng.uniform(-scale_variance, scale_variance) * jitter_factor)
+                scale *= (1.0 + self.rng.uniform(-0.15, 0.15) * jitter_factor)
                 new_w = max(1, int(glyph.width * scale))
                 new_h = max(1, int(glyph.height * scale))
                 glyph = glyph.resize((new_w, new_h), Image.LANCZOS)
@@ -386,10 +382,9 @@ class HandwritingRenderer:
                 arr[:, :, 3] = (arr[:, :, 3] * ink_darkness).astype(np.uint8)
                 glyph = Image.fromarray(arr)
 
-                # 3d: Reduced jitter (40% less position, 50% less rotation)
-                jx = self.rng.gauss(0, inter_letter_std * jitter_factor * 0.6) if char_idx > 0 else 0
-                jy = self.rng.gauss(0, 1.0 * jitter_factor * 0.6)
-                baseline = self._baseline_drift(cursor_x, line_idx, baseline_amplitude * jitter_factor)
+                jx = self.rng.gauss(0, 5.0 * jitter_factor) if char_idx > 0 else 0
+                jy = self.rng.gauss(0, 4.0 * jitter_factor)
+                baseline = self._baseline_drift(cursor_x, line_idx, 6.0 * jitter_factor)
 
                 # 3c: Align ink bottom to cursor_y (baseline alignment)
                 bbox = self._get_ink_bbox(glyph)
@@ -404,8 +399,7 @@ class HandwritingRenderer:
 
                 x = int(cursor_x + jx)
 
-                # 3d: Rotation jitter reduced 50%
-                angle = self.rng.uniform(-rotation_max_deg, rotation_max_deg) * jitter_factor * 0.5
+                angle = self.rng.uniform(-8.0, 8.0) * jitter_factor
                 if abs(angle) > 0.1:
                     glyph = glyph.rotate(angle, expand=True, resample=Image.BICUBIC,
                                        fillcolor=(0, 0, 0, 0))
@@ -420,9 +414,7 @@ class HandwritingRenderer:
                     if char.lower() in 'it':
                         self._add_i_dot(canvas, paste_x + new_w // 2, paste_y, char_height, jitter_factor)
 
-                # 3b: Proportional advance (glyph-width based)
-                cursor_x += new_w * 1.1 + self.rng.gauss(0, 2.0 * jitter_factor)
-                cursor_x += self.rng.gauss(0, inter_letter_std * jitter_factor * 0.5)
+                cursor_x += new_w * 1.1 + self.rng.gauss(0, 4.0 * jitter_factor)
                 
                 char_idx += 1
             
