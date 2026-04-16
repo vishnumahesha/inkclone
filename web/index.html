@@ -317,6 +317,7 @@
       border: none;
     }
     .slider-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-faint); }
+    .neatness-desc { font-size: 10px; color: var(--text-dim); margin-top: 4px; font-style: italic; }
 
     /* Profile selector */
     .profile-row { margin-bottom: 18px; }
@@ -494,6 +495,7 @@
             <textarea id="text-input" placeholder="Start typing to see your handwriting replicated..."></textarea>
             <span class="char-count" id="char-count">0</span>
           </div>
+          <button id="sample-text-btn" style="margin-top:6px;background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--text-dim);text-decoration:underline;text-underline-offset:3px;padding:0;text-align:left;" onmouseover="this.style.color='var(--accent)'" onmouseout="this.style.color='var(--text-dim)'">Try a sample</button>
         </div>
 
         <!-- Tab bar + panels -->
@@ -731,6 +733,7 @@
             <span>Messy</span>
             <span>Pristine</span>
           </div>
+          <div class="neatness-desc" id="neatness-desc">Natural and readable</div>
         </div>
 
         <!-- Generate button -->
@@ -746,22 +749,28 @@
 
         <span class="label">PREVIEW</span>
 
-        <div class="preview-card" id="preview-card">
-          <div class="preview-placeholder" id="preview-placeholder">
-            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect x="8" y="10" width="32" height="28" rx="3" stroke="#4a4850" stroke-width="1.5"/>
-              <line x1="14" y1="18" x2="34" y2="18" stroke="#4a4850" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="14" y1="23" x2="30" y2="23" stroke="#4a4850" stroke-width="1.5" stroke-linecap="round"/>
-              <line x1="14" y1="28" x2="26" y2="28" stroke="#4a4850" stroke-width="1.5" stroke-linecap="round"/>
-            </svg>
-            <p>Your handwritten document<br>will appear here</p>
+        <div class="preview-card" id="preview-card" style="align-items:stretch;">
+          <div id="demo-preview-wrap" style="position:relative;width:100%;">
+            <img id="preview-img" src="/static/demo_preview.png" class="preview-img" alt="Sample handwriting output" style="width:100%;height:auto;display:block;border-radius:9px;">
+            <div id="demo-overlay" style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(12,12,15,0.85));padding:14px 14px 12px;border-radius:0 0 9px 9px;pointer-events:none;">
+              <p style="font-size:10px;color:rgba(232,230,227,0.7);text-align:center;line-height:1.4;">Sample output — type your own text and click Generate</p>
+            </div>
           </div>
         </div>
 
         <!-- Download / Clear (hidden until image exists) -->
         <div class="action-btns" id="action-btns">
-          <button class="action-btn primary" id="download-btn">Download PNG</button>
+          <button class="action-btn primary" id="download-btn">Download</button>
           <button class="action-btn" id="clear-btn">Clear</button>
+        </div>
+        <!-- Format selector -->
+        <div id="format-selector" style="display:none;gap:6px;flex-direction:column;">
+          <div style="display:flex;gap:6px;">
+            <button class="fmt-btn active" data-fmt="png" style="flex:1;padding:6px 10px;background:rgba(124,111,224,0.12);border:1px solid rgba(124,111,224,0.4);border-radius:6px;color:var(--accent);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;cursor:pointer;outline:none;transition:all 0.15s;">PNG</button>
+            <button class="fmt-btn" data-fmt="jpeg" style="flex:1;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;cursor:pointer;outline:none;transition:all 0.15s;">JPEG</button>
+            <button class="fmt-btn" data-fmt="transparent" style="flex:1;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text-dim);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:500;cursor:pointer;outline:none;transition:all 0.15s;">Transparent</button>
+          </div>
+          <p style="font-size:10px;color:var(--text-faint);" id="fmt-hint">Standard PNG with paper background</p>
         </div>
 
         <!-- Stats row -->
@@ -792,30 +801,34 @@
 
   <script>
     // State
-    const state = { paper: 'college_ruled', ink: 'black', effect: 'scan', neatness: 0.7, profileId: '', realism: 'perfect' };
+    const state = { paper: 'college_ruled', ink: 'black', effect: 'scan', neatness: 0.7, profileId: '', realism: 'perfect', fmt: 'png' };
     let currentDataUrl = null;
+    let isDemoShowing = true;
 
     // DOM refs
-    const textInput          = document.getElementById('text-input');
-    const charCount          = document.getElementById('char-count');
-    const neatnessSlider     = document.getElementById('neatness-slider');
-    const neatnessPct        = document.getElementById('neatness-pct');
-    const generateBtn        = document.getElementById('generate-btn');
-    const btnText            = document.getElementById('btn-text');
-    const previewCard        = document.getElementById('preview-card');
-    const previewPlaceholder = document.getElementById('preview-placeholder');
-    const actionBtns         = document.getElementById('action-btns');
-    const downloadBtn        = document.getElementById('download-btn');
-    const clearBtn           = document.getElementById('clear-btn');
-    const profileSelect      = document.getElementById('profile-select');
+    const textInput      = document.getElementById('text-input');
+    const charCount      = document.getElementById('char-count');
+    const neatnessSlider = document.getElementById('neatness-slider');
+    const neatnessPct    = document.getElementById('neatness-pct');
+    const neatnessDesc   = document.getElementById('neatness-desc');
+    const generateBtn    = document.getElementById('generate-btn');
+    const btnText        = document.getElementById('btn-text');
+    const previewCard    = document.getElementById('preview-card');
+    const actionBtns     = document.getElementById('action-btns');
+    const downloadBtn    = document.getElementById('download-btn');
+    const clearBtn       = document.getElementById('clear-btn');
+    const profileSelect  = document.getElementById('profile-select');
+    const formatSelector = document.getElementById('format-selector');
+    const fmtHint        = document.getElementById('fmt-hint');
+    const sampleBtn      = document.getElementById('sample-text-btn');
 
-    // Profile selector
+    // ── Profile selector ────────────────────────────────────────────────────────
     profileSelect.addEventListener('change', () => { state.profileId = profileSelect.value; });
 
     async function loadProfiles() {
       try {
         const res = await fetch('/profiles');
-        if (!res.ok) throw new Error('Failed to fetch profiles');
+        if (!res.ok) throw new Error();
         const profiles = await res.json();
         profileSelect.innerHTML = '';
         if (profiles.length === 0) {
@@ -825,28 +838,42 @@
         profiles.forEach(p => {
           const opt = document.createElement('option');
           opt.value = p.profile_id;
-          const cov = p.character_coverage;
-          const lc = cov ? Math.round(cov.lowercase_pct || 0) : '?';
-          opt.textContent = p.profile_id + '  (' + lc + '% lowercase)';
+          const cov = p.character_coverage || {};
+          const lc  = cov.lowercase_pct != null ? cov.lowercase_pct : null;
+          const variants = cov.total_variants || 0;
+          // Coverage dot: green >90%, yellow 50-90%, red <50%
+          let dot = '🔴';
+          if (lc == null) dot = '⚪';
+          else if (lc > 90) dot = '🟢';
+          else if (lc >= 50) dot = '🟡';
+          // Human-readable name
+          const name = p.profile_id.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+          opt.textContent = dot + ' ' + name + (variants ? ' (' + variants + ' glyphs)' : '');
           profileSelect.appendChild(opt);
         });
-        // Handle ?profile_id= URL param
         const urlParams = new URLSearchParams(window.location.search);
         const urlProfile = urlParams.get('profile_id');
         if (urlProfile && profiles.find(p => p.profile_id === urlProfile)) {
           profileSelect.value = urlProfile;
         }
         state.profileId = profileSelect.value;
-      } catch (e) {
+      } catch {
         profileSelect.innerHTML = '<option value="">Could not load profiles</option>';
       }
     }
     loadProfiles();
 
-    // Char count
+    // ── Char count ──────────────────────────────────────────────────────────────
     textInput.addEventListener('input', () => { charCount.textContent = textInput.value.length; });
 
-    // Tab switching
+    // ── Sample text button ──────────────────────────────────────────────────────
+    sampleBtn.addEventListener('click', () => {
+      textInput.value = 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen jugs of liquid soap.';
+      charCount.textContent = textInput.value.length;
+      textInput.focus();
+    });
+
+    // ── Tab switching ───────────────────────────────────────────────────────────
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -856,7 +883,7 @@
       });
     });
 
-    // Paper selection
+    // ── Paper selection ─────────────────────────────────────────────────────────
     document.querySelectorAll('.paper-card').forEach(card => {
       card.addEventListener('click', () => {
         document.querySelectorAll('.paper-card').forEach(c => c.classList.remove('selected'));
@@ -865,7 +892,7 @@
       });
     });
 
-    // Ink selection
+    // ── Ink selection ───────────────────────────────────────────────────────────
     document.querySelectorAll('.ink-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.ink-btn').forEach(b => b.classList.remove('selected'));
@@ -874,7 +901,7 @@
       });
     });
 
-    // Effect selection
+    // ── Effect selection ────────────────────────────────────────────────────────
     document.querySelectorAll('#panel-effects .effect-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#panel-effects .effect-btn').forEach(b => b.classList.remove('selected'));
@@ -883,7 +910,7 @@
       });
     });
 
-    // Realism selection
+    // ── Realism selection ───────────────────────────────────────────────────────
     document.querySelectorAll('#panel-realism .effect-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('#panel-realism .effect-btn').forEach(b => b.classList.remove('selected'));
@@ -892,18 +919,52 @@
       });
     });
 
-    // Slider: gradient fill + state update
+    // ── Neatness slider ─────────────────────────────────────────────────────────
+    const NEATNESS_LABELS = [
+      [0,  15,  'Barely legible scrawl'],
+      [16, 30,  'Rushed and messy'],
+      [31, 50,  'Casual and relaxed'],
+      [51, 70,  'Natural and readable'],
+      [71, 85,  'Clean and tidy'],
+      [86, 100, 'Perfectly uniform'],
+    ];
+    function getNeatnessLabel(val) {
+      for (const [lo, hi, label] of NEATNESS_LABELS) {
+        if (val >= lo && val <= hi) return label;
+      }
+      return '';
+    }
     function updateSlider() {
       const val = parseInt(neatnessSlider.value);
       state.neatness = val / 100;
       neatnessPct.textContent = val + '%';
+      neatnessDesc.textContent = getNeatnessLabel(val);
       neatnessSlider.style.background =
         'linear-gradient(to right, #7c6fe0 0%, #7c6fe0 ' + val + '%, #1e1e24 ' + val + '%, #1e1e24 100%)';
     }
     neatnessSlider.addEventListener('input', updateSlider);
     updateSlider();
 
-    // Generate
+    // ── Format selector ─────────────────────────────────────────────────────────
+    const FMT_HINTS = {
+      png:         'Standard PNG with paper background',
+      jpeg:        'Smaller file, slight quality loss',
+      transparent: 'PNG with no paper — ink only (RGBA)',
+    };
+    document.querySelectorAll('.fmt-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.fmt = btn.dataset.fmt;
+        document.querySelectorAll('.fmt-btn').forEach(b => {
+          const active = b.dataset.fmt === state.fmt;
+          b.style.background     = active ? 'rgba(124,111,224,0.12)' : 'var(--surface)';
+          b.style.borderColor    = active ? 'rgba(124,111,224,0.4)'  : 'var(--border)';
+          b.style.color          = active ? 'var(--accent)'          : 'var(--text-dim)';
+        });
+        fmtHint.textContent = FMT_HINTS[state.fmt] || '';
+      });
+    });
+
+    // ── Generate ────────────────────────────────────────────────────────────────
     generateBtn.addEventListener('click', async () => {
       const text = textInput.value.trim();
       if (!text) { textInput.focus(); return; }
@@ -912,37 +973,36 @@
       generateBtn.classList.add('loading');
       btnText.textContent = 'Generating...';
 
-      // Loading state in preview
-      previewCard.innerHTML = '';
-      previewCard.style.alignItems = 'center';
-      const loadEl = document.createElement('div');
-      loadEl.className = 'preview-placeholder';
-      loadEl.innerHTML =
+      previewCard.innerHTML =
+        '<div class="preview-placeholder">' +
         '<div style="width:24px;height:24px;border:2px solid #4a4850;border-top-color:#7c6fe0;' +
         'border-radius:50%;animation:spin 0.6s linear infinite;"></div>' +
-        '<p style="color:#8a8890;">Rendering handwriting\u2026</p>';
-      previewCard.appendChild(loadEl);
+        '<p style="color:#8a8890;">Rendering handwriting\u2026</p></div>';
+      previewCard.style.alignItems = 'center';
+      isDemoShowing = false;
 
       try {
-        const res = await fetch('/generate', {
+        const body = {
+          text:        text,
+          paper:       state.paper,
+          ink_color:   state.ink,
+          artifact:    state.effect,
+          neatness:    state.neatness,
+          profile_id:  state.profileId || null,
+          realism:     state.realism,
+          transparent: state.fmt === 'transparent',
+        };
+        const res  = await fetch('/generate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            text:       text,
-            paper:      state.paper,
-            ink_color:  state.ink,
-            artifact:   state.effect,
-            neatness:   state.neatness,
-            profile_id: state.profileId || null,
-            realism:    state.realism,
-          }),
+          body: JSON.stringify(body),
         });
-
         const data = await res.json();
         if (!res.ok) throw new Error(data.detail || 'Generation failed');
         if (!data.success || !data.image) throw new Error('No image returned from server');
 
         currentDataUrl = data.image;
+
         const img = document.createElement('img');
         img.src = data.image;
         img.className = 'preview-img';
@@ -951,12 +1011,14 @@
         previewCard.style.alignItems = 'stretch';
         previewCard.appendChild(img);
         actionBtns.classList.add('visible');
+        formatSelector.style.display = 'flex';
 
       } catch (err) {
         previewCard.innerHTML = '<div class="preview-error">\u26a0 ' + err.message + '</div>';
         previewCard.style.alignItems = 'center';
         currentDataUrl = null;
         actionBtns.classList.remove('visible');
+        formatSelector.style.display = 'none';
       } finally {
         generateBtn.disabled = false;
         generateBtn.classList.remove('loading');
@@ -964,31 +1026,57 @@
       }
     });
 
-    // Clear
+    // ── Clear ───────────────────────────────────────────────────────────────────
     clearBtn.addEventListener('click', () => {
       currentDataUrl = null;
-      previewCard.innerHTML = '';
-      previewCard.style.alignItems = 'center';
-      previewCard.appendChild(previewPlaceholder);
+      isDemoShowing = true;
+      previewCard.innerHTML =
+        '<div id="demo-preview-wrap" style="position:relative;width:100%;">' +
+        '<img id="preview-img" src="/static/demo_preview.png" class="preview-img" alt="Sample handwriting output" style="width:100%;height:auto;display:block;border-radius:9px;">' +
+        '<div style="position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(12,12,15,0.85));padding:14px 14px 12px;border-radius:0 0 9px 9px;pointer-events:none;">' +
+        '<p style="font-size:10px;color:rgba(232,230,227,0.7);text-align:center;line-height:1.4;">Sample output — type your own text and click Generate</p></div></div>';
+      previewCard.style.alignItems = 'stretch';
       actionBtns.classList.remove('visible');
+      formatSelector.style.display = 'none';
     });
 
-    // Download PNG
+    // ── Download ────────────────────────────────────────────────────────────────
     downloadBtn.addEventListener('click', () => {
       if (!currentDataUrl) return;
-      fetch(currentDataUrl)
+      if (state.fmt === 'jpeg') {
+        // Convert PNG data URL to JPEG via canvas
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width  = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          const jpegUrl = canvas.toDataURL('image/jpeg', 0.92);
+          _triggerDownload(jpegUrl, 'inkclone-handwriting.jpg');
+        };
+        img.src = currentDataUrl;
+      } else {
+        _triggerDownload(currentDataUrl, state.fmt === 'transparent' ? 'inkclone-handwriting-transparent.png' : 'inkclone-handwriting.png');
+      }
+    });
+
+    function _triggerDownload(dataUrl, filename) {
+      fetch(dataUrl)
         .then(r => r.blob())
         .then(blob => {
           const url = URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = 'inkclone-handwriting.png';
+          a.download = filename;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);
           setTimeout(() => URL.revokeObjectURL(url), 5000);
         });
-    });
+    }
   </script>
 </body>
 </html>

@@ -96,15 +96,16 @@ ARTIFACTS = {
 
 # ── Models ─────────────────────────────────────────────────────────────────────
 class GenerateRequest(BaseModel):
-    text:       str
-    paper:      str   = "college_ruled"
-    ink_color:  str   = "black"
-    ink:        str   = None    # legacy alias
-    artifact:   str   = "scan"
-    neatness:   float = 0.5
-    seed:       int   = None
-    profile_id: str   = None
-    realism:    str   = "perfect"
+    text:        str
+    paper:       str   = "college_ruled"
+    ink_color:   str   = "black"
+    ink:         str   = None    # legacy alias
+    artifact:    str   = "scan"
+    neatness:    float = 0.5
+    seed:        int   = None
+    profile_id:  str   = None
+    realism:     str   = "perfect"
+    transparent: bool  = False   # skip paper composite, return RGBA PNG
 
     def get_ink(self) -> str:
         return self.ink_color or self.ink or "black"
@@ -157,16 +158,30 @@ async def generate_document(request: GenerateRequest):
             neatness=request.neatness,
         )
         text_img = apply_realism(text_img, request.realism)
-        _fixed_size = {"sticky_note", "dot_grid"}
-        if request.paper in _fixed_size:
-            paper = PAPERS[request.paper]()
+        if request.transparent:
+            # Colorize the ink alpha mask and return as RGBA (no paper)
+            import numpy as np
+            arr = np.array(text_img.convert("RGBA")).astype(float)
+            r, g, b = INK_COLORS[ink]
+            arr[:, :, 0] = r
+            arr[:, :, 1] = g
+            arr[:, :, 2] = b
+            from PIL import Image as _PIL
+            result = _PIL.fromarray(arr.astype("uint8"), "RGBA")
+            final  = ARTIFACTS[request.artifact](result)
+            buf = BytesIO()
+            final.save(buf, format="PNG")
         else:
-            paper = PAPERS[request.paper](width=PAGE_W, height=PAGE_H)
-        result   = composite(text_img, paper, ink_color=INK_COLORS[ink])
-        final    = ARTIFACTS[request.artifact](result)
+            _fixed_size = {"sticky_note", "dot_grid"}
+            if request.paper in _fixed_size:
+                paper = PAPERS[request.paper]()
+            else:
+                paper = PAPERS[request.paper](width=PAGE_W, height=PAGE_H)
+            result = composite(text_img, paper, ink_color=INK_COLORS[ink])
+            final  = ARTIFACTS[request.artifact](result)
+            buf = BytesIO()
+            final.save(buf, format="PNG")
 
-        buf = BytesIO()
-        final.save(buf, format="PNG")
         buf.seek(0)
         img_b64 = base64.b64encode(buf.getvalue()).decode("utf-8")
 

@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InkClone — Create Handwriting Profile</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Caveat:wght@400;500&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:            #0c0c0f;
+      --surface:       #141418;
+      --surface-hover: #1e1e28;
+      --border:        #1e1e24;
+      --border-active: rgba(124, 111, 224, 0.27);
+      --text:          #e8e6e3;
+      --text-dim:      #8a8890;
+      --text-faint:    #4a4850;
+      --accent:        #7c6fe0;
+      --accent-dark:   #5a4fc0;
+    }
+
+    html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+
+    body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      font-size: 13px;
+      font-weight: 400;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.5;
+    }
+
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9999;
+      opacity: 0.025;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='256' height='256'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='256' height='256' filter='url(%23n)'/%3E%3C/svg%3E");
+      background-size: 256px 256px;
+    }
+
+    @keyframes fadeDown  { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeUp    { from { opacity: 0; transform: translateY(8px);   } to { opacity: 1; transform: translateY(0); } }
+    @keyframes spin      { to   { transform: rotate(360deg); } }
+
+    .container {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-dim);
+      text-decoration: none;
+      margin-bottom: 32px;
+      transition: color 0.15s;
+    }
+    .back-link:hover { color: var(--text); }
+
+    .header { margin-bottom: 36px; animation: fadeDown 0.5s ease-out both; }
+    .logo-row { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+    .logo-icon {
+      width: 32px; height: 32px;
+      background: #1a1a2e;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-title { font-size: 18px; font-weight: 600; }
+    .subtitle { font-size: 13px; color: var(--text-dim); }
+
+    .steps { display: flex; flex-direction: column; gap: 24px; animation: fadeUp 0.5s ease-out 0.1s both; }
+
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+    }
+    .step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .step-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: rgba(124, 111, 224, 0.14);
+      border: 1px solid rgba(124, 111, 224, 0.3);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600; color: var(--accent);
+      flex-shrink: 0;
+    }
+    .step-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .step-body { font-size: 12px; color: var(--text-dim); line-height: 1.65; }
+    .step-body ul { padding-left: 18px; margin-top: 8px; }
+    .step-body li { margin-bottom: 4px; }
+    .step-body strong { color: var(--text); font-weight: 500; }
+
+    .tip-box {
+      margin-top: 10px;
+      padding: 10px 12px;
+      background: rgba(124, 111, 224, 0.06);
+      border: 1px solid rgba(124, 111, 224, 0.15);
+      border-radius: 6px;
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Upload zone */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      margin-top: 12px;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(124, 111, 224, 0.04);
+    }
+    .upload-icon { margin-bottom: 8px; }
+    .upload-primary { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+    .upload-secondary { font-size: 11px; color: var(--text-faint); }
+    #file-input { display: none; }
+
+    .file-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .file-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 8px 12px;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px; color: var(--text-dim);
+    }
+    .file-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-remove {
+      background: none; border: none; cursor: pointer;
+      color: var(--text-faint); font-size: 14px; padding: 0 0 0 8px;
+      transition: color 0.15s;
+    }
+    .file-remove:hover { color: #e07070; }
+
+    /* Submit */
+    .submit-btn {
+      width: 100%;
+      padding: 13px 20px;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600;
+      border: none; border-radius: 8px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      transition: transform 0.15s, opacity 0.15s;
+      box-shadow: 0 4px 20px rgba(124, 111, 224, 0.3);
+      outline: none;
+      margin-top: 24px;
+    }
+    .submit-btn:hover:not(:disabled)  { transform: scale(1.01); }
+    .submit-btn:active:not(:disabled) { transform: scale(0.98); }
+    .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+      display: none; flex-shrink: 0;
+    }
+    .submit-btn.loading .btn-spinner { display: block; }
+
+    /* Result */
+    .result-card {
+      display: none;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+      margin-top: 24px;
+      animation: fadeUp 0.4s ease-out both;
+    }
+    .result-card.visible { display: block; }
+    .result-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 12px; }
+    .result-stat { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+    .result-stat strong { color: var(--accent); }
+    .result-actions { display: flex; gap: 8px; margin-top: 14px; }
+    .result-btn {
+      flex: 1; padding: 9px 14px;
+      font-family: 'DM Sans', sans-serif; font-size: 12px; font-weight: 500;
+      border-radius: 6px; cursor: pointer; outline: none; transition: all 0.15s;
+      text-decoration: none; text-align: center;
+    }
+    .result-btn.primary {
+      background: var(--accent); color: #fff; border: none;
+    }
+    .result-btn.primary:hover { background: var(--accent-dark); }
+    .result-btn.secondary {
+      background: transparent; color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    .result-btn.secondary:hover { background: var(--surface-hover); color: var(--text); }
+
+    .error-msg { color: #e07070; font-size: 12px; margin-top: 12px; display: none; }
+    .error-msg.visible { display: block; }
+
+    .footer { margin-top: 52px; text-align: center; font-size: 11px; color: var(--text-faint); }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <a href="/" class="back-link">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M9 2L4 7L9 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Back to generator
+    </a>
+
+    <header class="header">
+      <div class="logo-row">
+        <div class="logo-icon">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M12.5 2.5L15 5L6.5 13.5L3.5 14.5L4.5 11.5L12.5 2.5Z" stroke="#7c6fe0" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M11 4L14 7" stroke="#7c6fe0" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <h1 class="logo-title">Create Profile</h1>
+      </div>
+      <p class="subtitle">Train InkClone on your handwriting in three steps.</p>
+    </header>
+
+    <div class="steps">
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num">1</div>
+          <div class="step-title">Print &amp; fill the template</div>
+        </div>
+        <div class="step-body">
+          <p>Download and print the handwriting template, then fill in every cell with the corresponding letter or character.</p>
+          <ul>
+            <li>Write naturally — don't try to be neater than usual</li>
+            <li><strong>Use any dark pen — black ink works best</strong></li>
+            <li>Fill every cell; leave none blank</li>
+            <li>One character per box, sized to fit</li>
+          </ul>
+          <div class="tip-box">
+            Tip: Write the template in the same pen you use day-to-day for the most authentic output.
+          </div>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num">2</div>
+          <div class="step-title">Photograph the filled template</div>
+        </div>
+        <div class="step-body">
+          <p>Take a clear photo of each completed page.</p>
+          <ul>
+            <li>Shoot straight above the page — avoid angles</li>
+            <li>Good, even lighting; avoid shadows across the page</li>
+            <li>Keep the whole page in frame with a small border</li>
+            <li>Up to 3 pages supported</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">
+          <div class="step-num">3</div>
+          <div class="step-title">Upload and process</div>
+        </div>
+        <div class="step-body">
+          <p>Upload your photos below. InkClone will extract your glyphs automatically and build a profile.</p>
+        </div>
+
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-icon">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+              <rect x="4" y="6" width="24" height="20" rx="3" stroke="#4a4850" stroke-width="1.5"/>
+              <circle cx="11" cy="13" r="2.5" stroke="#4a4850" stroke-width="1.2"/>
+              <path d="M4 22L10 16L14 20L19 15L28 22" stroke="#4a4850" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <div class="upload-primary">Drop photos here or click to select</div>
+          <div class="upload-secondary">JPEG or PNG · up to 3 files · max 20 MB each</div>
+          <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" multiple>
+        </div>
+
+        <div class="file-list" id="file-list"></div>
+      </div>
+
+    </div>
+
+    <button class="submit-btn" id="submit-btn" disabled>
+      <span class="btn-spinner"></span>
+      <span id="submit-text">Upload &amp; Create Profile</span>
+    </button>
+
+    <div class="error-msg" id="error-msg"></div>
+
+    <div class="result-card" id="result-card">
+      <div class="result-title">Profile created!</div>
+      <div class="result-stat"><span>Profile ID</span><strong id="res-id">—</strong></div>
+      <div class="result-stat"><span>Total glyphs</span><strong id="res-glyphs">—</strong></div>
+      <div class="result-stat"><span>Lowercase coverage</span><strong id="res-coverage">—</strong></div>
+      <div class="result-actions">
+        <a id="res-generate-link" href="/" class="result-btn primary">Generate with this profile</a>
+        <button class="result-btn secondary" onclick="location.reload()">Create another</button>
+      </div>
+    </div>
+
+    <footer class="footer">InkClone &mdash; Built by Vishnu Mahesha</footer>
+  </div>
+
+  <script>
+    const uploadZone  = document.getElementById('upload-zone');
+    const fileInput   = document.getElementById('file-input');
+    const fileList    = document.getElementById('file-list');
+    const submitBtn   = document.getElementById('submit-btn');
+    const submitText  = document.getElementById('submit-text');
+    const errorMsg    = document.getElementById('error-msg');
+    const resultCard  = document.getElementById('result-card');
+
+    let files = [];
+
+    function refreshFileList() {
+      fileList.innerHTML = '';
+      files.forEach((f, i) => {
+        const item = document.createElement('div');
+        item.className = 'file-item';
+        item.innerHTML =
+          '<span class="file-item-name">' + f.name + '</span>' +
+          '<button class="file-remove" data-idx="' + i + '" title="Remove">&times;</button>';
+        fileList.appendChild(item);
+      });
+      submitBtn.disabled = files.length === 0;
+      fileList.querySelectorAll('.file-remove').forEach(btn => {
+        btn.addEventListener('click', () => {
+          files.splice(parseInt(btn.dataset.idx), 1);
+          refreshFileList();
+        });
+      });
+    }
+
+    function addFiles(newFiles) {
+      for (const f of newFiles) {
+        if (files.length >= 3) break;
+        if (!files.find(x => x.name === f.name)) files.push(f);
+      }
+      refreshFileList();
+    }
+
+    uploadZone.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', () => addFiles(Array.from(fileInput.files)));
+
+    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+    uploadZone.addEventListener('drop', e => {
+      e.preventDefault();
+      uploadZone.classList.remove('drag-over');
+      addFiles(Array.from(e.dataTransfer.files));
+    });
+
+    submitBtn.addEventListener('click', async () => {
+      if (!files.length) return;
+      submitBtn.disabled = true;
+      submitBtn.classList.add('loading');
+      submitText.textContent = 'Processing…';
+      errorMsg.classList.remove('visible');
+
+      const form = new FormData();
+      files.forEach(f => form.append('images', f));
+
+      try {
+        const res  = await fetch('/profiles/create', { method: 'POST', body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Upload failed');
+
+        document.getElementById('res-id').textContent       = data.profile_id;
+        document.getElementById('res-glyphs').textContent   = data.total_glyphs;
+        document.getElementById('res-coverage').textContent = data.coverage_pct + '%';
+        document.getElementById('res-generate-link').href   = '/?profile_id=' + encodeURIComponent(data.profile_id);
+        resultCard.classList.add('visible');
+        submitBtn.style.display = 'none';
+      } catch (err) {
+        errorMsg.textContent = '\u26a0 ' + err.message;
+        errorMsg.classList.add('visible');
+        submitBtn.disabled = false;
+        submitBtn.classList.remove('loading');
+        submitText.textContent = 'Upload & Create Profile';
+      }
+    });
+  </script>
+</body>
+</html>
