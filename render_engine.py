@@ -264,29 +264,14 @@ class HandwritingRenderer:
             fill=(0, 0, 0, 180)
         )
 
-    def _smart_line_break(self, words: list, word_idx: int, cursor_x: int, 
+    def _smart_line_break(self, words: list, word_idx: int, cursor_x: int,
                          page_width: int, margin_right: int, margin_left: int,
                          char_height: int, inter_letter_mean: float) -> bool:
-        """Determine if we should break to next line (avoid orphans)"""
-        usable_width = page_width - margin_left - margin_right
-        
-        # Estimate width of remaining words on this line
-        remaining_text = " ".join(words[word_idx:])
-        remaining_width = len(remaining_text) * (char_height * 0.6 + inter_letter_mean)
-        
-        # Break if next word won't fit
-        if cursor_x + remaining_width > page_width - margin_right:
-            return True
-        
-        # Avoid single word orphans on new line (break earlier if needed)
-        if word_idx + 1 < len(words):
-            next_word_width = len(words[word_idx + 1]) * (char_height * 0.6 + inter_letter_mean)
-            if next_word_width > usable_width * 0.4:  # Next word takes >40% of line
-                # Check if current line is getting crowded
-                if cursor_x > margin_left + usable_width * 0.7:
-                    return True
-        
-        return False
+        """Break to next line when the current word won't fit."""
+        avg_char_w = char_height * 0.55 * 1.1 + inter_letter_mean
+        avg_word_gap = char_height * 0.55 * 2.5
+        word_width = len(words[word_idx]) * avg_char_w + avg_word_gap
+        return cursor_x + word_width > page_width - margin_right
 
     def render(self, text: str,
                page_width: int = 2400,
