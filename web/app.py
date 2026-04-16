@@ -176,42 +176,45 @@ async def generate_document(request: GenerateRequest):
 @app.get("/profiles")
 async def list_profiles():
     """List all available profiles with stats."""
+    if not _PROFILES_DIR.exists():
+        return JSONResponse([])
+
+    _SKIP = {"schema", "__pycache__", "glyphs"}
     results = []
     for entry in sorted(_PROFILES_DIR.iterdir()):
-        if not entry.is_dir() or entry.name.startswith(".") or entry.name == "schema":
+        if not entry.is_dir() or entry.name.startswith(".") or entry.name in _SKIP:
             continue
 
         profile_json = entry / "profile.json"
-        glyph_count  = 0
-        coverage_pct = 0.0
-        created_at   = None
+        character_coverage = {}
+        created_at = None
 
         if profile_json.exists():
             try:
                 data = json.loads(profile_json.read_text(encoding="utf-8"))
-                cc   = data.get("character_coverage", {})
-                glyph_count  = cc.get("total_variants", 0)
-                coverage_pct = round(
-                    (cc.get("lowercase_pct", 0) +
-                     cc.get("uppercase_pct", 0) +
-                     cc.get("digits_pct", 0)) / 3, 1
-                )
+                character_coverage = data.get("character_coverage", {})
                 created_at = data.get("created_at")
             except Exception:
                 pass
-        else:
-            # Count PNGs as a fallback
+
+        if not character_coverage:
+            # Synthesise basic coverage from PNG count
             glyphs_dir = entry / "glyphs"
-            if glyphs_dir.exists():
-                glyph_count = len(list(glyphs_dir.glob("*.png")))
+            n = len(list(glyphs_dir.glob("*.png"))) if glyphs_dir.exists() else 0
+            # Rough split: assume mostly lowercase
+            character_coverage = {
+                "total_variants": n,
+                "lowercase_pct":  min(100.0, round(n / 26 * 100, 1)),
+                "uppercase_pct":  0.0,
+                "digits_pct":     0.0,
+            }
 
         results.append({
-            "id":           entry.name,
-            "name":         entry.name.replace("_", " ").title(),
-            "glyph_count":  glyph_count,
-            "coverage_pct": coverage_pct,
-            "created_at":   created_at,
-            "has_schema":   profile_json.exists(),
+            "profile_id":          entry.name,
+            "name":                entry.name.replace("_", " ").title(),
+            "character_coverage":  character_coverage,
+            "created_at":          created_at,
+            "has_schema":          profile_json.exists(),
         })
 
     return JSONResponse(results)

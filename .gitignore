@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 output/
 test_images/
-profiles/
+# profiles/ intentionally committed for deployment
 .pytest_cache/
 node_modules/
 .next/

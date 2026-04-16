@@ -1,0 +1,802 @@
+{
+  "profile_id": "freeform_vishnu",
+  "created_at": "2026-04-16T15:03:08Z",
+  "source_method": "freeform",
+  "source_images": [],
+  "character_coverage": {
+    "lowercase_pct": 100.0,
+    "uppercase_pct": 100.0,
+    "digits_pct": 100.0,
+    "punctuation_pct": 80.0,
+    "total_characters": 75,
+    "total_variants": 172
+  },
+  "per_character": {
+    "!": {
+      "variants": [
+        "glyphs/exclaim_0.png"
+      ],
+      "avg_width": 20.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "\"": {
+      "variants": [
+        "glyphs/quote_0.png"
+      ],
+      "avg_width": 128.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "#": {
+      "variants": [
+        "glyphs/hash_0.png"
+      ],
+      "avg_width": 61.0,
+      "avg_height": 128.0,
+      "confidence": 0.778,
+      "extraction_method": "connected_component"
+    },
+    "&": {
+      "variants": [
+        "glyphs/ampersand_0.png"
+      ],
+      "avg_width": 68.0,
+      "avg_height": 128.0,
+      "confidence": 0.735,
+      "extraction_method": "connected_component"
+    },
+    "'": {
+      "variants": [
+        "glyphs/apostrophe_0.png"
+      ],
+      "avg_width": 71.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    ",": {
+      "variants": [
+        "glyphs/comma_0.png"
+      ],
+      "avg_width": 72.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "-": {
+      "variants": [
+        "glyphs/hyphen_0.png"
+      ],
+      "avg_width": 728.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    ".": {
+      "variants": [
+        "glyphs/period_0.png"
+      ],
+      "avg_width": 128.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "/": {
+      "variants": [
+        "glyphs/slash_0.png"
+      ],
+      "avg_width": 45.0,
+      "avg_height": 128.0,
+      "confidence": 0.701,
+      "extraction_method": "connected_component"
+    },
+    "0": {
+      "variants": [
+        "glyphs/digit_0_0.png"
+      ],
+      "avg_width": 159.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "1": {
+      "variants": [
+        "glyphs/digit_1_0.png"
+      ],
+      "avg_width": 274.0,
+      "avg_height": 128.0,
+      "confidence": 0.664,
+      "extraction_method": "connected_component"
+    },
+    "2": {
+      "variants": [
+        "glyphs/digit_2_0.png"
+      ],
+      "avg_width": 332.0,
+      "avg_height": 128.0,
+      "confidence": 0.713,
+      "extraction_method": "connected_component"
+    },
+    "3": {
+      "variants": [
+        "glyphs/digit_3_0.png"
+      ],
+      "avg_width": 362.0,
+      "avg_height": 128.0,
+      "confidence": 0.72,
+      "extraction_method": "connected_component"
+    },
+    "4": {
+      "variants": [
+        "glyphs/digit_4_0.png"
+      ],
+      "avg_width": 51.0,
+      "avg_height": 128.0,
+      "confidence": 0.912,
+      "extraction_method": "connected_component"
+    },
+    "5": {
+      "variants": [
+        "glyphs/digit_5_fallback.png"
+      ],
+      "avg_width": 80.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "6": {
+      "variants": [
+        "glyphs/digit_6_fallback.png"
+      ],
+      "avg_width": 82.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "7": {
+      "variants": [
+        "glyphs/digit_7_0.png"
+      ],
+      "avg_width": 133.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "8": {
+      "variants": [
+        "glyphs/digit_8_fallback.png"
+      ],
+      "avg_width": 78.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "9": {
+      "variants": [
+        "glyphs/digit_9_0.png"
+      ],
+      "avg_width": 256.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    ":": {
+      "variants": [
+        "glyphs/colon_0.png"
+      ],
+      "avg_width": 41.0,
+      "avg_height": 128.0,
+      "confidence": 0.921,
+      "extraction_method": "connected_component"
+    },
+    ";": {
+      "variants": [
+        "glyphs/semicolon_0.png"
+      ],
+      "avg_width": 30.0,
+      "avg_height": 128.0,
+      "confidence": 0.87,
+      "extraction_method": "connected_component"
+    },
+    "?": {
+      "variants": [
+        "glyphs/question_0.png"
+      ],
+      "avg_width": 74.0,
+      "avg_height": 128.0,
+      "confidence": 0.734,
+      "extraction_method": "connected_component"
+    },
+    "@": {
+      "variants": [
+        "glyphs/at_0.png"
+      ],
+      "avg_width": 125.0,
+      "avg_height": 128.0,
+      "confidence": 0.75,
+      "extraction_method": "connected_component"
+    },
+    "A": {
+      "variants": [
+        "glyphs/upper_A_fallback.png"
+      ],
+      "avg_width": 382.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "B": {
+      "variants": [
+        "glyphs/upper_B_fallback.png"
+      ],
+      "avg_width": 44.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "C": {
+      "variants": [
+        "glyphs/upper_C_fallback.png"
+      ],
+      "avg_width": 67.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "D": {
+      "variants": [
+        "glyphs/upper_D_fallback.png"
+      ],
+      "avg_width": 91.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "E": {
+      "variants": [
+        "glyphs/upper_E_fallback.png"
+      ],
+      "avg_width": 56.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "F": {
+      "variants": [
+        "glyphs/upper_F_fallback.png"
+      ],
+      "avg_width": 36.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "G": {
+      "variants": [
+        "glyphs/upper_G_fallback.png"
+      ],
+      "avg_width": 87.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "H": {
+      "variants": [
+        "glyphs/upper_H_fallback.png"
+      ],
+      "avg_width": 79.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "I": {
+      "variants": [
+        "glyphs/upper_I_fallback.png"
+      ],
+      "avg_width": 101.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "J": {
+      "variants": [
+        "glyphs/upper_J_fallback.png"
+      ],
+      "avg_width": 33.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "K": {
+      "variants": [
+        "glyphs/upper_K_fallback.png"
+      ],
+      "avg_width": 64.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "L": {
+      "variants": [
+        "glyphs/upper_L_fallback.png"
+      ],
+      "avg_width": 72.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "M": {
+      "variants": [
+        "glyphs/upper_M_fallback.png"
+      ],
+      "avg_width": 55.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "N": {
+      "variants": [
+        "glyphs/upper_N_fallback.png"
+      ],
+      "avg_width": 111.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "O": {
+      "variants": [
+        "glyphs/upper_O_fallback.png"
+      ],
+      "avg_width": 77.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "P": {
+      "variants": [
+        "glyphs/upper_P_0.png"
+      ],
+      "avg_width": 75.0,
+      "avg_height": 128.0,
+      "confidence": 0.874,
+      "extraction_method": "connected_component"
+    },
+    "Q": {
+      "variants": [
+        "glyphs/upper_Q_fallback.png"
+      ],
+      "avg_width": 50.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "R": {
+      "variants": [
+        "glyphs/upper_R_fallback.png"
+      ],
+      "avg_width": 88.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "S": {
+      "variants": [
+        "glyphs/upper_S_0.png"
+      ],
+      "avg_width": 89.0,
+      "avg_height": 128.0,
+      "confidence": 0.852,
+      "extraction_method": "connected_component"
+    },
+    "T": {
+      "variants": [
+        "glyphs/upper_T_0.png"
+      ],
+      "avg_width": 71.0,
+      "avg_height": 128.0,
+      "confidence": 0.774,
+      "extraction_method": "connected_component"
+    },
+    "U": {
+      "variants": [
+        "glyphs/upper_U_fallback.png"
+      ],
+      "avg_width": 93.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "V": {
+      "variants": [
+        "glyphs/upper_V_fallback.png"
+      ],
+      "avg_width": 157.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "W": {
+      "variants": [
+        "glyphs/upper_W_fallback.png"
+      ],
+      "avg_width": 93.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "X": {
+      "variants": [
+        "glyphs/upper_X_fallback.png"
+      ],
+      "avg_width": 126.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "Y": {
+      "variants": [
+        "glyphs/upper_Y_fallback.png"
+      ],
+      "avg_width": 167.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "Z": {
+      "variants": [
+        "glyphs/upper_Z_fallback.png"
+      ],
+      "avg_width": 35.0,
+      "avg_height": 128.0,
+      "confidence": 0.7,
+      "extraction_method": "fallback"
+    },
+    "a": {
+      "variants": [
+        "glyphs/a_0.png",
+        "glyphs/a_1.png",
+        "glyphs/a_2.png",
+        "glyphs/a_3.png",
+        "glyphs/a_4.png",
+        "glyphs/a_5.png",
+        "glyphs/a_6.png"
+      ],
+      "avg_width": 197.86,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "b": {
+      "variants": [
+        "glyphs/b_0.png",
+        "glyphs/b_1.png",
+        "glyphs/b_2.png",
+        "glyphs/b_3.png"
+      ],
+      "avg_width": 55.0,
+      "avg_height": 128.0,
+      "confidence": 0.947,
+      "extraction_method": "connected_component"
+    },
+    "c": {
+      "variants": [
+        "glyphs/c_0.png",
+        "glyphs/c_1.png"
+      ],
+      "avg_width": 97.0,
+      "avg_height": 128.0,
+      "confidence": 0.895,
+      "extraction_method": "connected_component"
+    },
+    "d": {
+      "variants": [
+        "glyphs/d_0.png",
+        "glyphs/d_1.png",
+        "glyphs/d_2.png",
+        "glyphs/d_3.png",
+        "glyphs/d_4.png"
+      ],
+      "avg_width": 75.2,
+      "avg_height": 128.0,
+      "confidence": 0.875,
+      "extraction_method": "connected_component"
+    },
+    "e": {
+      "variants": [
+        "glyphs/e_0.png",
+        "glyphs/e_1.png",
+        "glyphs/e_2.png",
+        "glyphs/e_3.png",
+        "glyphs/e_4.png",
+        "glyphs/e_5.png",
+        "glyphs/e_6.png",
+        "glyphs/e_7.png",
+        "glyphs/e_8.png",
+        "glyphs/e_9.png"
+      ],
+      "avg_width": 103.7,
+      "avg_height": 128.0,
+      "confidence": 0.943,
+      "extraction_method": "connected_component"
+    },
+    "f": {
+      "variants": [
+        "glyphs/f_0.png",
+        "glyphs/f_1.png",
+        "glyphs/f_2.png",
+        "glyphs/f_3.png"
+      ],
+      "avg_width": 88.25,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "g": {
+      "variants": [
+        "glyphs/g_0.png",
+        "glyphs/g_1.png",
+        "glyphs/g_2.png"
+      ],
+      "avg_width": 66.67,
+      "avg_height": 128.0,
+      "confidence": 0.937,
+      "extraction_method": "connected_component"
+    },
+    "h": {
+      "variants": [
+        "glyphs/h_0.png",
+        "glyphs/h_1.png",
+        "glyphs/h_2.png",
+        "glyphs/h_3.png",
+        "glyphs/h_4.png",
+        "glyphs/h_5.png",
+        "glyphs/h_6.png"
+      ],
+      "avg_width": 132.43,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "i": {
+      "variants": [
+        "glyphs/i_0.png",
+        "glyphs/i_10.png",
+        "glyphs/i_2.png",
+        "glyphs/i_3.png",
+        "glyphs/i_4.png",
+        "glyphs/i_5.png",
+        "glyphs/i_6.png",
+        "glyphs/i_7.png",
+        "glyphs/i_8.png",
+        "glyphs/i_9.png"
+      ],
+      "avg_width": 65.5,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "j": {
+      "variants": [
+        "glyphs/j_0.png",
+        "glyphs/j_1.png"
+      ],
+      "avg_width": 50.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "k": {
+      "variants": [
+        "glyphs/k_0.png",
+        "glyphs/k_1.png",
+        "glyphs/k_2.png"
+      ],
+      "avg_width": 72.33,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "l": {
+      "variants": [
+        "glyphs/l_0.png",
+        "glyphs/l_1.png",
+        "glyphs/l_2.png",
+        "glyphs/l_3.png"
+      ],
+      "avg_width": 44.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "m": {
+      "variants": [
+        "glyphs/m_0.png",
+        "glyphs/m_1.png",
+        "glyphs/m_2.png"
+      ],
+      "avg_width": 79.33,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "n": {
+      "variants": [
+        "glyphs/n_0.png",
+        "glyphs/n_1.png",
+        "glyphs/n_2.png",
+        "glyphs/n_3.png",
+        "glyphs/n_4.png"
+      ],
+      "avg_width": 85.8,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "o": {
+      "variants": [
+        "glyphs/o_0.png",
+        "glyphs/o_1.png",
+        "glyphs/o_10.png",
+        "glyphs/o_2.png",
+        "glyphs/o_3.png",
+        "glyphs/o_4.png",
+        "glyphs/o_5.png",
+        "glyphs/o_6.png",
+        "glyphs/o_7.png",
+        "glyphs/o_8.png",
+        "glyphs/o_9.png"
+      ],
+      "avg_width": 103.45,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "p": {
+      "variants": [
+        "glyphs/p_0.png",
+        "glyphs/p_1.png",
+        "glyphs/p_2.png",
+        "glyphs/p_3.png"
+      ],
+      "avg_width": 88.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "q": {
+      "variants": [
+        "glyphs/q_0.png",
+        "glyphs/q_1.png"
+      ],
+      "avg_width": 49.5,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "r": {
+      "variants": [
+        "glyphs/r_0.png",
+        "glyphs/r_1.png",
+        "glyphs/r_2.png",
+        "glyphs/r_3.png",
+        "glyphs/r_4.png",
+        "glyphs/r_5.png"
+      ],
+      "avg_width": 186.83,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "s": {
+      "variants": [
+        "glyphs/s_0.png",
+        "glyphs/s_1.png",
+        "glyphs/s_2.png",
+        "glyphs/s_3.png",
+        "glyphs/s_4.png",
+        "glyphs/s_5.png"
+      ],
+      "avg_width": 126.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "t": {
+      "variants": [
+        "glyphs/t_0.png",
+        "glyphs/t_1.png",
+        "glyphs/t_2.png",
+        "glyphs/t_3.png",
+        "glyphs/t_4.png"
+      ],
+      "avg_width": 101.6,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "u": {
+      "variants": [
+        "glyphs/u_0.png",
+        "glyphs/u_1.png",
+        "glyphs/u_2.png",
+        "glyphs/u_3.png",
+        "glyphs/u_4.png"
+      ],
+      "avg_width": 61.4,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "v": {
+      "variants": [
+        "glyphs/v_0.png",
+        "glyphs/v_1.png"
+      ],
+      "avg_width": 131.0,
+      "avg_height": 128.0,
+      "confidence": 0.892,
+      "extraction_method": "connected_component"
+    },
+    "w": {
+      "variants": [
+        "glyphs/w_0.png",
+        "glyphs/w_1.png",
+        "glyphs/w_2.png",
+        "glyphs/w_3.png"
+      ],
+      "avg_width": 109.5,
+      "avg_height": 128.0,
+      "confidence": 0.931,
+      "extraction_method": "connected_component"
+    },
+    "x": {
+      "variants": [
+        "glyphs/x_0.png",
+        "glyphs/x_1.png",
+        "glyphs/x_2.png"
+      ],
+      "avg_width": 104.33,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "y": {
+      "variants": [
+        "glyphs/y_0.png",
+        "glyphs/y_1.png",
+        "glyphs/y_2.png",
+        "glyphs/y_3.png"
+      ],
+      "avg_width": 131.25,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    },
+    "z": {
+      "variants": [
+        "glyphs/z_0.png",
+        "glyphs/z_1.png"
+      ],
+      "avg_width": 55.0,
+      "avg_height": 128.0,
+      "confidence": 0.9,
+      "extraction_method": "connected_component"
+    }
+  },
+  "style_metrics": {
+    "avg_glyph_width": 106.01,
+    "median_x_height": 128.0,
+    "baseline_offset": 0.0,
+    "slant_estimate_degrees": 0.0,
+    "avg_stroke_width": 19.0,
+    "ink_density": 0.38
+  },
+  "missing_characters": [
+    "(",
+    ")"
+  ],
+  "weak_characters": [],
+  "usable": true
+}
