@@ -18,10 +18,10 @@ class PageLayout:
     def calculate_ruled_baselines(paper_type, page_height, start_y=150):
         """Calculate y-positions where text baselines should sit on ruled paper."""
         line_spacing_map = {
-            "college_ruled": 85,      # Standard notebook spacing
-            "wide_ruled": 105,        # Wider spacing
-            "legal_pad": 85,
-            "dot_grid": 85,
+            "college_ruled": 42,
+            "wide_ruled": 52,
+            "legal_pad": 42,
+            "dot_grid": 42,
         }
         
         line_spacing = line_spacing_map.get(paper_type, 85)

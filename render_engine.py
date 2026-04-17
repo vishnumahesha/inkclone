@@ -190,7 +190,8 @@ class HandwritingRenderer:
         return (int(cmin), int(rmin), int(cmax + 1), int(rmax + 1))
 
     def _compute_norm_scale(self, char_height: int) -> float:
-        """Compute scale factor so median ink height matches char_height."""
+        """Compute scale factor so median glyph bbox height = char_height * 1.4
+        (x-height ≈ char_height, with 40% headroom for ascenders/descenders)."""
         ink_heights = []
         for variants in self.glyph_bank.values():
             for g in variants[:1]:
@@ -200,7 +201,7 @@ class HandwritingRenderer:
         if not ink_heights:
             return 1.0
         median_ink_h = float(np.median(ink_heights))
-        return char_height / median_ink_h if median_ink_h > 0 else 1.0
+        return (char_height * 1.4) / median_ink_h if median_ink_h > 0 else 1.0
 
     def _get_glyph(self, char: str) -> Image.Image:
         if char == ' ':
@@ -276,15 +277,15 @@ class HandwritingRenderer:
     def render(self, text: str,
                page_width: int = 2400,
                page_height: int = 3200,
-               margin_left: int = 220,
+               margin_left: int = 204,
                margin_right: int = 100,
-               margin_top: int = 150,
-               line_height: int = 85,
-               char_height: int = 50,
-               inter_letter_mean: float = 3.0,
-               inter_letter_std: float = 2.0,
-               inter_word_mean: float = 22.0,
-               inter_word_std: float = 5.0,
+               margin_top: int = 120,
+               line_height: int = 42,
+               char_height: int = 26,
+               inter_letter_mean: float = 2.0,
+               inter_letter_std: float = 1.0,
+               inter_word_mean: float = 25.0,
+               inter_word_std: float = 4.0,
                baseline_amplitude: float = 2.0,
                rotation_max_deg: float = 1.5,
                scale_variance: float = 0.03,
@@ -375,16 +376,18 @@ class HandwritingRenderer:
                 jy = self.rng.gauss(0, 4.0 * jitter_factor)
                 baseline = self._baseline_drift(cursor_x, line_idx, 6.0 * jitter_factor)
 
-                # 3c: Align ink bottom to cursor_y (baseline alignment)
+                # Align ink bottom to cursor_y (baseline). For descenders (g,j,p,q,y)
+                # the body sits on the line with the tail hanging below.
                 bbox = self._get_ink_bbox(glyph)
                 if bbox:
                     ink_bottom = bbox[3]
                     descender = char.lower() in 'gjpqy'
-                    descend_offset = int(char_height * 0.25) if descender else 0
-                    y_offset = new_h - ink_bottom + descend_offset
-                    y = int(cursor_y - y_offset + baseline + jy)
+                    # Shift glyph down so descender tail extends below baseline;
+                    # 35% of ink height ≈ descender length.
+                    descend_offset = int(ink_bottom * 0.35) if descender else 0
+                    y = int(cursor_y - ink_bottom + descend_offset + baseline + jy)
                 else:
-                    y = int(cursor_y + baseline + jy)
+                    y = int(cursor_y - new_h + baseline + jy)
 
                 x = int(cursor_x + jx)
 
@@ -403,13 +406,13 @@ class HandwritingRenderer:
                     if char.lower() in 'it':
                         self._add_i_dot(canvas, paste_x + new_w // 2, paste_y, char_height, jitter_factor)
 
-                cursor_x += new_w * 1.1 + self.rng.gauss(0, 4.0 * jitter_factor)
+                gap = max(1, inter_letter_mean + self.rng.gauss(0, inter_letter_std * jitter_factor))
+                cursor_x += new_w + gap
                 
                 char_idx += 1
             
-            # 3b: Word spacing proportional to avg ink width
-            word_gap = avg_ink_width * 2.5 + self.rng.gauss(0, 4.0 * jitter_factor)
-            cursor_x += max(avg_ink_width, word_gap) * prog["spacing_scale"]
+            word_gap = inter_word_mean + self.rng.gauss(0, inter_word_std * jitter_factor)
+            cursor_x += max(char_height // 4, word_gap) * prog["spacing_scale"]
         
         return canvas
 

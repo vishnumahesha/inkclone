@@ -11,9 +11,21 @@ DPI = 150
 INDEX_CARD_WIDTH = int(5 * DPI)   # 750px
 INDEX_CARD_HEIGHT = int(3 * DPI)  # 450px
 
-# Sticky note dimensions: 3x3 inches @ 150 DPI  
+# Sticky note dimensions: 3x3 inches @ 150 DPI
 STICKY_NOTE_WIDTH = int(3 * DPI)   # 450px
 STICKY_NOTE_HEIGHT = int(3 * DPI)  # 450px
+
+# Single source of truth for paper ruling geometry.
+# Used by render_engine and web/app to align glyphs with actual ruled lines.
+PAPER_LAYOUTS = {
+    "college_ruled": {"line_spacing": 42, "start_y": 120, "margin_x": 200},
+    "wide_ruled":    {"line_spacing": 52, "start_y": 120, "margin_x": 200},
+    "legal_pad":     {"line_spacing": 42, "start_y": 120, "margin_x": 200},
+    "dot_grid":      {"line_spacing": 42, "start_y": 120, "margin_x": None},
+    "blank_paper":   {"line_spacing": 42, "start_y": 120, "margin_x": None},
+    "sticky_note":   {"line_spacing": 42, "start_y":  60, "margin_x": None},
+    "graph_paper":   {"line_spacing": 42, "start_y": 120, "margin_x": None},
+}
 
 def _perlin_noise(width, height, scale=50, octaves=4):
     """Generate Perlin-like noise for paper texture."""

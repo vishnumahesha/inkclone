@@ -30,7 +30,7 @@ from render_engine import HandwritingRenderer, create_dummy_glyph_bank
 from glyph_loader import load_profile_glyphs
 from paper_backgrounds import (generate_blank_paper, generate_college_ruled,
                                generate_wide_ruled, generate_graph_paper, generate_legal_pad,
-                               generate_dot_grid, generate_sticky_note)
+                               generate_dot_grid, generate_sticky_note, PAPER_LAYOUTS)
 from compositor import composite, INK_COLORS
 from artifact_simulator import simulate_scan, simulate_phone_photo, simulate_clean
 from realism import apply_realism, PRESETS as REALISM_PRESETS
@@ -152,11 +152,26 @@ async def generate_document(request: GenerateRequest):
         PAGE_W, PAGE_H = 1200, 1600
         bank = _get_glyph_bank(request.profile_id)
         renderer = HandwritingRenderer(bank, seed=request.seed)
-        text_img = renderer.render(
-            request.text,
+
+        # Derive layout from paper's ruling geometry so text aligns to ruled lines.
+        layout = PAPER_LAYOUTS.get(request.paper, PAPER_LAYOUTS["college_ruled"])
+        line_spacing = layout["line_spacing"]
+        start_y      = layout["start_y"]
+        margin_x     = layout["margin_x"]
+        char_height  = int(0.62 * line_spacing)
+        baseline_y_positions = list(range(start_y, PAGE_H - 50, line_spacing))
+        render_kwargs = dict(
             page_width=PAGE_W, page_height=PAGE_H,
             neatness=request.neatness,
+            line_height=line_spacing,
+            char_height=char_height,
+            inter_word_mean=round(0.6 * line_spacing),
+            baseline_y_positions=baseline_y_positions,
         )
+        if margin_x is not None:
+            render_kwargs["margin_left"] = margin_x + 4
+
+        text_img = renderer.render(request.text, **render_kwargs)
         text_img = apply_realism(text_img, request.realism)
         if request.transparent:
             # Colorize the ink alpha mask and return as RGBA (no paper)
