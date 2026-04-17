@@ -1,15 +1,19 @@
 {
   "profile_id": "vishnu_v4",
-  "created_at": "2026-04-17T07:19:09.858907+00:00",
-  "source_method": "template_v4",
+  "created_at": "2026-04-17T17:02:50.764855+00:00",
+  "source_method": "extract_pipeline_v2",
   "template_version": "v4",
-  "total_variants": 238,
+  "total_variants": 224,
+  "quality_gate": {
+    "passed": 220,
+    "flagged": 4
+  },
   "character_coverage": {
     "lowercase_pct": 100.0,
     "uppercase_pct": 100.0,
     "digits_pct": 100.0,
-    "bigrams": 20,
-    "total_variants": 238
+    "bigrams": 14,
+    "total_variants": 224
   },
   "per_character": {
     ".": {
@@ -20,12 +24,11 @@
       ]
     },
     ",": {
-      "variants": 4,
+      "variants": 3,
       "files": [
         "glyphs/comma_0.png",
         "glyphs/comma_1.png",
-        "glyphs/comma_2.png",
-        "glyphs/comma_3.png"
+        "glyphs/comma_2.png"
       ]
     },
     "!": {
@@ -131,28 +134,10 @@
         "glyphs/he_0.png"
       ]
     },
-    "in": {
-      "variants": 1,
-      "files": [
-        "glyphs/in_0.png"
-      ]
-    },
     "an": {
       "variants": 1,
       "files": [
         "glyphs/an_0.png"
-      ]
-    },
-    "er": {
-      "variants": 1,
-      "files": [
-        "glyphs/er_0.png"
-      ]
-    },
-    "on": {
-      "variants": 1,
-      "files": [
-        "glyphs/on_0.png"
       ]
     },
     "ed": {
@@ -189,24 +174,6 @@
       "variants": 1,
       "files": [
         "glyphs/at_0.png"
-      ]
-    },
-    "st": {
-      "variants": 1,
-      "files": [
-        "glyphs/st_0.png"
-      ]
-    },
-    "en": {
-      "variants": 1,
-      "files": [
-        "glyphs/en_0.png"
-      ]
-    },
-    "or": {
-      "variants": 1,
-      "files": [
-        "glyphs/or_0.png"
       ]
     },
     "ng": {
@@ -366,10 +333,9 @@
       ]
     },
     "S": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_S_0.png",
-        "glyphs/upper_S_1.png"
+        "glyphs/upper_S_0.png"
       ]
     },
     "T": {
@@ -394,10 +360,9 @@
       ]
     },
     "W": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_W_0.png",
-        "glyphs/upper_W_1.png"
+        "glyphs/upper_W_0.png"
       ]
     },
     "X": {
@@ -408,17 +373,15 @@
       ]
     },
     "Y": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_Y_0.png",
-        "glyphs/upper_Y_1.png"
+        "glyphs/upper_Y_0.png"
       ]
     },
     "Z": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_Z_0.png",
-        "glyphs/upper_Z_1.png"
+        "glyphs/upper_Z_0.png"
       ]
     },
     "0": {
@@ -470,11 +433,10 @@
       ]
     },
     "6": {
-      "variants": 3,
+      "variants": 2,
       "files": [
         "glyphs/digit_6_0.png",
-        "glyphs/digit_6_1.png",
-        "glyphs/digit_6_2.png"
+        "glyphs/digit_6_1.png"
       ]
     },
     "7": {
@@ -565,12 +527,10 @@
       ]
     },
     "h": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/h_0.png",
-        "glyphs/h_1.png",
-        "glyphs/h_2.png",
-        "glyphs/h_3.png"
+        "glyphs/h_1.png"
       ]
     },
     "i": {
