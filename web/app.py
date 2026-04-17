@@ -172,8 +172,7 @@ async def generate_document(request: GenerateRequest):
             buf = BytesIO()
             final.save(buf, format="PNG")
         else:
-            _fixed_size = {"sticky_note", "dot_grid"}
-            if request.paper in _fixed_size:
+            if request.paper == "sticky_note":
                 paper = PAPERS[request.paper]()
             else:
                 paper = PAPERS[request.paper](width=PAGE_W, height=PAGE_H)
@@ -239,6 +238,10 @@ async def list_profiles():
                 "uppercase_pct":  0.0,
                 "digits_pct":     0.0,
             }
+
+        # Skip profiles with no usable glyphs
+        if character_coverage.get("total_variants", 0) == 0:
+            continue
 
         results.append({
             "profile_id":          entry.name,
@@ -901,7 +904,6 @@ def _generate_contact_sheet(profile_id: str):
             pass
 
         # Character label below thumbnail
-        from profiles.loader import _parse_glyph_stem  # noqa: reuse existing parser
         try:
             char = _parse_glyph_stem_local(png.stem)
         except Exception:
