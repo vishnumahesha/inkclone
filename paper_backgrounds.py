@@ -424,10 +424,8 @@ def generate_sticky_note(size_inches=3):
     return pil_img.convert('RGB')
 
 
-def generate_dot_grid(dot_spacing_mm=5):
+def generate_dot_grid(dot_spacing_mm=5, width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT):
     """Generate white paper with light gray dots at specified spacing (default 5mm)."""
-    width = DEFAULT_WIDTH
-    height = DEFAULT_HEIGHT
     
     # White background
     arr = np.ones((height, width, 3), dtype=np.uint8) * 255

@@ -101,7 +101,7 @@ class GenerateRequest(BaseModel):
     ink_color:   str   = "black"
     ink:         str   = None    # legacy alias
     artifact:    str   = "scan"
-    neatness:    float = 0.5
+    neatness:    Optional[float] = 0.5
     seed:        int   = None
     profile_id:  str   = None
     realism:     str   = "perfect"
@@ -141,6 +141,8 @@ async def generate_document(request: GenerateRequest):
         raise HTTPException(status_code=400, detail=f"Invalid ink color: {ink}")
     if request.artifact not in ARTIFACTS:
         raise HTTPException(status_code=400, detail=f"Invalid artifact type: {request.artifact}")
+    if request.neatness is None:
+        request.neatness = 0.5
     if not 0.0 <= request.neatness <= 1.0:
         raise HTTPException(status_code=400, detail="Neatness must be 0.0–1.0")
     if request.realism not in REALISM_PRESETS:
@@ -159,7 +161,9 @@ async def generate_document(request: GenerateRequest):
         )
         text_img = apply_realism(text_img, request.realism)
         if request.transparent:
-            # Colorize the ink alpha mask and return as RGBA (no paper)
+            # Colorize the ink alpha mask and return as RGBA (no paper).
+            # Artifact effects simulate paper/scan properties — skip them for
+            # transparent output where there is no paper background.
             import numpy as np
             arr = np.array(text_img.convert("RGBA")).astype(float)
             r, g, b = INK_COLORS[ink]
@@ -167,12 +171,11 @@ async def generate_document(request: GenerateRequest):
             arr[:, :, 1] = g
             arr[:, :, 2] = b
             from PIL import Image as _PIL
-            result = _PIL.fromarray(arr.astype("uint8"), "RGBA")
-            final  = ARTIFACTS[request.artifact](result)
+            final = _PIL.fromarray(arr.astype("uint8"), "RGBA")
             buf = BytesIO()
             final.save(buf, format="PNG")
         else:
-            _fixed_size = {"sticky_note", "dot_grid"}
+            _fixed_size = {"sticky_note"}
             if request.paper in _fixed_size:
                 paper = PAPERS[request.paper]()
             else:
@@ -901,7 +904,6 @@ def _generate_contact_sheet(profile_id: str):
             pass
 
         # Character label below thumbnail
-        from profiles.loader import _parse_glyph_stem  # noqa: reuse existing parser
         try:
             char = _parse_glyph_stem_local(png.stem)
         except Exception:
