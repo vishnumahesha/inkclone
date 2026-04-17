@@ -24,6 +24,51 @@ def _normalize_alpha(img, target_max=240):
     return Image.fromarray(arr, 'RGBA')
 
 
+def _autocrop_glyph(img: Image.Image, padding: int = 3) -> Image.Image:
+    """Crop to bounding box of actual letter ink, removing template guide marks.
+
+    Template cells have guide lines/dots in the top portion followed by a large
+    vertical gap before the actual handwritten letter. We detect this gap and
+    crop to only the letter region.
+    """
+    arr = np.array(img)
+    alpha = arr[:, :, 3]
+    h, w = arr.shape[:2]
+
+    ink_rows = np.where(np.any(alpha > 30, axis=1))[0]
+    if len(ink_rows) == 0:
+        return img
+
+    # Find the largest vertical gap between consecutive ink rows.
+    # Template marks → big empty gap → actual letter is the dominant pattern.
+    start_row = 0
+    if len(ink_rows) >= 2:
+        gaps = [(int(ink_rows[i + 1]) - int(ink_rows[i]), i)
+                for i in range(len(ink_rows) - 1)]
+        max_gap, max_gap_i = max(gaps)
+        # Only use the gap split if it's substantial and in the upper portion
+        if max_gap > 15 and int(ink_rows[max_gap_i]) < h * 0.6:
+            start_row = int(ink_rows[max_gap_i + 1])
+
+    ink_below = alpha[start_row:, :]
+    rows_with_ink = np.any(ink_below > 30, axis=1)
+    cols_with_ink = np.any(ink_below > 30, axis=0)
+
+    if not rows_with_ink.any() or not cols_with_ink.any():
+        return img
+
+    rmin = start_row + int(np.where(rows_with_ink)[0][0])
+    rmax = start_row + int(np.where(rows_with_ink)[0][-1])
+    cmin = int(np.where(cols_with_ink)[0][0])
+    cmax = int(np.where(cols_with_ink)[0][-1])
+
+    rmin = max(0, rmin - padding)
+    rmax = min(h - 1, rmax + padding)
+    cmin = max(0, cmin - padding)
+    cmax = min(w - 1, cmax + padding)
+    return Image.fromarray(arr[rmin:rmax + 1, cmin:cmax + 1], 'RGBA')
+
+
 def _measure_stroke_width(img: Image.Image) -> float:
     """Estimate stroke width via distance transform on the alpha mask."""
     arr = np.array(img)
@@ -195,6 +240,7 @@ def load_profile_glyphs(profile_dir, fallback_dummy=True):
                 if img.mode != "RGBA":
                     img = img.convert("RGBA")
                 img = _normalize_alpha(img.copy())
+                img = _autocrop_glyph(img)
             except Exception as e:
                 print(f"[glyph_loader] Failed to load {png_path.name}: {e}")
                 continue

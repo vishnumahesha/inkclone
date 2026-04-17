@@ -264,13 +264,26 @@ class HandwritingRenderer:
             fill=(0, 0, 0, 180)
         )
 
+    def _compute_avg_ink_width(self, norm_scale: float) -> float:
+        """Compute average scaled ink width across the glyph bank."""
+        widths = []
+        for variants in self.glyph_bank.values():
+            for g in variants[:1]:
+                bbox = self._get_ink_bbox(g)
+                if bbox:
+                    widths.append(bbox[2] - bbox[0])
+        if not widths:
+            return 0.0
+        return float(np.median(widths)) * norm_scale
+
     def _smart_line_break(self, words: list, word_idx: int, cursor_x: int,
                          page_width: int, margin_right: int, margin_left: int,
-                         char_height: int, inter_letter_mean: float) -> bool:
+                         char_height: int, inter_letter_mean: float,
+                         avg_char_width: float = None) -> bool:
         """Break to next line when the current word won't fit."""
-        avg_char_w = char_height * 0.55 * 1.1 + inter_letter_mean
-        avg_word_gap = char_height * 0.55 * 2.5
-        word_width = len(words[word_idx]) * avg_char_w + avg_word_gap
+        if avg_char_width is None:
+            avg_char_width = char_height * 0.55
+        word_width = len(words[word_idx]) * (avg_char_width + 2) + avg_char_width * 2.0
         return cursor_x + word_width > page_width - margin_right
 
     def render(self, text: str,
@@ -304,8 +317,8 @@ class HandwritingRenderer:
         # 3a: compute normalization scale from median ink height
         norm_scale = self._compute_norm_scale(char_height)
 
-        # Estimate avg ink width for word spacing
-        avg_ink_width = int(char_height * 0.55)
+        # Compute actual average ink width from the glyph bank after scaling
+        avg_ink_width = int(self._compute_avg_ink_width(norm_scale)) or int(char_height * 0.55)
 
         cursor_x = margin_left
         # 3e: snap starting y to first rule line if provided
@@ -316,16 +329,14 @@ class HandwritingRenderer:
         line_idx = 0
         usable_width = page_width - margin_left - margin_right
 
-        avg_char_width = char_height * 0.6
-        chars_per_line = usable_width / (avg_char_width + inter_letter_mean)
+        chars_per_line = usable_width / (avg_ink_width + 2)
         total_lines = max(1, len(text) / chars_per_line)
-        
+
         for word_i, word in enumerate(words):
-            word_width = len(word) * (char_height * 0.6 + inter_letter_mean)
-            
-            # Smart line breaking
+            # Smart line breaking using actual glyph widths
             if self._smart_line_break(words, word_i, cursor_x, page_width, margin_right,
-                                     margin_left, char_height, inter_letter_mean):
+                                     margin_left, char_height, inter_letter_mean,
+                                     avg_char_width=float(avg_ink_width)):
                 if cursor_x > margin_left + 50:
                     cursor_x = margin_left + self.rng.gauss(0, 8.0 * jitter_factor)
                     line_idx += 1
@@ -403,13 +414,14 @@ class HandwritingRenderer:
                     if char.lower() in 'it':
                         self._add_i_dot(canvas, paste_x + new_w // 2, paste_y, char_height, jitter_factor)
 
-                cursor_x += new_w * 1.1 + self.rng.gauss(0, 4.0 * jitter_factor)
-                
+                # letters nearly touch: advance by actual glyph width + 2px gap
+                cursor_x += new_w + 2 + self.rng.gauss(0, 3.0 * jitter_factor)
+
                 char_idx += 1
-            
-            # 3b: Word spacing proportional to avg ink width
-            word_gap = avg_ink_width * 2.5 + self.rng.gauss(0, 4.0 * jitter_factor)
-            cursor_x += max(avg_ink_width, word_gap) * prog["spacing_scale"]
+
+            # word spacing = 0.6 × line_height (matches paper ruled spacing)
+            word_gap = line_height * 0.6 + self.rng.gauss(0, 4.0 * jitter_factor)
+            cursor_x += word_gap * prog["spacing_scale"]
         
         return canvas
 

@@ -87,6 +87,19 @@ PAPERS = {
     "sticky_note":    generate_sticky_note,
 }
 
+# Render parameters matched to each paper's actual line/margin geometry.
+# line_spacing values come from paper_backgrounds.py (hardcoded regardless of image size).
+# char_height = 60% of line_spacing (x-height target); margin_left = margin_x + 4px.
+_PAPER_RENDER_PARAMS = {
+    "college_ruled": {"line_height": 42, "char_height": 30, "margin_left": 204, "margin_top": 120},
+    "wide_ruled":    {"line_height": 51, "char_height": 36, "margin_left": 204, "margin_top": 120},
+    "legal_pad":     {"line_height": 51, "char_height": 36, "margin_left": 204, "margin_top": 201},
+    "blank":         {"line_height": 55, "char_height": 40, "margin_left": 100, "margin_top": 150},
+    "graph":         {"line_height": 30, "char_height": 18, "margin_left": 100, "margin_top": 100},
+    "dot_grid":      {"line_height": 42, "char_height": 25, "margin_left": 100, "margin_top": 100},
+    "sticky_note":   {"line_height": 40, "char_height": 24, "margin_left": 30,  "margin_top": 30},
+}
+
 ARTIFACTS = {
     "clean": simulate_clean,
     "scan":  simulate_scan,
@@ -152,10 +165,12 @@ async def generate_document(request: GenerateRequest):
         PAGE_W, PAGE_H = 1200, 1600
         bank = _get_glyph_bank(request.profile_id)
         renderer = HandwritingRenderer(bank, seed=request.seed)
+        render_params = _PAPER_RENDER_PARAMS.get(request.paper, _PAPER_RENDER_PARAMS["college_ruled"])
         text_img = renderer.render(
             request.text,
             page_width=PAGE_W, page_height=PAGE_H,
             neatness=request.neatness,
+            **render_params,
         )
         text_img = apply_realism(text_img, request.realism)
         if request.transparent:
