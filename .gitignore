@@ -12,6 +12,11 @@ node_modules/
 *.jpg
 *.png
 !web/static/*.png
+!profiles/vishnu_v3/*.png
+!profiles/vishnu_v3/**/*.png
 real_glyphs/
 profiles/*/glyphs/
+!profiles/vishnu_v3/
+!profiles/vishnu_v3/glyphs/
+!profiles/vishnu_v3/**
 
