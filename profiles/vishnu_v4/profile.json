@@ -1,15 +1,15 @@
 {
   "profile_id": "vishnu_v4",
-  "created_at": "2026-04-17T07:19:09.858907+00:00",
+  "created_at": "2026-04-17T12:50:57.899190+00:00",
   "source_method": "template_v4",
   "template_version": "v4",
-  "total_variants": 238,
+  "total_variants": 143,
   "character_coverage": {
     "lowercase_pct": 100.0,
     "uppercase_pct": 100.0,
-    "digits_pct": 100.0,
+    "digits_pct": 60.0,
     "bigrams": 20,
-    "total_variants": 238
+    "total_variants": 143
   },
   "per_character": {
     ".": {
@@ -50,17 +50,15 @@
       ]
     },
     "\"": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/quote_0.png",
-        "glyphs/quote_1.png"
+        "glyphs/quote_0.png"
       ]
     },
     "-": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/hyphen_0.png",
-        "glyphs/hyphen_1.png"
+        "glyphs/hyphen_0.png"
       ]
     },
     ":": {
@@ -92,10 +90,9 @@
       ]
     },
     "/": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/slash_0.png",
-        "glyphs/slash_1.png"
+        "glyphs/slash_0.png"
       ]
     },
     "@": {
@@ -247,24 +244,21 @@
       ]
     },
     "B": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_B_0.png",
-        "glyphs/upper_B_1.png"
+        "glyphs/upper_B_0.png"
       ]
     },
     "C": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_C_0.png",
-        "glyphs/upper_C_1.png"
+        "glyphs/upper_C_0.png"
       ]
     },
     "D": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_D_0.png",
-        "glyphs/upper_D_1.png"
+        "glyphs/upper_D_0.png"
       ]
     },
     "E": {
@@ -275,24 +269,21 @@
       ]
     },
     "F": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_F_0.png",
-        "glyphs/upper_F_1.png"
+        "glyphs/upper_F_0.png"
       ]
     },
     "G": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_G_0.png",
-        "glyphs/upper_G_1.png"
+        "glyphs/upper_G_0.png"
       ]
     },
     "H": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_H_0.png",
-        "glyphs/upper_H_1.png"
+        "glyphs/upper_H_0.png"
       ]
     },
     "I": {
@@ -303,24 +294,21 @@
       ]
     },
     "J": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_J_0.png",
-        "glyphs/upper_J_1.png"
+        "glyphs/upper_J_0.png"
       ]
     },
     "K": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_K_0.png",
-        "glyphs/upper_K_1.png"
+        "glyphs/upper_K_0.png"
       ]
     },
     "L": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_L_0.png",
-        "glyphs/upper_L_1.png"
+        "glyphs/upper_L_0.png"
       ]
     },
     "M": {
@@ -331,24 +319,21 @@
       ]
     },
     "N": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_N_0.png",
-        "glyphs/upper_N_1.png"
+        "glyphs/upper_N_0.png"
       ]
     },
     "O": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_O_0.png",
-        "glyphs/upper_O_1.png"
+        "glyphs/upper_O_0.png"
       ]
     },
     "P": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_P_0.png",
-        "glyphs/upper_P_1.png"
+        "glyphs/upper_P_0.png"
       ]
     },
     "Q": {
@@ -359,24 +344,21 @@
       ]
     },
     "R": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_R_0.png",
-        "glyphs/upper_R_1.png"
+        "glyphs/upper_R_0.png"
       ]
     },
     "S": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_S_0.png",
-        "glyphs/upper_S_1.png"
+        "glyphs/upper_S_0.png"
       ]
     },
     "T": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_T_0.png",
-        "glyphs/upper_T_1.png"
+        "glyphs/upper_T_0.png"
       ]
     },
     "U": {
@@ -387,352 +369,255 @@
       ]
     },
     "V": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_V_0.png",
-        "glyphs/upper_V_1.png"
+        "glyphs/upper_V_0.png"
       ]
     },
     "W": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_W_0.png",
-        "glyphs/upper_W_1.png"
+        "glyphs/upper_W_0.png"
       ]
     },
     "X": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_X_0.png",
-        "glyphs/upper_X_1.png"
+        "glyphs/upper_X_0.png"
       ]
     },
     "Y": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_Y_0.png",
-        "glyphs/upper_Y_1.png"
+        "glyphs/upper_Y_0.png"
       ]
     },
     "Z": {
-      "variants": 2,
+      "variants": 1,
       "files": [
-        "glyphs/upper_Z_0.png",
-        "glyphs/upper_Z_1.png"
+        "glyphs/upper_Z_0.png"
       ]
     },
     "0": {
-      "variants": 3,
+      "variants": 2,
       "files": [
         "glyphs/digit_0_0.png",
-        "glyphs/digit_0_1.png",
-        "glyphs/digit_0_2.png"
+        "glyphs/digit_0_1.png"
       ]
     },
     "1": {
-      "variants": 3,
+      "variants": 2,
       "files": [
         "glyphs/digit_1_0.png",
-        "glyphs/digit_1_1.png",
-        "glyphs/digit_1_2.png"
-      ]
-    },
-    "2": {
-      "variants": 3,
-      "files": [
-        "glyphs/digit_2_0.png",
-        "glyphs/digit_2_1.png",
-        "glyphs/digit_2_2.png"
-      ]
-    },
-    "3": {
-      "variants": 3,
-      "files": [
-        "glyphs/digit_3_0.png",
-        "glyphs/digit_3_1.png",
-        "glyphs/digit_3_2.png"
+        "glyphs/digit_1_1.png"
       ]
     },
     "4": {
-      "variants": 3,
+      "variants": 1,
       "files": [
-        "glyphs/digit_4_0.png",
-        "glyphs/digit_4_1.png",
-        "glyphs/digit_4_2.png"
+        "glyphs/digit_4_0.png"
       ]
     },
     "5": {
-      "variants": 3,
+      "variants": 2,
       "files": [
         "glyphs/digit_5_0.png",
-        "glyphs/digit_5_1.png",
-        "glyphs/digit_5_2.png"
+        "glyphs/digit_5_1.png"
       ]
     },
     "6": {
-      "variants": 3,
+      "variants": 1,
       "files": [
-        "glyphs/digit_6_0.png",
-        "glyphs/digit_6_1.png",
-        "glyphs/digit_6_2.png"
-      ]
-    },
-    "7": {
-      "variants": 3,
-      "files": [
-        "glyphs/digit_7_0.png",
-        "glyphs/digit_7_1.png",
-        "glyphs/digit_7_2.png"
-      ]
-    },
-    "8": {
-      "variants": 3,
-      "files": [
-        "glyphs/digit_8_0.png",
-        "glyphs/digit_8_1.png",
-        "glyphs/digit_8_2.png"
+        "glyphs/digit_6_0.png"
       ]
     },
     "9": {
-      "variants": 3,
+      "variants": 1,
       "files": [
-        "glyphs/digit_9_0.png",
-        "glyphs/digit_9_1.png",
-        "glyphs/digit_9_2.png"
+        "glyphs/digit_9_0.png"
       ]
     },
     "a": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/a_0.png",
-        "glyphs/a_1.png",
-        "glyphs/a_2.png",
-        "glyphs/a_3.png"
+        "glyphs/a_1.png"
       ]
     },
     "b": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/b_0.png",
-        "glyphs/b_1.png",
-        "glyphs/b_2.png",
-        "glyphs/b_3.png"
+        "glyphs/b_1.png"
       ]
     },
     "c": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/c_0.png",
-        "glyphs/c_1.png",
-        "glyphs/c_2.png",
-        "glyphs/c_3.png"
+        "glyphs/c_1.png"
       ]
     },
     "d": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/d_0.png",
-        "glyphs/d_1.png",
-        "glyphs/d_2.png",
-        "glyphs/d_3.png"
+        "glyphs/d_1.png"
       ]
     },
     "e": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/e_0.png",
-        "glyphs/e_1.png",
-        "glyphs/e_2.png",
-        "glyphs/e_3.png"
+        "glyphs/e_1.png"
       ]
     },
     "f": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/f_0.png",
-        "glyphs/f_1.png",
-        "glyphs/f_2.png",
-        "glyphs/f_3.png"
+        "glyphs/f_1.png"
       ]
     },
     "g": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/g_0.png",
-        "glyphs/g_1.png",
-        "glyphs/g_2.png",
-        "glyphs/g_3.png"
+        "glyphs/g_1.png"
       ]
     },
     "h": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/h_0.png",
-        "glyphs/h_1.png",
-        "glyphs/h_2.png",
-        "glyphs/h_3.png"
+        "glyphs/h_1.png"
       ]
     },
     "i": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/i_0.png",
-        "glyphs/i_1.png",
-        "glyphs/i_2.png",
-        "glyphs/i_3.png"
+        "glyphs/i_1.png"
       ]
     },
     "j": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/j_0.png",
-        "glyphs/j_1.png",
-        "glyphs/j_2.png",
-        "glyphs/j_3.png"
+        "glyphs/j_1.png"
       ]
     },
     "k": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/k_0.png",
-        "glyphs/k_1.png",
-        "glyphs/k_2.png",
-        "glyphs/k_3.png"
+        "glyphs/k_1.png"
       ]
     },
     "l": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/l_0.png",
-        "glyphs/l_1.png",
-        "glyphs/l_2.png",
-        "glyphs/l_3.png"
+        "glyphs/l_1.png"
       ]
     },
     "m": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/m_0.png",
-        "glyphs/m_1.png",
-        "glyphs/m_2.png",
-        "glyphs/m_3.png"
+        "glyphs/m_1.png"
       ]
     },
     "n": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/n_0.png",
-        "glyphs/n_1.png",
-        "glyphs/n_2.png",
-        "glyphs/n_3.png"
+        "glyphs/n_1.png"
       ]
     },
     "o": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/o_0.png",
-        "glyphs/o_1.png",
-        "glyphs/o_2.png",
-        "glyphs/o_3.png"
+        "glyphs/o_1.png"
       ]
     },
     "p": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/p_0.png",
-        "glyphs/p_1.png",
-        "glyphs/p_2.png",
-        "glyphs/p_3.png"
+        "glyphs/p_1.png"
       ]
     },
     "q": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/q_0.png",
-        "glyphs/q_1.png",
-        "glyphs/q_2.png",
-        "glyphs/q_3.png"
+        "glyphs/q_1.png"
       ]
     },
     "r": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/r_0.png",
-        "glyphs/r_1.png",
-        "glyphs/r_2.png",
-        "glyphs/r_3.png"
+        "glyphs/r_1.png"
       ]
     },
     "s": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/s_0.png",
-        "glyphs/s_1.png",
-        "glyphs/s_2.png",
-        "glyphs/s_3.png"
+        "glyphs/s_1.png"
       ]
     },
     "t": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/t_0.png",
-        "glyphs/t_1.png",
-        "glyphs/t_2.png",
-        "glyphs/t_3.png"
+        "glyphs/t_1.png"
       ]
     },
     "u": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/u_0.png",
-        "glyphs/u_1.png",
-        "glyphs/u_2.png",
-        "glyphs/u_3.png"
+        "glyphs/u_1.png"
       ]
     },
     "v": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/v_0.png",
-        "glyphs/v_1.png",
-        "glyphs/v_2.png",
-        "glyphs/v_3.png"
+        "glyphs/v_1.png"
       ]
     },
     "w": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/w_0.png",
-        "glyphs/w_1.png",
-        "glyphs/w_2.png",
-        "glyphs/w_3.png"
+        "glyphs/w_1.png"
       ]
     },
     "x": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/x_0.png",
-        "glyphs/x_1.png",
-        "glyphs/x_2.png",
-        "glyphs/x_3.png"
+        "glyphs/x_1.png"
       ]
     },
     "y": {
-      "variants": 4,
+      "variants": 3,
       "files": [
         "glyphs/y_0.png",
         "glyphs/y_1.png",
-        "glyphs/y_2.png",
-        "glyphs/y_3.png"
+        "glyphs/y_2.png"
       ]
     },
     "z": {
-      "variants": 4,
+      "variants": 2,
       "files": [
         "glyphs/z_0.png",
-        "glyphs/z_1.png",
-        "glyphs/z_2.png",
-        "glyphs/z_3.png"
+        "glyphs/z_1.png"
       ]
     }
   },

@@ -111,8 +111,52 @@ def detect_grid_params(gray: np.ndarray):
     return x_left, cell_w, y_top, cell_h
 
 
+def remove_grid_artifacts(cell_bin: np.ndarray) -> np.ndarray:
+    """Remove template grid lines and borders from a binary cell image.
+
+    Uses connected components to identify and drop:
+    - Components touching any edge within 2px (outer cell borders)
+    - Components spanning >70% of cell width (horizontal guide lines)
+    - Components spanning >70% of cell height (vertical grid lines)
+    """
+    if cell_bin.max() == 0:
+        return cell_bin
+
+    h, w = cell_bin.shape
+    edge_margin = 2
+
+    num_labels, labels, stats, _ = cv2.connectedComponentsWithStats(cell_bin, connectivity=8)
+
+    clean = np.zeros_like(cell_bin)
+    for label in range(1, num_labels):
+        x      = int(stats[label, cv2.CC_STAT_LEFT])
+        y      = int(stats[label, cv2.CC_STAT_TOP])
+        comp_w = int(stats[label, cv2.CC_STAT_WIDTH])
+        comp_h = int(stats[label, cv2.CC_STAT_HEIGHT])
+
+        # Drop components touching any edge
+        if x <= edge_margin or y <= edge_margin:
+            continue
+        if (x + comp_w) >= (w - edge_margin) or (y + comp_h) >= (h - edge_margin):
+            continue
+
+        # Drop wide horizontal spans (guide lines / baselines)
+        if comp_w > w * 0.70:
+            continue
+
+        # Drop tall vertical spans (cell dividers)
+        if comp_h > h * 0.70:
+            continue
+
+        clean[labels == label] = 255
+
+    return clean
+
+
 def cell_to_rgba(cell_bin: np.ndarray, cell_gray: np.ndarray):
     """Convert binary cell crop to clean RGBA glyph at 128px height."""
+    cell_bin = remove_grid_artifacts(cell_bin)
+
     rows = np.any(cell_bin > 0, axis=1)
     cols = np.any(cell_bin > 0, axis=0)
 
