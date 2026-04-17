@@ -7,6 +7,7 @@ Provides seamless integration between dummy and real glyph banks.
 
 import json
 import numpy as np
+import cv2
 from pathlib import Path
 from PIL import Image, ImageDraw
 from render_engine import create_dummy_glyph_bank
@@ -20,6 +21,86 @@ def _normalize_alpha(img, target_max=240):
     if max_a > 0:
         alpha = (alpha / max_a) * target_max
         arr[:, :, 3] = alpha.clip(0, 255).astype(np.uint8)
+    return Image.fromarray(arr, 'RGBA')
+
+
+def _measure_stroke_width(img: Image.Image) -> float:
+    """Estimate stroke width via distance transform on the alpha mask."""
+    arr = np.array(img)
+    binary = (arr[:, :, 3] > 10).astype(np.uint8)
+    if binary.sum() == 0:
+        return 0.0
+    dist = cv2.distanceTransform(binary, cv2.DIST_L2, 5)
+    nonzero = dist[dist > 0]
+    if len(nonzero) == 0:
+        return 0.0
+    return float(np.median(nonzero)) * 2  # radius → diameter
+
+
+def _normalize_stroke_widths(bank: dict) -> dict:
+    """Dilate glyphs whose stroke width is <70% of median across lowercase chars."""
+    lowercase = 'abcdefghijklmnopqrstuvwxyz'
+    char_medians = {}
+    for char in lowercase:
+        if char not in bank:
+            continue
+        widths = [_measure_stroke_width(g) for g in bank[char]]
+        widths = [w for w in widths if w > 0]
+        if widths:
+            char_medians[char] = float(np.median(widths))
+
+    if not char_medians:
+        return bank
+
+    global_median = float(np.median(list(char_medians.values())))
+    threshold = global_median * 0.70
+    kernel = np.ones((2, 2), np.uint8)
+
+    for char, char_median in char_medians.items():
+        if char_median < threshold:
+            new_variants = []
+            for glyph in bank[char]:
+                arr = np.array(glyph)
+                arr[:, :, 3] = cv2.dilate(arr[:, :, 3], kernel, iterations=1)
+                new_variants.append(Image.fromarray(arr, 'RGBA'))
+            bank[char] = new_variants
+            print(f"[glyph_loader] Dilated '{char}' (stroke {char_median:.1f}px < threshold {threshold:.1f}px)")
+
+    return bank
+
+
+def _apply_ink_pooling(img: Image.Image) -> Image.Image:
+    """Boost alpha by 15% in a 3px radius around topmost and bottommost ink rows."""
+    arr = np.array(img.copy())
+    alpha = arr[:, :, 3].astype(float)
+
+    if alpha.max() == 0:
+        return img
+
+    ink_rows = np.where(np.any(alpha > 10, axis=1))[0]
+    if len(ink_rows) == 0:
+        return img
+
+    h, w = alpha.shape
+    radius = 3
+
+    for row in (ink_rows[0], ink_rows[-1]):
+        ink_cols = np.where(alpha[row, :] > 10)[0]
+        if len(ink_cols) == 0:
+            continue
+        center_col = int(np.median(ink_cols))
+        y_lo = max(0, row - radius)
+        y_hi = min(h, row + radius + 1)
+        x_lo = max(0, center_col - radius)
+        x_hi = min(w, center_col + radius + 1)
+        ys, xs = np.mgrid[y_lo:y_hi, x_lo:x_hi]
+        dist2 = (ys - row) ** 2 + (xs - center_col) ** 2
+        mask = dist2 <= radius * radius
+        alpha[y_lo:y_hi, x_lo:x_hi][mask] = np.clip(
+            alpha[y_lo:y_hi, x_lo:x_hi][mask] * 1.15, 0, 255
+        )
+
+    arr[:, :, 3] = alpha.astype(np.uint8)
     return Image.fromarray(arr, 'RGBA')
 
 
@@ -123,6 +204,13 @@ def load_profile_glyphs(profile_dir, fallback_dummy=True):
 
         total = sum(len(v) for v in bank.values())
         print(f"[glyph_loader] Loaded {len(bank)} chars, {total} variants from {glyphs_dir}")
+
+        # Task 2.4: ink pooling on each loaded glyph
+        for char in bank:
+            bank[char] = [_apply_ink_pooling(g) for g in bank[char]]
+
+        # Task 2.3: normalize stroke widths across lowercase glyphs
+        bank = _normalize_stroke_widths(bank)
 
     if fallback_dummy:
         dummy = create_dummy_glyph_bank()
