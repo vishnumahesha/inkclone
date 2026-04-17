@@ -5,6 +5,13 @@ import random
 import os
 import warnings
 
+try:
+    from variant_selector import QualityWeightedVariantSelector, find_bigram
+    from kerning import get_kern_adjustment
+    _HAS_ADVANCED_MODULES = True
+except ImportError:
+    _HAS_ADVANCED_MODULES = False
+
 # Common ligatures and their spacing adjustments
 LIGATURES = {
     "th": -3,  # Tighter spacing
@@ -173,7 +180,10 @@ class HandwritingRenderer:
 
     def __init__(self, glyph_bank: dict, seed: int = None):
         self.glyph_bank = glyph_bank
-        self.selector = VariantSelector()
+        if _HAS_ADVANCED_MODULES:
+            self.selector = QualityWeightedVariantSelector(seed=seed)
+        else:
+            self.selector = VariantSelector()
         self.rng = random.Random(seed)
         self.np_rng = np.random.RandomState(seed)
 
@@ -356,9 +366,18 @@ class HandwritingRenderer:
             word_slant = self.rng.uniform(-0.5, 0.5)  # degrees
 
             char_idx = 0
+            prev_char = None
             while char_idx < len(word):
-                char = word[char_idx]
-                
+                # Bigram substitution: use pre-drawn bigram glyph when available
+                if _HAS_ADVANCED_MODULES:
+                    bigram_match = find_bigram(word, char_idx, self.glyph_bank)
+                    if bigram_match is not None:
+                        char, char_step = bigram_match
+                    else:
+                        char, char_step = word[char_idx], 1
+                else:
+                    char, char_step = word[char_idx], 1
+
                 # Check for ligatures — tighten spacing but still render both chars
                 _, ligature_spacing = self._check_ligature(word, char_idx)
                 if ligature_spacing != 0:
@@ -367,7 +386,7 @@ class HandwritingRenderer:
                 glyph = self._get_glyph(char)
                 if glyph is None:
                     cursor_x += char_height * 0.3
-                    char_idx += 1
+                    char_idx += char_step
                     continue
                 
                 # 3a: Scale using normalized scale (ink-height-based) + word-level scale
@@ -414,10 +433,14 @@ class HandwritingRenderer:
                     if char.lower() in 'it':
                         self._add_i_dot(canvas, paste_x + new_w // 2, paste_y, char_height, jitter_factor)
 
-                # letters nearly touch: advance by actual glyph width + 2px gap
-                cursor_x += new_w + 2 + self.rng.gauss(0, 3.0 * jitter_factor)
-
-                char_idx += 1
+                # Advance cursor: glyph width + 2px gap, adjusted for kerning
+                next_char = word[char_idx + char_step] if (char_idx + char_step) < len(word) else None
+                kern_adj = (get_kern_adjustment(char[-1], next_char)
+                            if (_HAS_ADVANCED_MODULES and next_char) else 1.0)
+                letter_gap = (2 + self.rng.gauss(0, 3.0 * jitter_factor)) * kern_adj
+                cursor_x += new_w + letter_gap
+                prev_char = char[-1]
+                char_idx += char_step
 
             # word spacing = 0.6 × line_height (matches paper ruled spacing)
             word_gap = line_height * 0.6 + self.rng.gauss(0, 4.0 * jitter_factor)

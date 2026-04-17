@@ -49,7 +49,7 @@ app = FastAPI(title="InkClone", description="Handwriting document generator")
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 # ── Default glyph bank ─────────────────────────────────────────────────────────
-_DEFAULT_PROFILE = "freeform_vishnu"
+_DEFAULT_PROFILE = "vishnu_v4"
 _PROFILE_DIR     = _PROFILES_DIR / _DEFAULT_PROFILE
 _GLYPH_BANKS: dict = {}   # cache: profile_id → glyph_bank dict
 
@@ -1077,6 +1077,52 @@ def _write_profile_json(profile_dir: Path, profile_id: str,
     (profile_dir / "profile.json").write_text(
         json.dumps(profile, indent=2, ensure_ascii=False), encoding="utf-8"
     )
+
+
+# ── Style analysis routes ──────────────────────────────────────────────────────
+
+@app.get("/analyze", response_class=HTMLResponse)
+async def get_analyze():
+    html_file = _WEB_DIR / "analyze.html"
+    if html_file.exists():
+        return html_file.read_text(encoding="utf-8")
+    return "<h1>Style Analyzer</h1><p>analyze.html not found</p>"
+
+
+@app.post("/api/analyze-style")
+async def api_analyze_style(image: UploadFile = File(...)):
+    """Analyze handwriting style from an uploaded image. Returns 11 scores (0–100)."""
+    contents = await image.read()
+    if not contents:
+        raise HTTPException(status_code=400, detail="Empty image file")
+
+    try:
+        sys.path.insert(0, str(_ROOT))
+        from analysis.style_analyzer import analyze_style
+        scores = analyze_style(contents)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {exc}")
+
+    return JSONResponse({"success": True, "scores": scores})
+
+
+class ApplyStyleRequest(BaseModel):
+    scores: dict
+
+
+@app.post("/api/apply-style")
+async def api_apply_style(request: ApplyStyleRequest):
+    """Map 11 style scores to HandwritingRenderer and realism engine parameters."""
+    if not request.scores:
+        raise HTTPException(status_code=400, detail="No scores provided")
+
+    try:
+        from analysis.parameter_mapper import map_all
+        params = map_all(request.scores)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Mapping failed: {exc}")
+
+    return JSONResponse({"success": True, "params": params})
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────

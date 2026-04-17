@@ -19,4 +19,10 @@ profiles/*/glyphs/
 !profiles/vishnu_v3/
 !profiles/vishnu_v3/glyphs/
 !profiles/vishnu_v3/**
+!profiles/vishnu_v4/
+!profiles/vishnu_v4/glyphs/
+!profiles/vishnu_v4/**
+!template_v4_scan_page1.png
+!template_v4_scan_page2.png
+!template_v4_scan_page3.png
 

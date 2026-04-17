@@ -185,6 +185,11 @@ def _parse_glyph_stem(stem: str):
         "semicolon": ";",
         "lparen": "(",
         "rparen": ")",
+        "ampersand": "&",
+        "hash": "#",
+        "atsign": "@",
+        "slash": "/",
+        "quote": '"',
     }
     for key, ch in _PUNCT_MAP.items():
         if working == key or working.startswith(key + "_"):
@@ -204,6 +209,9 @@ def _parse_glyph_stem(stem: str):
         return None
     parts = working.split("_")
     if parts and len(parts[0]) == 1:
+        return parts[0]
+    # Multi-char bigram/trigram: lowercase alpha-only prefix before the _N suffix
+    if len(parts) >= 2 and parts[-1].isdigit() and parts[0].isalpha() and parts[0].islower():
         return parts[0]
     return None
 
