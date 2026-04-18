@@ -389,9 +389,14 @@ class HandwritingRenderer:
                     char_idx += char_step
                     continue
                 
-                # 3a: Scale using normalized scale (ink-height-based) + word-level scale
-                scale = norm_scale * prog["size_scale"] * word_scale
-                scale *= (1.0 + self.rng.uniform(-0.15, 0.15) * jitter_factor)
+                # 3a: Scale each glyph so its ink height = char_height
+                glyph_bbox = self._get_ink_bbox(glyph)
+                if glyph_bbox:
+                    ink_h = glyph_bbox[3] - glyph_bbox[1]
+                    scale = (char_height / max(ink_h, 1)) * prog["size_scale"] * word_scale
+                else:
+                    scale = norm_scale * prog["size_scale"] * word_scale
+                scale *= (1.0 + self.rng.uniform(-scale_variance, scale_variance) * jitter_factor)
                 new_w = max(1, int(glyph.width * scale))
                 new_h = max(1, int(glyph.height * scale))
                 glyph = glyph.resize((new_w, new_h), Image.LANCZOS)
@@ -405,16 +410,16 @@ class HandwritingRenderer:
                 jy = self.rng.gauss(0, 4.0 * jitter_factor)
                 baseline = self._baseline_drift(cursor_x, line_idx, 6.0 * jitter_factor)
 
-                # 3c: Align ink bottom to cursor_y (baseline alignment)
+                # 3c: Align ink bottom to cursor_y (baseline = ruled line)
                 bbox = self._get_ink_bbox(glyph)
                 if bbox:
                     ink_bottom = bbox[3]
                     descender = char.lower() in 'gjpqy'
-                    descend_offset = int(char_height * 0.25) if descender else 0
-                    y_offset = new_h - ink_bottom + descend_offset
-                    y = int(cursor_y - y_offset + baseline + jy)
+                    descend_push = int(char_height * 0.25) if descender else 0
+                    # ink bottom sits ON the baseline; descenders hang below
+                    y = int(cursor_y - ink_bottom + descend_push + baseline + jy)
                 else:
-                    y = int(cursor_y + baseline + jy)
+                    y = int(cursor_y - new_h + baseline + jy)
 
                 x = int(cursor_x + jx)
 
@@ -433,17 +438,20 @@ class HandwritingRenderer:
                     if char.lower() in 'it':
                         self._add_i_dot(canvas, paste_x + new_w // 2, paste_y, char_height, jitter_factor)
 
-                # Advance cursor: glyph width + 2px gap, adjusted for kerning
+                # Advance cursor: ink width + letter gap (ignore transparent padding)
                 next_char = word[char_idx + char_step] if (char_idx + char_step) < len(word) else None
                 kern_adj = (get_kern_adjustment(char[-1], next_char)
                             if (_HAS_ADVANCED_MODULES and next_char) else 1.0)
-                letter_gap = (2 + self.rng.gauss(0, 3.0 * jitter_factor)) * kern_adj
-                cursor_x += new_w + letter_gap
+                letter_gap = (inter_letter_mean + self.rng.gauss(0, inter_letter_std * jitter_factor)) * kern_adj
+                # Use ink width, not full image width, to avoid double-counting padding
+                adv_bbox = self._get_ink_bbox(glyph)
+                advance_w = (adv_bbox[2] - adv_bbox[0]) if adv_bbox else new_w
+                cursor_x += advance_w + letter_gap
                 prev_char = char[-1]
                 char_idx += char_step
 
-            # word spacing = 0.6 × line_height (matches paper ruled spacing)
-            word_gap = line_height * 0.6 + self.rng.gauss(0, 4.0 * jitter_factor)
+            # Word spacing from parameters
+            word_gap = inter_word_mean + self.rng.gauss(0, inter_word_std * jitter_factor)
             cursor_x += word_gap * prog["spacing_scale"]
         
         return canvas

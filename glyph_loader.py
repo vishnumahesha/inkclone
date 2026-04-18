@@ -263,8 +263,9 @@ def load_profile_glyphs(profile_dir, fallback_dummy=True):
         for char in bank:
             bank[char] = [_apply_ink_pooling(g) for g in bank[char]]
 
-        # Task 2.3: normalize stroke widths across lowercase glyphs
-        bank = _normalize_stroke_widths(bank)
+        # Stroke-width normalization DISABLED — dilation makes thin glyphs
+        # look artificial. The real fix is larger template cells (v5).
+        # bank = _normalize_stroke_widths(bank)
 
     if fallback_dummy:
         dummy = create_dummy_glyph_bank()
