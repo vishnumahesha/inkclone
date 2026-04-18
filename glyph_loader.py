@@ -149,6 +149,34 @@ def _apply_ink_pooling(img: Image.Image) -> Image.Image:
     return Image.fromarray(arr, 'RGBA')
 
 
+WIDE_CHARS = set('mwMW') | {
+    'th', 'he', 'in', 'an', 'er', 'on', 'ed', 're',
+    'ou', 'es', 'ti', 'at', 'st', 'en', 'or', 'ng',
+    'ing', 'the', 'and', 'tion',
+}
+
+
+def _is_valid_glyph(img: Image.Image, char: str) -> bool:
+    w, h = img.size
+    if w < 8 or h < 8:
+        return False
+    ar = w / h
+    max_ar = 3.5 if char in WIDE_CHARS else 2.0
+    if ar > max_ar or ar < 0.15:
+        return False
+    arr = np.array(img)
+    if img.mode == 'RGBA' and int((arr[:, :, 3] > 0).sum()) < 50:
+        return False
+    return True
+
+
+def _ink_count(img: Image.Image) -> int:
+    arr = np.array(img)
+    if img.mode == 'RGBA':
+        return int((arr[:, :, 3] > 0).sum())
+    return int(np.any(arr > 0, axis=2).sum())
+
+
 def _parse_glyph_stem(stem: str):
     """Parse glyph filename stem to character.
     Examples:
@@ -239,6 +267,7 @@ def load_profile_glyphs(profile_dir, fallback_dummy=True):
     if not glyphs_dir.exists():
         print(f"[glyph_loader] WARNING: {glyphs_dir} not found")
     else:
+        raw_bank: dict = {}
         for png_path in sorted(glyphs_dir.glob("*.png")):
             char = _parse_glyph_stem(png_path.stem)
             if char is None:
@@ -252,14 +281,22 @@ def load_profile_glyphs(profile_dir, fallback_dummy=True):
             except Exception as e:
                 print(f"[glyph_loader] Failed to load {png_path.name}: {e}")
                 continue
-            if char not in bank:
-                bank[char] = []
-            bank[char].append(img)
+            raw_bank.setdefault(char, []).append(img)
+
+        total_rejected = 0
+        for char, variants in raw_bank.items():
+            valid = [v for v in variants if _is_valid_glyph(v, char)]
+            rejected = len(variants) - len(valid)
+            total_rejected += rejected
+            if valid:
+                bank[char] = valid
+            else:
+                bank[char] = [max(variants, key=_ink_count)]
 
         total = sum(len(v) for v in bank.values())
-        print(f"[glyph_loader] Loaded {len(bank)} chars, {total} variants from {glyphs_dir}")
+        print(f"[glyph_loader] Loaded {len(bank)} chars, {total} variants from {glyphs_dir} "
+              f"({total_rejected} rejected by quality gate)")
 
-        # Task 2.4: ink pooling on each loaded glyph
         for char in bank:
             bank[char] = [_apply_ink_pooling(g) for g in bank[char]]
 
