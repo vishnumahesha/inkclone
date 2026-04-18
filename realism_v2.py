@@ -8,7 +8,7 @@ to kwargs accepted by HandwritingRenderer.render().
 from typing import Dict
 
 SLIDER_NAMES = [
-    "font_size", "letter_spacing", "word_spacing", "slant",
+    "font_size", "stroke_thickness", "letter_spacing", "word_spacing", "slant",
     "baseline_straightness", "line_spacing", "margin_consistency",
     "line_end_behavior", "size_variation", "spacing_variation",
     "angle_variation", "pressure_variation", "page_fatigue",
@@ -17,6 +17,7 @@ SLIDER_NAMES = [
 
 SLIDER_LABELS = {
     "font_size":            "Font Size",
+    "stroke_thickness":     "Stroke Thickness",
     "letter_spacing":       "Letter Spacing",
     "word_spacing":         "Word Spacing",
     "slant":                "Slant",
@@ -35,28 +36,28 @@ SLIDER_LABELS = {
 
 PRESETS: Dict[str, Dict[str, int]] = {
     "perfect_student": {
-        "font_size": 55, "letter_spacing": 42, "word_spacing": 48,
+        "font_size": 55, "stroke_thickness": 50, "letter_spacing": 42, "word_spacing": 48,
         "slant": 52, "baseline_straightness": 92, "line_spacing": 50,
         "margin_consistency": 92, "line_end_behavior": 50,
         "size_variation": 8, "spacing_variation": 8, "angle_variation": 8,
         "pressure_variation": 10, "page_fatigue": 5, "ink_fading": 5, "ink_bleed": 8,
     },
     "natural_notes": {
-        "font_size": 50, "letter_spacing": 45, "word_spacing": 50,
+        "font_size": 50, "stroke_thickness": 50, "letter_spacing": 45, "word_spacing": 50,
         "slant": 55, "baseline_straightness": 75, "line_spacing": 50,
         "margin_consistency": 75, "line_end_behavior": 60,
         "size_variation": 25, "spacing_variation": 25, "angle_variation": 20,
         "pressure_variation": 30, "page_fatigue": 15, "ink_fading": 10, "ink_bleed": 25,
     },
     "rushed_homework": {
-        "font_size": 42, "letter_spacing": 35, "word_spacing": 58,
+        "font_size": 42, "stroke_thickness": 50, "letter_spacing": 35, "word_spacing": 58,
         "slant": 45, "baseline_straightness": 42, "line_spacing": 55,
         "margin_consistency": 38, "line_end_behavior": 82,
         "size_variation": 55, "spacing_variation": 55, "angle_variation": 52,
         "pressure_variation": 55, "page_fatigue": 58, "ink_fading": 32, "ink_bleed": 42,
     },
     "messy_scrawl": {
-        "font_size": 48, "letter_spacing": 25, "word_spacing": 65,
+        "font_size": 48, "stroke_thickness": 50, "letter_spacing": 25, "word_spacing": 65,
         "slant": 38, "baseline_straightness": 18, "line_spacing": 62,
         "margin_consistency": 18, "line_end_behavior": 95,
         "size_variation": 82, "spacing_variation": 82, "angle_variation": 78,
@@ -84,6 +85,7 @@ def sliders_to_render_params(sliders: Dict[str, int], line_spacing_px: int) -> d
     return {
         # Character metrics
         "char_height":        int(_lerp(s["font_size"],               lsp * 0.30, lsp * 0.80)),
+        "stroke_thickness":   int(_lerp(s.get("stroke_thickness", 50), -1, 3)),
         "inter_letter_mean":  _lerp(s["letter_spacing"],              -2.0,  10.0),
         "inter_word_mean":    _lerp(s["word_spacing"],                lsp * 0.25, lsp * 1.2),
         "slant_deg":          _lerp(s["slant"],                       -12.0, 12.0),

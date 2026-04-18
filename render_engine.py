@@ -327,7 +327,8 @@ class HandwritingRenderer:
                fatigue_factor: float = 0.0,
                ink_fade: float = 0.0,
                bleed_radius: float = 0.0,
-               line_spacing_mult: float = 1.0) -> Image.Image:
+               line_spacing_mult: float = 1.0,
+               stroke_thickness: int = 0) -> Image.Image:
         """Render text as handwriting."""
         if margin_left_x is not None:
             margin_left = margin_left_x
@@ -433,6 +434,17 @@ class HandwritingRenderer:
                 if ink_fade > 0:
                     alpha_mult *= max(0.5, 1.0 - ink_fade * cursor_y / max(page_height, 1))
                 arr[:, :, 3] = np.clip(arr[:, :, 3] * alpha_mult, 0, 255).astype(np.uint8)
+
+                if stroke_thickness != 0:
+                    import cv2 as _cv2
+                    kernel = np.ones((2, 2), np.uint8)
+                    alpha_ch = arr[:, :, 3]
+                    if stroke_thickness > 0:
+                        alpha_ch = _cv2.dilate(alpha_ch, kernel, iterations=stroke_thickness)
+                    else:
+                        alpha_ch = _cv2.erode(alpha_ch, kernel, iterations=abs(stroke_thickness))
+                    arr[:, :, 3] = alpha_ch
+
                 glyph = Image.fromarray(arr)
 
                 jx       = self.rng.gauss(0, 2.0 * jitter_factor) if char_idx > 0 else 0

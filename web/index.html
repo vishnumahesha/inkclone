@@ -734,6 +734,7 @@
             </div>
             <div class="slider-section-body">
               <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Font Size</span><span class="slider-val" id="val-font_size">50</span></div><input type="range" class="realism-slider" data-key="font_size" min="0" max="100" value="50"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Stroke Thickness</span><span class="slider-val" id="val-stroke_thickness">50</span></div><input type="range" class="realism-slider" data-key="stroke_thickness" min="0" max="100" value="50"><div class="slider-labels"><span>Thin</span><span>Normal</span><span>Bold</span></div></div>
               <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Letter Spacing</span><span class="slider-val" id="val-letter_spacing">45</span></div><input type="range" class="realism-slider" data-key="letter_spacing" min="0" max="100" value="45"></div>
               <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Word Spacing</span><span class="slider-val" id="val-word_spacing">50</span></div><input type="range" class="realism-slider" data-key="word_spacing" min="0" max="100" value="50"></div>
               <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Slant</span><span class="slider-val" id="val-slant">55</span></div><input type="range" class="realism-slider" data-key="slant" min="0" max="100" value="55"></div>
@@ -843,10 +844,10 @@
   <script>
     // ── Presets (mirror realism_v2.py) ──────────────────────────────────────────
     const PRESETS = {
-      perfect_student: { font_size:55, letter_spacing:42, word_spacing:48, slant:52, baseline_straightness:92, line_spacing:50, margin_consistency:92, line_end_behavior:50, size_variation:8, spacing_variation:8, angle_variation:8, pressure_variation:10, page_fatigue:5, ink_fading:5, ink_bleed:8 },
-      natural_notes:   { font_size:50, letter_spacing:45, word_spacing:50, slant:55, baseline_straightness:75, line_spacing:50, margin_consistency:75, line_end_behavior:60, size_variation:25, spacing_variation:25, angle_variation:20, pressure_variation:30, page_fatigue:15, ink_fading:10, ink_bleed:25 },
-      rushed_homework: { font_size:42, letter_spacing:35, word_spacing:58, slant:45, baseline_straightness:42, line_spacing:55, margin_consistency:38, line_end_behavior:82, size_variation:55, spacing_variation:55, angle_variation:52, pressure_variation:55, page_fatigue:58, ink_fading:32, ink_bleed:42 },
-      messy_scrawl:    { font_size:48, letter_spacing:25, word_spacing:65, slant:38, baseline_straightness:18, line_spacing:62, margin_consistency:18, line_end_behavior:95, size_variation:82, spacing_variation:82, angle_variation:78, pressure_variation:78, page_fatigue:82, ink_fading:62, ink_bleed:68 },
+      perfect_student: { font_size:55, stroke_thickness:50, letter_spacing:42, word_spacing:48, slant:52, baseline_straightness:92, line_spacing:50, margin_consistency:92, line_end_behavior:50, size_variation:8, spacing_variation:8, angle_variation:8, pressure_variation:10, page_fatigue:5, ink_fading:5, ink_bleed:8 },
+      natural_notes:   { font_size:50, stroke_thickness:50, letter_spacing:45, word_spacing:50, slant:55, baseline_straightness:75, line_spacing:50, margin_consistency:75, line_end_behavior:60, size_variation:25, spacing_variation:25, angle_variation:20, pressure_variation:30, page_fatigue:15, ink_fading:10, ink_bleed:25 },
+      rushed_homework: { font_size:42, stroke_thickness:50, letter_spacing:35, word_spacing:58, slant:45, baseline_straightness:42, line_spacing:55, margin_consistency:38, line_end_behavior:82, size_variation:55, spacing_variation:55, angle_variation:52, pressure_variation:55, page_fatigue:58, ink_fading:32, ink_bleed:42 },
+      messy_scrawl:    { font_size:48, stroke_thickness:50, letter_spacing:25, word_spacing:65, slant:38, baseline_straightness:18, line_spacing:62, margin_consistency:18, line_end_behavior:95, size_variation:82, spacing_variation:82, angle_variation:78, pressure_variation:78, page_fatigue:82, ink_fading:62, ink_bleed:68 },
     };
 
     // State
