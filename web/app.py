@@ -238,6 +238,115 @@ async def get_profile_stats(profile_id: str = None):
     })
 
 
+# ── Glyph review endpoints ─────────────────────────────────────────────────────
+
+_WIDE_CHARS = set('mwMW') | {
+    'th', 'he', 'in', 'an', 'er', 'on', 'ed', 're',
+    'ou', 'es', 'ti', 'at', 'st', 'en', 'or', 'ng',
+    'ing', 'the', 'and', 'tion',
+}
+
+def _glyph_quality(char: str, w: int, h: int, ink: int, top_ink: int):
+    """Return (quality, reason) mirroring glyph_loader._is_valid_glyph thresholds."""
+    if w < 8 or h < 8:
+        return 'rejected', 'too small'
+    ar = w / h
+    max_ar = 3.5 if char in _WIDE_CHARS else 1.8
+    if ar > max_ar:
+        return 'rejected', f'AR {ar:.2f} > {max_ar}'
+    if ar < 0.15:
+        return 'rejected', f'AR {ar:.2f} too narrow'
+    if ink < 50:
+        return 'rejected', 'insufficient ink'
+    if ink > 0 and top_ink / ink > 0.20:
+        return 'rejected', 'label contamination'
+    if ar > 1.35:
+        return 'warning', f'AR {ar:.2f} wide'
+    if ink < 150:
+        return 'warning', 'low ink count'
+    return 'good', ''
+
+def _char_category(char: str) -> str:
+    if len(char) > 1:
+        return 'bigrams'
+    if char.islower():
+        return 'lowercase'
+    if char.isupper():
+        return 'uppercase'
+    if char.isdigit():
+        return 'digits'
+    return 'punctuation'
+
+@app.get("/review", response_class=HTMLResponse)
+async def review_page():
+    with open(_WEB_DIR / "review.html", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/api/glyph-image/{profile}/{filename}")
+async def get_glyph_image(profile: str, filename: str):
+    path = _PROFILES_DIR / profile / "glyphs" / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Not found")
+    return FileResponse(str(path), media_type="image/png")
+
+@app.get("/api/profile-glyphs")
+async def get_profile_glyphs(profile: str = None):
+    import numpy as np
+    pid = profile or _DEFAULT_PROFILE
+    glyphs_dir = _PROFILES_DIR / pid / "glyphs"
+    if not glyphs_dir.exists():
+        raise HTTPException(status_code=404, detail=f"Profile '{pid}' not found")
+
+    from glyph_loader import _parse_glyph_stem
+    from PIL import Image as _Image
+
+    glyphs = []
+    variant_counter: dict = {}
+
+    for png in sorted(glyphs_dir.glob("*.png")):
+        char = _parse_glyph_stem(png.stem)
+        if char is None:
+            continue
+        variant_counter[char] = variant_counter.get(char, -1) + 1
+        variant = variant_counter[char]
+        try:
+            img = _Image.open(png)
+            if img.mode != "RGBA":
+                img = img.convert("RGBA")
+            w, h = img.size
+            arr   = np.array(img)
+            alpha = arr[:, :, 3]
+            ink   = int((alpha > 0).sum())
+            top_ink = int((alpha[:max(1, h // 4), :] > 0).sum())
+        except Exception:
+            continue
+
+        quality, reason = _glyph_quality(char, w, h, ink, top_ink)
+        glyphs.append({
+            "filename":     png.name,
+            "char":         char,
+            "variant":      variant,
+            "width":        w,
+            "height":       h,
+            "aspect_ratio": round(w / max(h, 1), 3),
+            "ink_pixels":   ink,
+            "quality":      quality,
+            "quality_reason": reason,
+            "category":     _char_category(char),
+            "image_url":    f"/api/glyph-image/{pid}/{png.name}",
+        })
+
+    total    = len(glyphs)
+    good     = sum(1 for g in glyphs if g["quality"] == "good")
+    warnings = sum(1 for g in glyphs if g["quality"] == "warning")
+    rejected = sum(1 for g in glyphs if g["quality"] == "rejected")
+    return JSONResponse({
+        "profile": pid,
+        "glyphs":  glyphs,
+        "summary": {"total": total, "good": good, "warnings": warnings, "rejected": rejected},
+    })
+
+
 # ── Profile listing ────────────────────────────────────────────────────────────
 
 @app.get("/profiles")

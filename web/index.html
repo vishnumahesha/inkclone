@@ -532,6 +532,7 @@
               <option value="">Loading profiles…</option>
             </select>
             <a href="/setup" class="new-profile-btn">+ New Profile</a>
+            <a id="review-link" href="/review" class="new-profile-btn" style="background:transparent;border-color:#5a5af0;color:#5a5af0;">Review Glyphs</a>
           </div>
         </div>
 
@@ -887,9 +888,15 @@
     }
 
     // ── Profile selector ────────────────────────────────────────────────────────
+    function updateReviewLink(profileId) {
+      const link = document.getElementById('review-link');
+      if (link) link.href = '/review' + (profileId ? '?profile=' + encodeURIComponent(profileId) : '');
+    }
+
     profileSelect.addEventListener('change', () => {
       state.profileId = profileSelect.value;
       updateStats(state.profileId);
+      updateReviewLink(state.profileId);
     });
 
     async function loadProfiles() {
@@ -925,6 +932,7 @@
         }
         state.profileId = profileSelect.value;
         updateStats(state.profileId);
+        updateReviewLink(state.profileId);
       } catch {
         profileSelect.innerHTML = '<option value="">Could not load profiles</option>';
       }
