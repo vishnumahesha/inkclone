@@ -299,14 +299,14 @@ class HandwritingRenderer:
     def render(self, text: str,
                page_width: int = 2400,
                page_height: int = 3200,
-               margin_left: int = 220,
+               margin_left: int = 206,
                margin_right: int = 100,
                margin_top: int = 150,
-               line_height: int = 85,
-               char_height: int = 50,
-               inter_letter_mean: float = 3.0,
+               line_height: int = 42,
+               char_height: int = 25,
+               inter_letter_mean: float = 2.0,
                inter_letter_std: float = 2.0,
-               inter_word_mean: float = 22.0,
+               inter_word_mean: float = 23.0,
                inter_word_std: float = 5.0,
                baseline_amplitude: float = 2.0,
                rotation_max_deg: float = 1.5,
@@ -389,17 +389,24 @@ class HandwritingRenderer:
                     char_idx += char_step
                     continue
                 
-                # 3a: Scale each glyph so its ink height = char_height
-                glyph_bbox = self._get_ink_bbox(glyph)
-                if glyph_bbox:
-                    ink_h = glyph_bbox[3] - glyph_bbox[1]
-                    scale = (char_height / max(ink_h, 1)) * prog["size_scale"] * word_scale
-                else:
-                    scale = norm_scale * prog["size_scale"] * word_scale
-                scale *= (1.0 + self.rng.uniform(-scale_variance, scale_variance) * jitter_factor)
+                # Scale to target height: ascenders/uppercase 40% taller
+                target_h = char_height
+                if char.isupper() or char in 'bdfhklt':
+                    target_h = int(char_height * 1.4)
+                scale = target_h / max(glyph.height, 1)
                 new_w = max(1, int(glyph.width * scale))
-                new_h = max(1, int(glyph.height * scale))
-                glyph = glyph.resize((new_w, new_h), Image.LANCZOS)
+                glyph = glyph.resize((new_w, target_h), Image.LANCZOS)
+                new_h = target_h
+
+                # Line wrap: break before glyph overflows right margin
+                right_margin = page_width - margin_left
+                if cursor_x + new_w > right_margin:
+                    cursor_x = margin_left
+                    line_idx += 1
+                    if baseline_y_positions and line_idx < len(baseline_y_positions):
+                        cursor_y = baseline_y_positions[line_idx]
+                    else:
+                        cursor_y += line_height
 
                 # Apply ink darkness
                 arr = np.array(glyph)
@@ -410,14 +417,9 @@ class HandwritingRenderer:
                 jy = self.rng.gauss(0, 4.0 * jitter_factor)
                 baseline = self._baseline_drift(cursor_x, line_idx, 6.0 * jitter_factor)
 
-                # 3c: Align ink bottom to cursor_y (baseline = ruled line)
-                bbox = self._get_ink_bbox(glyph)
-                if bbox:
-                    ink_bottom = bbox[3]
-                    descender = char.lower() in 'gjpqy'
-                    descend_push = int(char_height * 0.25) if descender else 0
-                    # ink bottom sits ON the baseline; descenders hang below
-                    y = int(cursor_y - ink_bottom + descend_push + baseline + jy)
+                # Baseline: glyph bottom sits ON ruled line; descenders hang below
+                if char in 'gjpqy':
+                    y = int(cursor_y - new_h + int(char_height * 0.22) + baseline + jy)
                 else:
                     y = int(cursor_y - new_h + baseline + jy)
 
@@ -438,12 +440,11 @@ class HandwritingRenderer:
                     if char.lower() in 'it':
                         self._add_i_dot(canvas, paste_x + new_w // 2, paste_y, char_height, jitter_factor)
 
-                # Advance cursor: ink width + letter gap (ignore transparent padding)
+                # Advance cursor: ink width + letter gap
                 next_char = word[char_idx + char_step] if (char_idx + char_step) < len(word) else None
                 kern_adj = (get_kern_adjustment(char[-1], next_char)
                             if (_HAS_ADVANCED_MODULES and next_char) else 1.0)
                 letter_gap = (inter_letter_mean + self.rng.gauss(0, inter_letter_std * jitter_factor)) * kern_adj
-                # Use ink width, not full image width, to avoid double-counting padding
                 adv_bbox = self._get_ink_bbox(glyph)
                 advance_w = (adv_bbox[2] - adv_bbox[0]) if adv_bbox else new_w
                 cursor_x += advance_w + letter_gap
