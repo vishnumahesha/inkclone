@@ -49,7 +49,7 @@ app = FastAPI(title="InkClone", description="Handwriting document generator")
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 # ── Default glyph bank ─────────────────────────────────────────────────────────
-_DEFAULT_PROFILE  = "vishnu_v3"
+_DEFAULT_PROFILE  = "vishnu_v3_final"
 _PROFILE_DIR      = _PROFILES_DIR / _DEFAULT_PROFILE
 _GLYPH_BANKS: dict = {}   # cache: profile_id → glyph_bank dict
 
@@ -247,21 +247,23 @@ _WIDE_CHARS = set('mwMW') | {
 }
 
 def _glyph_quality(char: str, w: int, h: int, ink: int, top_ink: int):
-    """Return (quality, reason) mirroring glyph_loader._is_valid_glyph thresholds."""
+    """Return (quality, reason) for display on the review page.
+
+    Label-contamination is NOT checked here because post-processed glyphs
+    have ink starting at row 0, making the top-quarter test meaningless.
+    AR threshold is 2.2 for single chars (glyph_loader uses 1.8 after autocrop
+    but review shows raw files which are slightly wider before autocrop).
+    """
     if w < 8 or h < 8:
         return 'rejected', 'too small'
     ar = w / h
-    max_ar = 3.5 if char in _WIDE_CHARS else 1.8
+    max_ar = 3.5 if char in _WIDE_CHARS else 2.2
     if ar > max_ar:
         return 'rejected', f'AR {ar:.2f} > {max_ar}'
     if ar < 0.15:
-        return 'rejected', f'AR {ar:.2f} too narrow'
+        return 'rejected', 'too narrow'
     if ink < 50:
         return 'rejected', 'insufficient ink'
-    if ink > 0 and top_ink / ink > 0.20:
-        return 'rejected', 'label contamination'
-    if ar > 1.35:
-        return 'warning', f'AR {ar:.2f} wide'
     if ink < 150:
         return 'warning', 'low ink count'
     return 'good', ''
