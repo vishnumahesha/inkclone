@@ -314,61 +314,69 @@ class HandwritingRenderer:
                ink_darkness: float = 0.85,
                neatness: float = 0.5,
                baseline_y_positions: list = None,
-               margin_left_x: int = None) -> Image.Image:
-        """Render text as handwriting with improved features."""
+               margin_left_x: int = None,
+               # realism_v2 params — None means fall back to legacy equivalents
+               slant_deg: float = 0.0,
+               baseline_wander_px: float = None,
+               margin_drift_px: float = 0.0,
+               line_end_cramming: float = 1.0,
+               size_jitter: float = None,
+               spacing_jitter: float = None,
+               angle_jitter_deg: float = None,
+               pressure_range: float = 0.0,
+               fatigue_factor: float = 0.0,
+               ink_fade: float = 0.0,
+               bleed_radius: float = 0.0,
+               line_spacing_mult: float = 1.0) -> Image.Image:
+        """Render text as handwriting."""
         if margin_left_x is not None:
             margin_left = margin_left_x
 
         self.selector.reset()
-        jitter_factor = 1.0 - neatness  # 0.0 = perfectly neat, 1.0 = maximum mess
+        jitter_factor = 1.0 - neatness
+
+        # Use realism_v2 params if provided, else fall back to legacy equivalents
+        _bwander  = baseline_wander_px if baseline_wander_px is not None else baseline_amplitude
+        _szjitter = size_jitter        if size_jitter        is not None else scale_variance
+        _spjitter = spacing_jitter     if spacing_jitter     is not None else inter_letter_std
+        _ajitter  = angle_jitter_deg   if angle_jitter_deg   is not None else rotation_max_deg
+
         canvas = Image.new('RGBA', (page_width, page_height), (0, 0, 0, 0))
         words = text.split()
 
-        # 3a: compute normalization scale from median ink height
-        norm_scale = self._compute_norm_scale(char_height)
-
-        # Compute actual average ink width from the glyph bank after scaling
+        norm_scale    = self._compute_norm_scale(char_height)
         avg_ink_width = int(self._compute_avg_ink_width(norm_scale)) or int(char_height * 0.55)
 
         cursor_x = margin_left
-        # 3e: snap starting y to first rule line if provided
-        if baseline_y_positions:
-            cursor_y = baseline_y_positions[0] if baseline_y_positions else margin_top
-        else:
-            cursor_y = margin_top
+        cursor_y = baseline_y_positions[0] if baseline_y_positions else margin_top
         line_idx = 0
         usable_width = page_width - margin_left - margin_right
 
         chars_per_line = usable_width / (avg_ink_width + 2)
-        total_lines = max(1, len(text) / chars_per_line)
+        total_lines    = max(1, len(text) / chars_per_line)
+        right_edge     = page_width - margin_left
+        crammed_start  = margin_left + 0.8 * (right_edge - margin_left)
 
         for word_i, word in enumerate(words):
-            # Smart line breaking using actual glyph widths
             if self._smart_line_break(words, word_i, cursor_x, page_width, margin_right,
                                      margin_left, char_height, inter_letter_mean,
                                      avg_char_width=float(avg_ink_width)):
                 if cursor_x > margin_left + 50:
-                    cursor_x = margin_left + self.rng.gauss(0, 8.0 * jitter_factor)
-                    line_idx += 1
-                    # 3e: snap to rule line
+                    line_drift = min(line_idx * margin_drift_px / max(total_lines, 1), margin_left * 0.4)
+                    cursor_x   = margin_left + line_drift + self.rng.gauss(0, 2.0 * jitter_factor)
+                    line_idx  += 1
                     if baseline_y_positions and line_idx < len(baseline_y_positions):
                         cursor_y = baseline_y_positions[line_idx]
                     else:
-                        cursor_y += line_height
-            
+                        cursor_y += int(line_height * line_spacing_mult)
+
             if cursor_y + char_height > page_height - 100:
                 break
-            
+
             prog = self._page_progression(line_idx, total_lines)
-            
-            # Task 2.5: word-level coherence — uniform scale and slant per word
-            word_scale = self.rng.uniform(0.97, 1.03)
-            word_slant = self.rng.uniform(-0.5, 0.5)  # degrees
 
             char_idx = 0
-            prev_char = None
             while char_idx < len(word):
-                # Bigram substitution: use pre-drawn bigram glyph when available
                 if _HAS_ADVANCED_MODULES:
                     bigram_match = find_bigram(word, char_idx, self.glyph_bank)
                     if bigram_match is not None:
@@ -378,7 +386,6 @@ class HandwritingRenderer:
                 else:
                     char, char_step = word[char_idx], 1
 
-                # Check for ligatures — tighten spacing but still render both chars
                 _, ligature_spacing = self._check_ligature(word, char_idx)
                 if ligature_spacing != 0:
                     cursor_x += ligature_spacing * prog["spacing_scale"]
@@ -388,7 +395,7 @@ class HandwritingRenderer:
                     cursor_x += char_height * 0.3
                     char_idx += char_step
                     continue
-                
+
                 # Scale to target height: ascenders/uppercase 40% taller
                 target_h = char_height
                 if char.isupper() or char in 'bdfhklt':
@@ -399,23 +406,38 @@ class HandwritingRenderer:
                 new_h = target_h
 
                 # Line wrap: break before glyph overflows right margin
-                right_margin = page_width - margin_left
-                if cursor_x + new_w > right_margin:
-                    cursor_x = margin_left
-                    line_idx += 1
+                if cursor_x + new_w > right_edge:
+                    line_drift = min(line_idx * margin_drift_px / max(total_lines, 1), margin_left * 0.4)
+                    cursor_x   = margin_left + line_drift
+                    line_idx  += 1
                     if baseline_y_positions and line_idx < len(baseline_y_positions):
                         cursor_y = baseline_y_positions[line_idx]
                     else:
-                        cursor_y += line_height
+                        cursor_y += int(line_height * line_spacing_mult)
 
-                # Apply ink darkness
-                arr = np.array(glyph)
-                arr[:, :, 3] = (arr[:, :, 3] * ink_darkness).astype(np.uint8)
+                # Fatigue scale increases toward bottom of page
+                fatigue_scale = 1.0 + fatigue_factor * min(1.0, cursor_y / max(page_height, 1))
+
+                # Optional size jitter: uniform scale per glyph
+                if _szjitter > 0:
+                    sj    = 1.0 + self.rng.uniform(-_szjitter, _szjitter) * fatigue_scale
+                    new_w = max(1, int(new_w * sj))
+                    new_h = max(1, int(new_h * sj))
+                    glyph = glyph.resize((new_w, new_h), Image.LANCZOS)
+
+                # Alpha: ink darkness + pressure variation + fade
+                arr        = np.array(glyph)
+                alpha_mult = ink_darkness
+                if pressure_range > 0:
+                    alpha_mult *= max(0.35, 1.0 - self.rng.uniform(0, pressure_range) * fatigue_scale)
+                if ink_fade > 0:
+                    alpha_mult *= max(0.5, 1.0 - ink_fade * cursor_y / max(page_height, 1))
+                arr[:, :, 3] = np.clip(arr[:, :, 3] * alpha_mult, 0, 255).astype(np.uint8)
                 glyph = Image.fromarray(arr)
 
-                jx = self.rng.gauss(0, 5.0 * jitter_factor) if char_idx > 0 else 0
-                jy = self.rng.gauss(0, 4.0 * jitter_factor)
-                baseline = self._baseline_drift(cursor_x, line_idx, 6.0 * jitter_factor)
+                jx       = self.rng.gauss(0, 2.0 * jitter_factor) if char_idx > 0 else 0
+                jy       = self.rng.gauss(0, 2.0 * jitter_factor)
+                baseline = self._baseline_drift(cursor_x, line_idx, _bwander * fatigue_scale)
 
                 # Baseline: glyph bottom sits ON ruled line; descenders hang below
                 if char in 'gjpqy':
@@ -423,38 +445,48 @@ class HandwritingRenderer:
                 else:
                     y = int(cursor_y - new_h + baseline + jy)
 
-                x = int(cursor_x + jx)
-
-                angle = self.rng.uniform(-8.0, 8.0) * jitter_factor + word_slant
+                x     = int(cursor_x + jx)
+                angle = self.rng.uniform(-_ajitter, _ajitter) * fatigue_scale + slant_deg
                 if abs(angle) > 0.1:
                     glyph = glyph.rotate(angle, expand=True, resample=Image.BICUBIC,
                                        fillcolor=(0, 0, 0, 0))
 
-                # Paste glyph
                 if 0 <= x < page_width and 0 <= y < page_height:
                     paste_x = max(0, x)
                     paste_y = max(0, y)
                     canvas.paste(glyph, (paste_x, paste_y), glyph)
-
-                    # Add i-dot/t-cross for specific characters
                     if char.lower() in 'it':
                         self._add_i_dot(canvas, paste_x + new_w // 2, paste_y, char_height, jitter_factor)
 
-                # Advance cursor: ink width + letter gap
-                next_char = word[char_idx + char_step] if (char_idx + char_step) < len(word) else None
-                kern_adj = (get_kern_adjustment(char[-1], next_char)
-                            if (_HAS_ADVANCED_MODULES and next_char) else 1.0)
-                letter_gap = (inter_letter_mean + self.rng.gauss(0, inter_letter_std * jitter_factor)) * kern_adj
-                adv_bbox = self._get_ink_bbox(glyph)
-                advance_w = (adv_bbox[2] - adv_bbox[0]) if adv_bbox else new_w
-                cursor_x += advance_w + letter_gap
-                prev_char = char[-1]
-                char_idx += char_step
+                # Advance cursor: ink width + letter gap with cramming near right margin
+                next_char  = word[char_idx + char_step] if (char_idx + char_step) < len(word) else None
+                kern_adj   = (get_kern_adjustment(char[-1], next_char)
+                              if (_HAS_ADVANCED_MODULES and next_char) else 1.0)
+                letter_gap = (inter_letter_mean + self.rng.gauss(0, _spjitter * fatigue_scale)) * kern_adj
+                if cursor_x > crammed_start and line_end_cramming < 1.0:
+                    cramp      = min(1.0, (cursor_x - crammed_start) / max(1, right_edge - crammed_start))
+                    letter_gap *= 1.0 - (1.0 - line_end_cramming) * cramp
+                adv_bbox   = self._get_ink_bbox(glyph)
+                advance_w  = (adv_bbox[2] - adv_bbox[0]) if adv_bbox else new_w
+                cursor_x  += advance_w + letter_gap
+                char_idx  += char_step
 
-            # Word spacing from parameters
+            # Word spacing
             word_gap = inter_word_mean + self.rng.gauss(0, inter_word_std * jitter_factor)
+            if cursor_x > crammed_start and line_end_cramming < 1.0:
+                cramp     = min(1.0, (cursor_x - crammed_start) / max(1, right_edge - crammed_start))
+                word_gap *= 1.0 - (1.0 - line_end_cramming) * cramp
             cursor_x += word_gap * prog["spacing_scale"]
-        
+
+        # Ink bleed: Gaussian blur on alpha channel
+        if bleed_radius > 0:
+            from PIL import ImageFilter
+            arr       = np.array(canvas)
+            alpha_img = Image.fromarray(arr[:, :, 3])
+            alpha_img = alpha_img.filter(ImageFilter.GaussianBlur(radius=bleed_radius))
+            arr[:, :, 3] = np.array(alpha_img)
+            canvas    = Image.fromarray(arr, 'RGBA')
+
         return canvas
 
 

@@ -20,8 +20,8 @@
       --text:          #e8e6e3;
       --text-dim:      #8a8890;
       --text-faint:    #4a4850;
-      --accent:        #7c6fe0;
-      --accent-dark:   #5a4fc0;
+      --accent:        #5a5af0;
+      --accent-dark:   #3a3ad0;
     }
 
     html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
@@ -283,9 +283,56 @@
     .check-circle svg { opacity: 0; transform: scale(0.5); transition: opacity 0.2s, transform 0.2s; }
     .effect-btn.selected .check-circle svg { opacity: 1; transform: scale(1); }
 
-    /* Neatness slider */
-    .neatness-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .neatness-pct { font-size: 12px; font-weight: 600; color: var(--accent); }
+    /* Preset buttons */
+    .preset-row { display: flex; flex-wrap: wrap; gap: 6px; }
+    .preset-btn {
+      padding: 6px 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-dim);
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
+      outline: none;
+    }
+    .preset-btn:hover    { background: var(--surface-hover); color: var(--text); }
+    .preset-btn.active   { background: rgba(90,90,240,0.12); border-color: rgba(90,90,240,0.45); color: var(--accent); }
+
+    /* Collapsible slider sections */
+    .slider-section { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+    .slider-section + .slider-section { margin-top: 6px; }
+    .slider-section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 12px;
+      background: var(--surface);
+      cursor: pointer;
+      user-select: none;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-dim);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      transition: background 0.15s, color 0.15s;
+    }
+    .slider-section-header:hover { background: var(--surface-hover); color: var(--text); }
+    .slider-section-chevron { transition: transform 0.2s; font-size: 9px; }
+    .slider-section.open .slider-section-chevron { transform: rotate(180deg); }
+    .slider-section-body { display: none; padding: 10px 12px; background: var(--surface); border-top: 1px solid var(--border); }
+    .slider-section.open .slider-section-body { display: block; }
+
+    /* Individual slider rows */
+    .slider-row { margin-bottom: 10px; }
+    .slider-row:last-child { margin-bottom: 0; }
+    .slider-row-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .slider-name { font-size: 10px; font-weight: 500; color: var(--text-dim); }
+    .slider-val  { font-size: 11px; font-weight: 600; color: var(--accent); min-width: 24px; text-align: right; }
+
+    /* Neatness-style range (keep for reuse) */
     input[type="range"] {
       -webkit-appearance: none;
       appearance: none;
@@ -504,7 +551,6 @@
             <button class="tab-btn active" data-tab="paper">Paper</button>
             <button class="tab-btn" data-tab="ink">Ink</button>
             <button class="tab-btn" data-tab="effects">Effects</button>
-            <button class="tab-btn" data-tab="realism">Realism</button>
           </div>
 
           <!-- Paper panel -->
@@ -665,76 +711,71 @@
             </div>
           </div><!-- /panel-effects -->
 
-          <!-- Realism panel -->
-          <div class="tab-panel" id="panel-realism">
-            <div class="effects-list">
-
-              <button class="effect-btn selected" data-realism="perfect">
-                <div class="effect-info">
-                  <span class="effect-name">Perfect</span>
-                  <span class="effect-desc">No realism effects</span>
-                </div>
-                <div class="check-circle">
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-              </button>
-
-              <button class="effect-btn" data-realism="natural">
-                <div class="effect-info">
-                  <span class="effect-name">Natural</span>
-                  <span class="effect-desc">Subtle human imperfections</span>
-                </div>
-                <div class="check-circle">
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-              </button>
-
-              <button class="effect-btn" data-realism="rushed">
-                <div class="effect-info">
-                  <span class="effect-name">Rushed</span>
-                  <span class="effect-desc">Written in a hurry</span>
-                </div>
-                <div class="check-circle">
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-              </button>
-
-              <button class="effect-btn" data-realism="messy">
-                <div class="effect-info">
-                  <span class="effect-name">Messy</span>
-                  <span class="effect-desc">Fatigued, wandering script</span>
-                </div>
-                <div class="check-circle">
-                  <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                    <path d="M2 5L4 7L8 3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-              </button>
-
-            </div>
-          </div><!-- /panel-realism -->
-
         </div><!-- /tab section -->
 
-        <!-- Neatness -->
+        <!-- Preset buttons -->
         <div>
-          <div class="neatness-header">
-            <span class="label" style="margin-bottom:0;">NEATNESS</span>
-            <span class="neatness-pct" id="neatness-pct">70%</span>
+          <label class="label">STYLE PRESET</label>
+          <div class="preset-row">
+            <button class="preset-btn" data-preset="perfect_student">Perfect Student</button>
+            <button class="preset-btn active" data-preset="natural_notes">Natural Notes</button>
+            <button class="preset-btn" data-preset="rushed_homework">Rushed Homework</button>
+            <button class="preset-btn" data-preset="messy_scrawl">Messy Scrawl</button>
+            <button class="preset-btn" data-preset="custom">Custom</button>
           </div>
-          <input type="range" id="neatness-slider" min="0" max="100" value="70">
-          <div class="slider-labels">
-            <span>Messy</span>
-            <span>Pristine</span>
-          </div>
-          <div class="neatness-desc" id="neatness-desc">Natural and readable</div>
         </div>
+
+        <!-- Realism sliders (4 collapsible sections) -->
+        <div id="slider-sections">
+
+          <div class="slider-section open" id="section-character">
+            <div class="slider-section-header" data-section="character">
+              Character <span class="slider-section-chevron">▼</span>
+            </div>
+            <div class="slider-section-body">
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Font Size</span><span class="slider-val" id="val-font_size">50</span></div><input type="range" class="realism-slider" data-key="font_size" min="0" max="100" value="50"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Letter Spacing</span><span class="slider-val" id="val-letter_spacing">45</span></div><input type="range" class="realism-slider" data-key="letter_spacing" min="0" max="100" value="45"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Word Spacing</span><span class="slider-val" id="val-word_spacing">50</span></div><input type="range" class="realism-slider" data-key="word_spacing" min="0" max="100" value="50"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Slant</span><span class="slider-val" id="val-slant">55</span></div><input type="range" class="realism-slider" data-key="slant" min="0" max="100" value="55"></div>
+            </div>
+          </div>
+
+          <div class="slider-section" id="section-lines">
+            <div class="slider-section-header" data-section="lines">
+              Lines <span class="slider-section-chevron">▼</span>
+            </div>
+            <div class="slider-section-body">
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Baseline Straightness</span><span class="slider-val" id="val-baseline_straightness">75</span></div><input type="range" class="realism-slider" data-key="baseline_straightness" min="0" max="100" value="75"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Line Spacing</span><span class="slider-val" id="val-line_spacing">50</span></div><input type="range" class="realism-slider" data-key="line_spacing" min="0" max="100" value="50"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Margin Consistency</span><span class="slider-val" id="val-margin_consistency">75</span></div><input type="range" class="realism-slider" data-key="margin_consistency" min="0" max="100" value="75"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Line End Behavior</span><span class="slider-val" id="val-line_end_behavior">60</span></div><input type="range" class="realism-slider" data-key="line_end_behavior" min="0" max="100" value="60"></div>
+            </div>
+          </div>
+
+          <div class="slider-section" id="section-variation">
+            <div class="slider-section-header" data-section="variation">
+              Variation <span class="slider-section-chevron">▼</span>
+            </div>
+            <div class="slider-section-body">
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Size Variation</span><span class="slider-val" id="val-size_variation">25</span></div><input type="range" class="realism-slider" data-key="size_variation" min="0" max="100" value="25"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Spacing Variation</span><span class="slider-val" id="val-spacing_variation">25</span></div><input type="range" class="realism-slider" data-key="spacing_variation" min="0" max="100" value="25"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Angle Variation</span><span class="slider-val" id="val-angle_variation">20</span></div><input type="range" class="realism-slider" data-key="angle_variation" min="0" max="100" value="20"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Pressure Variation</span><span class="slider-val" id="val-pressure_variation">30</span></div><input type="range" class="realism-slider" data-key="pressure_variation" min="0" max="100" value="30"></div>
+            </div>
+          </div>
+
+          <div class="slider-section" id="section-page">
+            <div class="slider-section-header" data-section="page">
+              Page Effects <span class="slider-section-chevron">▼</span>
+            </div>
+            <div class="slider-section-body">
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Page Fatigue</span><span class="slider-val" id="val-page_fatigue">15</span></div><input type="range" class="realism-slider" data-key="page_fatigue" min="0" max="100" value="15"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Ink Fading</span><span class="slider-val" id="val-ink_fading">10</span></div><input type="range" class="realism-slider" data-key="ink_fading" min="0" max="100" value="10"></div>
+              <div class="slider-row"><div class="slider-row-header"><span class="slider-name">Ink Bleed</span><span class="slider-val" id="val-ink_bleed">25</span></div><input type="range" class="realism-slider" data-key="ink_bleed" min="0" max="100" value="25"></div>
+            </div>
+          </div>
+
+        </div><!-- /slider-sections -->
 
         <!-- Generate button -->
         <button class="generate-btn" id="generate-btn">
@@ -800,17 +841,26 @@
   </div><!-- /container -->
 
   <script>
+    // ── Presets (mirror realism_v2.py) ──────────────────────────────────────────
+    const PRESETS = {
+      perfect_student: { font_size:55, letter_spacing:42, word_spacing:48, slant:52, baseline_straightness:92, line_spacing:50, margin_consistency:92, line_end_behavior:50, size_variation:8, spacing_variation:8, angle_variation:8, pressure_variation:10, page_fatigue:5, ink_fading:5, ink_bleed:8 },
+      natural_notes:   { font_size:50, letter_spacing:45, word_spacing:50, slant:55, baseline_straightness:75, line_spacing:50, margin_consistency:75, line_end_behavior:60, size_variation:25, spacing_variation:25, angle_variation:20, pressure_variation:30, page_fatigue:15, ink_fading:10, ink_bleed:25 },
+      rushed_homework: { font_size:42, letter_spacing:35, word_spacing:58, slant:45, baseline_straightness:42, line_spacing:55, margin_consistency:38, line_end_behavior:82, size_variation:55, spacing_variation:55, angle_variation:52, pressure_variation:55, page_fatigue:58, ink_fading:32, ink_bleed:42 },
+      messy_scrawl:    { font_size:48, letter_spacing:25, word_spacing:65, slant:38, baseline_straightness:18, line_spacing:62, margin_consistency:18, line_end_behavior:95, size_variation:82, spacing_variation:82, angle_variation:78, pressure_variation:78, page_fatigue:82, ink_fading:62, ink_bleed:68 },
+    };
+
     // State
-    const state = { paper: 'college_ruled', ink: 'black', effect: 'scan', neatness: 0.7, profileId: '', realism: 'perfect', fmt: 'png' };
+    const state = {
+      paper: 'college_ruled', ink: 'black', effect: 'scan',
+      profileId: '', fmt: 'png', preset: 'natural_notes',
+      sliders: Object.assign({}, PRESETS.natural_notes),
+    };
     let currentDataUrl = null;
     let isDemoShowing = true;
 
     // DOM refs
     const textInput      = document.getElementById('text-input');
     const charCount      = document.getElementById('char-count');
-    const neatnessSlider = document.getElementById('neatness-slider');
-    const neatnessPct    = document.getElementById('neatness-pct');
-    const neatnessDesc   = document.getElementById('neatness-desc');
     const generateBtn    = document.getElementById('generate-btn');
     const btnText        = document.getElementById('btn-text');
     const previewCard    = document.getElementById('preview-card');
@@ -910,40 +960,64 @@
       });
     });
 
-    // ── Realism selection ───────────────────────────────────────────────────────
-    document.querySelectorAll('#panel-realism .effect-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('#panel-realism .effect-btn').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        state.realism = btn.dataset.realism;
+    // ── Collapsible slider sections ─────────────────────────────────────────────
+    document.querySelectorAll('.slider-section-header').forEach(header => {
+      header.addEventListener('click', () => {
+        header.closest('.slider-section').classList.toggle('open');
       });
     });
 
-    // ── Neatness slider ─────────────────────────────────────────────────────────
-    const NEATNESS_LABELS = [
-      [0,  15,  'Barely legible scrawl'],
-      [16, 30,  'Rushed and messy'],
-      [31, 50,  'Casual and relaxed'],
-      [51, 70,  'Natural and readable'],
-      [71, 85,  'Clean and tidy'],
-      [86, 100, 'Perfectly uniform'],
-    ];
-    function getNeatnessLabel(val) {
-      for (const [lo, hi, label] of NEATNESS_LABELS) {
-        if (val >= lo && val <= hi) return label;
-      }
-      return '';
+    // ── Slider range fill helper ────────────────────────────────────────────────
+    function updateRangeFill(input) {
+      const val = parseInt(input.value);
+      input.style.background =
+        'linear-gradient(to right, #5a5af0 0%, #5a5af0 ' + val + '%, #1e1e24 ' + val + '%, #1e1e24 100%)';
     }
-    function updateSlider() {
-      const val = parseInt(neatnessSlider.value);
-      state.neatness = val / 100;
-      neatnessPct.textContent = val + '%';
-      neatnessDesc.textContent = getNeatnessLabel(val);
-      neatnessSlider.style.background =
-        'linear-gradient(to right, #7c6fe0 0%, #7c6fe0 ' + val + '%, #1e1e24 ' + val + '%, #1e1e24 100%)';
+
+    // ── Preset buttons ──────────────────────────────────────────────────────────
+    function applyPreset(name) {
+      const p = PRESETS[name];
+      if (!p) return;
+      state.preset  = name;
+      state.sliders = Object.assign({}, p);
+      document.querySelectorAll('.preset-btn').forEach(b => {
+        b.classList.toggle('active', b.dataset.preset === name);
+      });
+      document.querySelectorAll('.realism-slider').forEach(inp => {
+        const key = inp.dataset.key;
+        if (key in p) {
+          inp.value = p[key];
+          document.getElementById('val-' + key).textContent = p[key];
+          updateRangeFill(inp);
+        }
+      });
     }
-    neatnessSlider.addEventListener('input', updateSlider);
-    updateSlider();
+
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.preset === 'custom') {
+          state.preset = 'custom';
+          document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === 'custom'));
+        } else {
+          applyPreset(btn.dataset.preset);
+        }
+      });
+    });
+
+    // ── Realism sliders ─────────────────────────────────────────────────────────
+    document.querySelectorAll('.realism-slider').forEach(inp => {
+      updateRangeFill(inp);
+      inp.addEventListener('input', () => {
+        const key = inp.dataset.key;
+        const val = parseInt(inp.value);
+        state.sliders[key] = val;
+        document.getElementById('val-' + key).textContent = val;
+        updateRangeFill(inp);
+        // Any manual change → switch to Custom
+        state.preset = 'custom';
+        document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.preset === 'custom'));
+      });
+    });
 
     // ── Format selector ─────────────────────────────────────────────────────────
     const FMT_HINTS = {
@@ -987,10 +1061,10 @@
           paper:       state.paper,
           ink_color:   state.ink,
           artifact:    state.effect,
-          neatness:    state.neatness,
           profile_id:  state.profileId || null,
-          realism:     state.realism,
           transparent: state.fmt === 'transparent',
+          sliders:     state.sliders,
+          preset:      state.preset,
         };
         const res  = await fetch('/generate', {
           method: 'POST',

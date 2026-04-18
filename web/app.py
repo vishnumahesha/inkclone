@@ -33,7 +33,7 @@ from paper_backgrounds import (generate_blank_paper, generate_college_ruled,
                                generate_dot_grid, generate_sticky_note)
 from compositor import composite, INK_COLORS
 from artifact_simulator import simulate_scan, simulate_phone_photo, simulate_clean
-from realism import apply_realism, PRESETS as REALISM_PRESETS
+from realism_v2 import sliders_to_render_params, PRESETS as REALISM_PRESETS, get_preset
 
 # ── Directories ────────────────────────────────────────────────────────────────
 _PROFILES_DIR = _ROOT / "profiles"
@@ -114,14 +114,19 @@ class GenerateRequest(BaseModel):
     ink_color:   str   = "black"
     ink:         str   = None    # legacy alias
     artifact:    str   = "scan"
-    neatness:    float = 0.5
     seed:        int   = None
     profile_id:  str   = None
-    realism:     str   = "perfect"
-    transparent: bool  = False   # skip paper composite, return RGBA PNG
+    transparent: bool  = False
+    sliders:     dict  = None    # 15 realism_v2 sliders (0–100 each)
+    preset:      str   = "natural_notes"  # fallback when sliders is None
 
     def get_ink(self) -> str:
         return self.ink_color or self.ink or "black"
+
+    def get_sliders(self) -> dict:
+        if self.sliders:
+            return self.sliders
+        return get_preset(self.preset)
 
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
@@ -154,25 +159,27 @@ async def generate_document(request: GenerateRequest):
         raise HTTPException(status_code=400, detail=f"Invalid ink color: {ink}")
     if request.artifact not in ARTIFACTS:
         raise HTTPException(status_code=400, detail=f"Invalid artifact type: {request.artifact}")
-    if not 0.0 <= request.neatness <= 1.0:
-        raise HTTPException(status_code=400, detail="Neatness must be 0.0–1.0")
-    if request.realism not in REALISM_PRESETS:
-        raise HTTPException(status_code=400, detail=f"Invalid realism preset: {request.realism}")
 
     try:
-        # Use half-resolution (1200×1600) so the 1 GB container isn't OOM-killed
-        # when numpy allocates multiple large intermediate arrays.
         PAGE_W, PAGE_H = 1200, 1600
-        bank = _get_glyph_bank(request.profile_id)
+        bank     = _get_glyph_bank(request.profile_id)
         renderer = HandwritingRenderer(bank, seed=request.seed)
-        render_params = _PAPER_RENDER_PARAMS.get(request.paper, _PAPER_RENDER_PARAMS["college_ruled"])
+
+        paper_params = _PAPER_RENDER_PARAMS.get(request.paper, _PAPER_RENDER_PARAMS["college_ruled"])
+        line_spacing = paper_params["line_height"]
+        slider_params = sliders_to_render_params(request.get_sliders(), line_spacing)
+
+        render_params = {
+            "margin_left":  paper_params["margin_left"],
+            "margin_top":   paper_params["margin_top"],
+            "line_height":  paper_params["line_height"],
+            **slider_params,
+        }
         text_img = renderer.render(
             request.text,
             page_width=PAGE_W, page_height=PAGE_H,
-            neatness=request.neatness,
             **render_params,
         )
-        text_img = apply_realism(text_img, request.realism)
         if request.transparent:
             # Colorize the ink alpha mask and return as RGBA (no paper)
             import numpy as np
@@ -208,7 +215,6 @@ async def generate_document(request: GenerateRequest):
             "paper":      request.paper,
             "ink_color":  ink,
             "artifact":   request.artifact,
-            "neatness":   request.neatness,
             "profile_id": request.profile_id or _DEFAULT_PROFILE,
         })
     except HTTPException:
