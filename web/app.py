@@ -223,6 +223,21 @@ async def generate_document(request: GenerateRequest):
         raise HTTPException(status_code=500, detail=f"Error generating document: {exc}")
 
 
+# ── Profile stats ──────────────────────────────────────────────────────────────
+
+@app.get("/api/profile-stats")
+async def get_profile_stats(profile_id: str = None):
+    """Return glyph counts for a profile (used to populate the stats cards)."""
+    bank = _get_glyph_bank(profile_id)
+    total_variants = sum(len(v) for v in bank.values())
+    unique_chars   = len(bank)
+    return JSONResponse({
+        "total_variants": total_variants,
+        "unique_chars":   unique_chars,
+        "papers":         len(PAPERS),
+    })
+
+
 # ── Profile listing ────────────────────────────────────────────────────────────
 
 @app.get("/profiles")

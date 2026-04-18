@@ -1,30 +1,36 @@
 # InkClone — Handwriting Replication Engine
 
-Replicate any handwriting style from a single photo. Generate handwritten documents on realistic paper backgrounds with scan and photo artifacts.
+Replicate any handwriting style from a single filled template. Generate handwritten documents on realistic paper backgrounds with 15 realism sliders and 5 presets.
 
-**Live demo**: [https://inkclone-pro.fly.dev/](https://inkclone-pro.fly.dev/)
-
-**Status**: Deployed — April 2026
-
----
-
-## Screenshots
-
-<!-- TODO: add screenshot 1 — web UI upload flow -->
-<!-- TODO: add screenshot 2 — generated document example -->
-<!-- TODO: add screenshot 3 — glyph extraction result -->
+**Live**: [https://inkclone-production.up.railway.app](https://inkclone-production.up.railway.app)
 
 ---
 
 ## Features
 
-- **Profile extraction** — photograph a filled template, extract individual glyphs per character with alpha cleaning
-- **Realism engine** — baseline drift, rotation jitter, scale variance, ligature kerning, page-progression fatigue
-- **Paper backgrounds** — college ruled, blank, legal pad, graph, dot grid, index card, sticky note
-- **Artifact simulation** — scan, phone photo, clean render modes
-- **Web UI** — FastAPI + single-file HTML frontend at `/`
-- **Dockerized** — single `docker run` to start locally
-- **CLI** — `python3 cli.py generate "text" --paper college_ruled --ink blue --artifact scan`
+- **Profile extraction** — photograph a filled template, extract individual glyphs per character with perspective warp and morphological cleaning
+- **15-slider realism engine** — per-glyph size/angle/pressure/fade, per-line baseline wander/margin drift/cramming, per-page fatigue and ink bleed
+- **5 presets** — Perfect Student, Natural Notes, Rushed Homework, Messy Scrawl, Custom
+- **Paper backgrounds** — college ruled, blank, legal pad, graph, dot grid, sticky note
+- **Artifact simulation** — scan, phone photo, clean render
+- **Web UI** — FastAPI + single-file HTML frontend
+
+---
+
+## Architecture
+
+```
+EXTRACTION                          RENDER
+extract_pipeline.py                 paper_backgrounds.py
+  └─ perspective warp               render_engine.py        ← 15 realism params
+  └─ morph line removal             realism_v2.py           ← sliders → params
+  └─ quality scoring                compositor.py
+  └─ profiles/{id}/glyphs/         artifact_simulator.py
+
+WEB
+web/app.py          (FastAPI, Railway)
+web/index.html      (single-file frontend)
+```
 
 ---
 
@@ -35,126 +41,58 @@ Replicate any handwriting style from a single photo. Generate handwritten docume
 | Language | Python 3.11 |
 | Web framework | FastAPI + Uvicorn |
 | Image processing | Pillow, OpenCV (headless), NumPy |
-| OCR (eval) | Tesseract via pytesseract |
+| Hosting | Railway (1 GB RAM container) |
 | Containerization | Docker |
-| Hosting | Fly.io (shared-cpu-1x, 1 GB RAM) |
 
 ---
 
 ## Quick Start
 
-### Generate a Document
-
-```bash
-python3 cli.py generate "Your text here" --paper college_ruled --ink blue --artifact scan
-```
-
-Output: `output/document_college_ruled_blue_scan.png`
-
-### Create a Handwriting Profile (from a real handwriting sample)
-
-```bash
-# 1. Generate template PDF
-python3 cli.py template
-
-# 2. Print, fill in handwriting, take photo
-# 3. Extract glyphs from photo
-python3 cli.py create-profile filled_template.jpg
-
-# 4. Generate documents using your handwriting
-python3 cli.py generate "Hello world" --paper blank --ink black
-```
-
----
-
-## Architecture
-
-```
-CAPTURE PIPELINE                    RENDER PIPELINE
-├─ generate_template.py             ├─ paper_backgrounds.py
-├─ preprocess.py                    ├─ render_engine.py
-└─ segment.py                       ├─ compositor.py
-                                    ├─ artifact_simulator.py
-                                    └─ demo.py
-
-                          UNIFIED CLI (cli.py)
-           template → create-profile → generate
-```
-
----
-
-## Commands
-
-### `python3 cli.py generate <text> [options]`
-
-- `--paper` — `blank`, `college_ruled`, `wide_ruled`, `graph`, `legal_pad` (default: college_ruled)
-- `--ink` — `black`, `blue`, `dark_blue`, `green`, `red`, `pencil` (default: black)
-- `--artifact` — `clean`, `scan`, `phone` (default: scan)
-- `--neatness` — 0.0 (messy) to 1.0 (neat), default 0.5
-- `--opacity` — 0.0–1.0, default 1.0
-- `--seed` — integer for reproducible output
-
-### `python3 cli.py template`
-Generate a blank template PDF for handwriting sample collection.
-
-### `python3 cli.py create-profile <photo.jpg>`
-Extract handwriting glyphs from a filled-in template photo. Saves `output/profile.pkl`.
-
-### `python3 cli.py test`
-Run full test suite.
-
----
-
-## Performance
-
-Measured on the eval harness and stress tests:
-
-| Operation | Time |
-|-----------|------|
-| Avg generation (eval harness) | ~0.3s |
-| Stress test peak | ~748ms |
-| Full pipeline (paper + render + artifact) | <1s typical |
-
----
-
-## Known Limitations
-
-- **OCR verification scores ~42%** on real handwriting output. The rendering engine produces visually convincing output but Tesseract struggles to read it back — this is expected given the stylized nature of the glyphs, but it means automated OCR-based QA has low recall.
-- Glyph extraction works best with clear, dark handwriting, consistent character size, and good photo lighting.
-- Artifact simulation doesn't cover all scanner/camera variations.
-
----
-
-## Roadmap
-
-### Done
-- [x] Paper generation (5 types)
-- [x] Glyph extraction from template photos
-- [x] Text rendering with real glyph bank
-- [x] Artifact simulation (scan, phone, clean)
-- [x] CLI interface
-- [x] Web UI (FastAPI + HTML frontend)
-- [x] Deployed on Fly.io
-- [x] Multiple handwriting profiles
-
-### Next
-- [ ] Improve OCR verification accuracy (currently ~42%)
-- [ ] Character kerning optimization
-- [ ] Bleed-through simulation
-- [ ] ML-based handwriting style transfer
-- [ ] Export to PDF
-
----
-
-## Installation
-
 ```bash
 git clone https://github.com/vishnumahesha/inkclone
 cd inkclone
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-python3 cli.py info
+uvicorn web.app:app --reload --port 8000
+```
+
+Open `http://localhost:8000`.
+
+---
+
+## Realism Sliders
+
+| Section | Sliders |
+|---------|---------|
+| Character | Font Size, Letter Spacing, Word Spacing, Slant |
+| Lines | Baseline Straightness, Line Spacing, Margin Consistency, Line End Behavior |
+| Variation | Size Variation, Spacing Variation, Angle Variation, Pressure Variation |
+| Page Effects | Page Fatigue, Ink Fading, Ink Bleed |
+
+Each slider is 0–100. Presets fill all 15 values at once. Any manual change switches to Custom.
+
+---
+
+## Paper Types
+
+`college_ruled` · `blank` · `legal_pad` · `graph` · `dot_grid` · `sticky_note`
+
+---
+
+## Creating a Handwriting Profile
+
+1. Upload a handwriting photo via the web UI (`+ New Profile`)
+2. The extraction pipeline detects the template grid, crops cells, scores quality, and saves glyphs to `profiles/{id}/glyphs/`
+3. Select the new profile from the dropdown and generate
+
+---
+
+## Deployment
+
+Deployed on Railway. Push to `main` and Railway auto-deploys from the `Dockerfile`.
+
+```bash
+git push origin main   # triggers Railway deploy
 ```
 
 ---
