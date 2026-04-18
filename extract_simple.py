@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
-"""
-extract_simple.py — Calligraphr-style V3 extraction: Otsu threshold, no guide filtering.
-
+"""extract_simple.py — Calligraphr-style V3 extraction: Otsu threshold + span-based guide removal.
 Usage:  python extract_simple.py [--profile vishnu_v3_clean]
 """
 import sys, json, shutil, argparse
@@ -14,13 +12,12 @@ ROOT = Path(__file__).parent
 sys.path.insert(0, str(ROOT))
 from template_layout import PAGE_LAYOUTS, COLS, ROWS, char_to_stem
 
-TGT_W, TGT_H = 2550, 3300
-MARGIN_L, MARGIN_T = 135, 345
+TGT_W, TGT_H, MARGIN_L, MARGIN_T = 2550, 3300, 135, 345
 CELL_W = (TGT_W - MARGIN_L - 135) / COLS
 CELL_H = (TGT_H - MARGIN_T - 165) / ROWS
 LABEL_ZONE = 0.35
 SCAN_FILES = [ROOT / f"template_scans_v3_page{i}.png" for i in range(1, 4)]
-SCAN_TO_PAGE = {0: 1, 1: 2, 2: 3}
+SCAN_TO_PAGE = {0: 3, 1: 1, 2: 2}  # page1=punct, page2=lowercase, page3=upper+digits
 
 
 def _synth_bullseye(sz=48):
@@ -104,10 +101,8 @@ def extract_cells(warped_gray, page_dots):
 
         work[-8:, :] = 255; work[:, :6] = 255; work[:, -6:] = 255  # mask cell borders
 
-        # Otsu's threshold; cap at 140 so light guide lines (~160-220) are never captured
-        otsu_val, binary = cv2.threshold(work, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-        if otsu_val > 150:
-            _, binary = cv2.threshold(work, 140, 255, cv2.THRESH_BINARY_INV)
+        # Otsu's threshold — let OpenCV pick the level automatically
+        _, binary = cv2.threshold(work, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
 
         # Remove noise: drop connected components smaller than 20px
         n, labels, stats, _ = cv2.connectedComponentsWithStats(binary, 8)
@@ -115,6 +110,12 @@ def extract_cells(warped_gray, page_dots):
         for lbl in range(1, n):
             if stats[lbl, cv2.CC_STAT_AREA] >= 20:
                 clean[labels == lbl] = 255
+
+        # Drop guide-line rows: span > 40% of cell width = printed guide, not stroke
+        for ry in range(clean.shape[0]):
+            nzc = np.where(clean[ry] > 0)[0]
+            if len(nzc) > 1 and nzc[-1] - nzc[0] > cw * 0.40:
+                clean[ry] = 0
 
         coords = np.argwhere(clean > 0)
         if len(coords) < 10:
@@ -142,14 +143,12 @@ def extract_cells(warped_gray, page_dots):
 def run(profile='vishnu_v3_clean'):
     profile_dir = ROOT / 'profiles' / profile
     glyphs_dir = profile_dir / 'glyphs'
-    if profile_dir.exists():
-        shutil.rmtree(profile_dir)
+    if profile_dir.exists(): shutil.rmtree(profile_dir)
     glyphs_dir.mkdir(parents=True)
 
     bank = {}
     for file_idx, scan_path in enumerate(SCAN_FILES):
-        if not scan_path.exists():
-            print(f"SKIP {scan_path.name}"); continue
+        if not scan_path.exists(): print(f"SKIP {scan_path.name}"); continue
         page_dots = SCAN_TO_PAGE[file_idx]
         img = cv2.imread(str(scan_path))
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
