@@ -49,7 +49,7 @@ app = FastAPI(title="InkClone", description="Handwriting document generator")
 app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 # ── Default glyph bank ─────────────────────────────────────────────────────────
-_DEFAULT_PROFILE  = "vishnu_v3_clean"
+_DEFAULT_PROFILE  = "freeform_vishnu"
 _PROFILE_DIR      = _PROFILES_DIR / _DEFAULT_PROFILE
 _GLYPH_BANKS: dict = {}   # cache: profile_id → glyph_bank dict
 

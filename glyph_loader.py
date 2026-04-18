@@ -47,7 +47,7 @@ def _autocrop_glyph(img: Image.Image, padding: int = 3) -> Image.Image:
                 for i in range(len(ink_rows) - 1)]
         max_gap, max_gap_i = max(gaps)
         # Only use the gap split if it's substantial and in the upper portion
-        if max_gap > 15 and int(ink_rows[max_gap_i]) < h * 0.6:
+        if max_gap > 8 and int(ink_rows[max_gap_i]) < h * 0.7:
             start_row = int(ink_rows[max_gap_i + 1])
 
     ink_below = alpha[start_row:, :]
@@ -165,7 +165,14 @@ def _is_valid_glyph(img: Image.Image, char: str) -> bool:
     if ar > max_ar or ar < 0.15:
         return False
     arr = np.array(img)
-    if img.mode == 'RGBA' and int((arr[:, :, 3] > 0).sum()) < 50:
+    if img.mode != 'RGBA':
+        return True
+    alpha = arr[:, :, 3]
+    total_ink = int((alpha > 0).sum())
+    if total_ink < 50:
+        return False
+    top_ink = int((alpha[:max(1, h // 4), :] > 0).sum())
+    if top_ink / total_ink > 0.30:
         return False
     return True
 
