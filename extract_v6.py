@@ -2,7 +2,7 @@
 """extract_v6.py — Extract V6 template glyphs from camera photos.
 
 Finds 4 square corner markers, perspective warps, extracts cells as RGBA glyphs.
-Fixed threshold 130, cc_min 50, 18% label mask.
+Otsu threshold per-cell, cc_min 12, 18% label mask.
 """
 import json, shutil, argparse
 from pathlib import Path
@@ -22,9 +22,9 @@ SCAN_MAP = [
 
 TGT_W, TGT_H = 2550, 3300
 ML, MT, GW, GH = 150, 285, 2250, 2880
-INK_THRESH = 130
-CC_MIN = 50
+CC_MIN = 12
 LABEL_MASK_PCT = 0.18
+SMALL_CHARS = {'.', ',', "'", '"', '-', ':', ';', '!', '`', '*'}
 
 _PUNCT = {
     '.': 'period', ',': 'comma', '!': 'exclaim', '?': 'question',
@@ -115,7 +115,7 @@ def perspective_warp(img, corners):
                                flags=cv2.INTER_LANCZOS4)
 
 
-def extract_glyph(warped_gray, col, row, cw, ch):
+def extract_glyph(warped_gray, col, row, cw, ch, char_name=''):
     """Extract one cell, threshold, autocrop, return RGBA or None."""
     x0 = int(round(ML + col * cw)) + 10
     y0 = int(round(MT + row * ch)) + 10
@@ -127,8 +127,8 @@ def extract_glyph(warped_gray, col, row, cw, ch):
     cell_h = cell.shape[0]
     # Mask label zone (top 18%)
     cell[:int(cell_h * LABEL_MASK_PCT), :] = 255
-    # Fixed threshold at 130
-    _, binarized = cv2.threshold(cell, INK_THRESH, 255, cv2.THRESH_BINARY_INV)
+    # Otsu's threshold per-cell
+    _, binarized = cv2.threshold(cell, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     # Remove noise components < 50 pixels
     n_cc, labels, cc_stats, _ = cv2.connectedComponentsWithStats(binarized, 8)
     for i in range(1, n_cc):
@@ -136,7 +136,8 @@ def extract_glyph(warped_gray, col, row, cw, ch):
             binarized[labels == i] = 0
     # Autocrop to ink bounding box with 4px padding
     ink_coords = np.argwhere(binarized > 0)
-    if len(ink_coords) < 25:
+    min_ink = 15 if char_name in SMALL_CHARS else 35
+    if len(ink_coords) < min_ink:
         return None
     y_min, x_min = ink_coords.min(axis=0)
     y_max, x_max = ink_coords.max(axis=0)
@@ -158,10 +159,11 @@ def run(profile='vishnu_v6'):
     glyphs_dir = profile_dir / 'glyphs'
     glyphs_dir.mkdir(parents=True, exist_ok=True)
     for old_file in glyphs_dir.glob('*.png'):
-        try:
-            old_file.unlink()
-        except OSError:
-            pass
+        if '_fallback' not in old_file.name:
+            try:
+                old_file.unlink()
+            except OSError:
+                pass
 
     bank = {}
     all_heights = []
@@ -183,7 +185,7 @@ def run(profile='vishnu_v6'):
             row = idx // cols
             if row >= rows:
                 break
-            glyph = extract_glyph(warped, col, row, cw, ch)
+            glyph = extract_glyph(warped, col, row, cw, ch, char_name=char)
             if glyph is None:
                 empty += 1
                 continue
