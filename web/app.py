@@ -299,7 +299,7 @@ async def get_profile_glyphs(profile: str = None):
     if not glyphs_dir.exists():
         raise HTTPException(status_code=404, detail=f"Profile '{pid}' not found")
 
-    from glyph_loader import _parse_glyph_stem
+    from glyph_loader import _parse_glyph_stem, _is_valid_glyph
     from PIL import Image as _Image
 
     glyphs = []
@@ -324,6 +324,8 @@ async def get_profile_glyphs(profile: str = None):
             continue
 
         quality, reason = _glyph_quality(char, w, h, ink, top_ink)
+        if quality == "warning" and not _is_valid_glyph(img, char):
+            quality, reason = "skipped", "loader skips (short ink span)"
         glyphs.append({
             "filename":     png.name,
             "char":         char,
@@ -341,11 +343,12 @@ async def get_profile_glyphs(profile: str = None):
     total    = len(glyphs)
     good     = sum(1 for g in glyphs if g["quality"] == "good")
     warnings = sum(1 for g in glyphs if g["quality"] == "warning")
+    skipped  = sum(1 for g in glyphs if g["quality"] == "skipped")
     rejected = sum(1 for g in glyphs if g["quality"] == "rejected")
     return JSONResponse({
         "profile": pid,
         "glyphs":  glyphs,
-        "summary": {"total": total, "good": good, "warnings": warnings, "rejected": rejected},
+        "summary": {"total": total, "good": good, "warnings": warnings, "skipped": skipped, "rejected": rejected},
     })
 
 

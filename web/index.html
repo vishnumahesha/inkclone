@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>InkClone — Handwriting Replication Engine</title>
+  <title>InkClone — Your Handwriting, Digitally Replicated</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✍️</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Caveat:wght@400;500&display=swap" rel="stylesheet">
@@ -944,7 +945,7 @@
 
     // ── Sample text button ──────────────────────────────────────────────────────
     sampleBtn.addEventListener('click', () => {
-      textInput.value = 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen jugs of liquid soap.';
+      textInput.value = 'Dear Professor, I wanted to follow up on our conversation about the research project. The deadline is next Friday and I\'ve completed the first three sections. Looking forward to your feedback.';
       charCount.textContent = textInput.value.length;
       textInput.focus();
     });
@@ -1162,6 +1163,9 @@
     // ── Download ────────────────────────────────────────────────────────────────
     downloadBtn.addEventListener('click', () => {
       if (!currentDataUrl) return;
+      const slug = (textInput.value || '').trim().slice(0, 30).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '') || 'handwriting';
+      const paper = state.paper || 'college_ruled';
+      const baseName = `inkclone_${slug}_${paper}`;
       if (state.fmt === 'jpeg') {
         // Convert PNG data URL to JPEG via canvas
         const img = new Image();
@@ -1174,11 +1178,11 @@
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0);
           const jpegUrl = canvas.toDataURL('image/jpeg', 0.92);
-          _triggerDownload(jpegUrl, 'inkclone-handwriting.jpg');
+          _triggerDownload(jpegUrl, `${baseName}.jpg`);
         };
         img.src = currentDataUrl;
       } else {
-        _triggerDownload(currentDataUrl, state.fmt === 'transparent' ? 'inkclone-handwriting-transparent.png' : 'inkclone-handwriting.png');
+        _triggerDownload(currentDataUrl, state.fmt === 'transparent' ? `${baseName}_transparent.png` : `${baseName}.png`);
       }
     });
 

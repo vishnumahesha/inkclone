@@ -225,6 +225,23 @@ def _parse_glyph_stem(stem: str):
         "atsign": "@",
         "slash": "/",
         "quote": '"',
+        "dollar": "$",
+        "underscore": "_",
+        "percent": "%",
+        "caret": "^",
+        "asterisk": "*",
+        "plus": "+",
+        "equals": "=",
+        "less": "<",
+        "greater": ">",
+        "lbracket": "[",
+        "rbracket": "]",
+        "lbrace": "{",
+        "rbrace": "}",
+        "pipe": "|",
+        "backtick": "`",
+        "tilde": "~",
+        "backslash": "\\",
     }
     for key, ch in _PUNCT_MAP.items():
         if working == key or working.startswith(key + "_"):

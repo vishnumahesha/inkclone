@@ -52,6 +52,7 @@
   .glyph-card:hover { border-color: #4a4a6a; }
   .glyph-card.rejected { border-color: var(--bad); opacity: .55; }
   .glyph-card.warning  { border-color: var(--warn); }
+  .glyph-card.skipped  { border-color: #555566; opacity: .65; }
   .glyph-card.good     { border-color: var(--border); }
 
   .glyph-img-wrap { display: flex; justify-content: center; margin-bottom: 8px; }
@@ -59,7 +60,8 @@
     width: 80px;
     height: 80px;
     object-fit: contain;
-    background-color: #ffffff;
+    background-color: #ffffff !important;
+    background-image: none !important;
     border-radius: 4px;
     padding: 6px;
     border: 1px solid #e0e0e0;
@@ -71,6 +73,7 @@
   .quality-label { font-size: 10px; font-weight: 600; }
   .quality-good     { color: var(--good); }
   .quality-warning  { color: var(--warn); }
+  .quality-skipped  { color: #888888; }
   .quality-rejected { color: var(--bad); }
   .quality-reason { font-size: 9px; color: var(--text-faint); margin-top: 1px; }
 
@@ -178,6 +181,7 @@ function updateSummary(s) {
     s.total    ? `<span class="chip chip-total">${s.total} total</span>` : '',
     s.good     ? `<span class="chip chip-good">✓ ${s.good} good</span>` : '',
     s.warnings ? `<span class="chip chip-warn">⚠ ${s.warnings} warn</span>` : '',
+    s.skipped  ? `<span class="chip chip-total">– ${s.skipped} skipped</span>` : '',
     s.rejected ? `<span class="chip chip-bad">✗ ${s.rejected} rejected</span>` : '',
   ].join('');
 }
@@ -205,7 +209,7 @@ function render() {
   if (activeSort === 'char') {
     items.sort((a, b) => a.char.localeCompare(b.char) || a.variant - b.variant);
   } else if (activeSort === 'quality') {
-    const qord = { rejected: 0, warning: 1, good: 2 };
+    const qord = { rejected: 0, skipped: 1, warning: 2, good: 3 };
     items.sort((a, b) => (qord[a.quality] ?? 1) - (qord[b.quality] ?? 1));
   } else if (activeSort === 'size') {
     items.sort((a, b) => (b.width * b.height) - (a.width * a.height));
@@ -227,7 +231,7 @@ function render() {
     card.className = 'glyph-card ' + g.quality;
     card.dataset.category = g.category;
 
-    const qIcon  = g.quality === 'good' ? '✓' : g.quality === 'warning' ? '⚠' : '✗';
+    const qIcon  = g.quality === 'good' ? '✓' : g.quality === 'warning' ? '⚠' : g.quality === 'skipped' ? '–' : '✗';
     const qClass = 'quality-' + g.quality;
     const label  = g.char.length > 1 ? `"${g.char}"` : `'${g.char}'`;
 
