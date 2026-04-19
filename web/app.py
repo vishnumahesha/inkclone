@@ -1071,7 +1071,7 @@ def _parse_glyph_stem_local(stem: str) -> str:
         "period": ".", "comma": ",", "exclaim": "!", "question": "?",
         "apostrophe": "'", "hyphen": "-", "colon": ":", "semicolon": ";",
         "lparen": "(", "rparen": ")", "hash": "#", "at": "@",
-        "ampersand": "&", "slash": "/", "quote": '"',
+        "ampersand": "&", "slash": "/", "quote": '"', "dollar": "$", "backslash": "\\",
     }
     for key, ch in _PUNCT.items():
         if working == key or working.startswith(key + "_"):
@@ -1100,7 +1100,7 @@ def _char_to_stem(char: str) -> str:
         ".": "period", ",": "comma", "!": "exclaim", "?": "question",
         "'": "apostrophe", "-": "hyphen", ":": "colon", ";": "semicolon",
         "(": "lparen", ")": "rparen", "#": "hash", "@": "at",
-        "&": "ampersand", "/": "slash", '"': "quote",
+        "&": "ampersand", "/": "slash", '"': "quote", "$": "dollar", "\\": "backslash",
     }
     if char in _SPECIAL:
         return _SPECIAL[char]

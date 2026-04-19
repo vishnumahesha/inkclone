@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>InkClone — Handwriting Replication Engine</title>
+  <title>InkClone — Your Handwriting, Digitally Replicated</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✍️</text></svg>">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600&family=Caveat:wght@400;500&display=swap" rel="stylesheet">
@@ -846,7 +847,7 @@
     // ── Presets (mirror realism_v2.py) ──────────────────────────────────────────
     const PRESETS = {
       perfect_student: { font_size:55, stroke_thickness:50, letter_spacing:42, word_spacing:48, slant:52, baseline_straightness:92, line_spacing:50, margin_consistency:92, line_end_behavior:50, size_variation:8, spacing_variation:8, angle_variation:8, pressure_variation:10, page_fatigue:5, ink_fading:5, ink_bleed:8 },
-      natural_notes:   { font_size:50, stroke_thickness:50, letter_spacing:45, word_spacing:50, slant:55, baseline_straightness:75, line_spacing:50, margin_consistency:75, line_end_behavior:60, size_variation:25, spacing_variation:25, angle_variation:20, pressure_variation:30, page_fatigue:15, ink_fading:10, ink_bleed:25 },
+      natural_notes:   { font_size:65, stroke_thickness:50, letter_spacing:35, word_spacing:50, slant:55, baseline_straightness:75, line_spacing:50, margin_consistency:75, line_end_behavior:60, size_variation:25, spacing_variation:25, angle_variation:20, pressure_variation:30, page_fatigue:15, ink_fading:10, ink_bleed:25 },
       rushed_homework: { font_size:42, stroke_thickness:50, letter_spacing:35, word_spacing:58, slant:45, baseline_straightness:42, line_spacing:55, margin_consistency:38, line_end_behavior:82, size_variation:55, spacing_variation:55, angle_variation:52, pressure_variation:55, page_fatigue:58, ink_fading:32, ink_bleed:42 },
       messy_scrawl:    { font_size:48, stroke_thickness:50, letter_spacing:25, word_spacing:65, slant:38, baseline_straightness:18, line_spacing:62, margin_consistency:18, line_end_behavior:95, size_variation:82, spacing_variation:82, angle_variation:78, pressure_variation:78, page_fatigue:82, ink_fading:62, ink_bleed:68 },
     };
@@ -858,6 +859,7 @@
       sliders: Object.assign({}, PRESETS.natural_notes),
     };
     let currentDataUrl = null;
+    let currentText = '';
     let isDemoShowing = true;
 
     // DOM refs
@@ -944,7 +946,7 @@
 
     // ── Sample text button ──────────────────────────────────────────────────────
     sampleBtn.addEventListener('click', () => {
-      textInput.value = 'The quick brown fox jumps over the lazy dog. Pack my box with five dozen jugs of liquid soap.';
+      textInput.value = 'Dear Professor, I wanted to follow up on our conversation about the research project. The deadline is next Friday and I\'ve completed the first three sections. Looking forward to your feedback.';
       charCount.textContent = textInput.value.length;
       textInput.focus();
     });
@@ -1087,6 +1089,7 @@
     async function _doGenerate() {
       const text = textInput.value.trim();
       if (!text) { textInput.focus(); return; }
+      currentText = text;
 
       generateBtn.disabled = true;
       generateBtn.classList.add('loading');
@@ -1162,6 +1165,8 @@
     // ── Download ────────────────────────────────────────────────────────────────
     downloadBtn.addEventListener('click', () => {
       if (!currentDataUrl) return;
+      const slug = currentText.slice(0, 30).replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+      const baseName = `inkclone_${slug}_${state.paper}`;
       if (state.fmt === 'jpeg') {
         // Convert PNG data URL to JPEG via canvas
         const img = new Image();
@@ -1174,11 +1179,11 @@
           ctx.fillRect(0, 0, canvas.width, canvas.height);
           ctx.drawImage(img, 0, 0);
           const jpegUrl = canvas.toDataURL('image/jpeg', 0.92);
-          _triggerDownload(jpegUrl, 'inkclone-handwriting.jpg');
+          _triggerDownload(jpegUrl, baseName + '.jpg');
         };
         img.src = currentDataUrl;
       } else {
-        _triggerDownload(currentDataUrl, state.fmt === 'transparent' ? 'inkclone-handwriting-transparent.png' : 'inkclone-handwriting.png');
+        _triggerDownload(currentDataUrl, state.fmt === 'transparent' ? baseName + '_transparent.png' : baseName + '.png');
       }
     });
 

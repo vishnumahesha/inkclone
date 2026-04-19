@@ -59,7 +59,8 @@
     width: 80px;
     height: 80px;
     object-fit: contain;
-    background-color: #ffffff;
+    background-color: #ffffff !important;
+    background-image: none !important;
     border-radius: 4px;
     padding: 6px;
     border: 1px solid #e0e0e0;
@@ -72,6 +73,7 @@
   .quality-good     { color: var(--good); }
   .quality-warning  { color: var(--warn); }
   .quality-rejected { color: var(--bad); }
+  .quality-skipped  { color: #888888; }
   .quality-reason { font-size: 9px; color: var(--text-faint); margin-top: 1px; }
 
   /* ── Empty / loading ── */
@@ -222,13 +224,18 @@ function render() {
   const grid = document.createElement('div');
   grid.className = 'glyph-grid';
 
+  // Chars that have at least one good variant — warning variants for these are skipped by loader
+  const charsWithGood = new Set(allGlyphs.filter(g => g.quality === 'good').map(g => g.char));
+
   for (const g of items) {
     const card = document.createElement('div');
     card.className = 'glyph-card ' + g.quality;
     card.dataset.category = g.category;
 
-    const qIcon  = g.quality === 'good' ? '✓' : g.quality === 'warning' ? '⚠' : '✗';
-    const qClass = 'quality-' + g.quality;
+    const isSkipped = g.quality === 'warning' && charsWithGood.has(g.char);
+    const qIcon  = g.quality === 'good' ? '✓' : isSkipped ? '–' : g.quality === 'warning' ? '⚠' : '✗';
+    const qClass = isSkipped ? 'quality-skipped' : 'quality-' + g.quality;
+    const qLabel = isSkipped ? 'Skipped' : cap(g.quality);
     const label  = g.char.length > 1 ? `"${g.char}"` : `'${g.char}'`;
 
     card.innerHTML = `
@@ -240,7 +247,7 @@ function render() {
       <div class="glyph-variant">variant ${g.variant}</div>
       <div class="glyph-size">${g.width}×${g.height}px</div>
       <div class="glyph-ar">AR ${g.aspect_ratio.toFixed(2)}</div>
-      <div class="quality-label ${qClass}">${qIcon} ${cap(g.quality)}</div>
+      <div class="quality-label ${qClass}">${qIcon} ${qLabel}</div>
       ${g.quality_reason ? `<div class="quality-reason">${escHtml(g.quality_reason)}</div>` : ''}
     `;
     card.querySelector('.delete-btn').addEventListener('click', () => deleteGlyph(g, card));
