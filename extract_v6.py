@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """extract_v6.py — Extract V6 template glyphs from camera photos.
 
-Resolution-independent: warps to SOURCE native resolution (never upscales).
-All cell positions computed from template margin ratios, not hardcoded pixels.
+Always warps to 2550x3300 (letter @ 300 DPI) with sharpening after upscale.
+All cell positions computed from template margin ratios.
 """
 import json, argparse
 from pathlib import Path
@@ -127,14 +127,20 @@ def perspective_warp(img, corners, target_w, target_h):
     dst = np.array([[0, 0], [target_w, 0],
                     [target_w, target_h], [0, target_h]], np.float32)
     matrix = cv2.getPerspectiveTransform(src, dst)
-    # Downscale: use area interpolation. Same size: use linear.
-    interp = cv2.INTER_AREA if (target_w < img.shape[1]) else cv2.INTER_LINEAR
-    return cv2.warpPerspective(img, matrix, (target_w, target_h), flags=interp)
+    # Use cubic interpolation for upscaling (better than linear)
+    is_upscale = target_w > img.shape[1]
+    interp = cv2.INTER_CUBIC if is_upscale else cv2.INTER_AREA
+    warped = cv2.warpPerspective(img, matrix, (target_w, target_h), flags=interp)
+    # Sharpen after upscale to recover edges lost during interpolation
+    if is_upscale:
+        kernel = np.array([[0, -1, 0], [-1, 5, -1], [0, -1, 0]], dtype=np.float32)
+        warped = cv2.filter2D(warped, -1, kernel)
+    return warped
 
 
 def extract_glyph(warped_gray, col, row, ml, mt, cw, ch,
                   target_w, target_h, char_name=''):
-    """Extract one cell at native resolution, threshold, autocrop, return RGBA."""
+    """Extract one cell, threshold, autocrop, return RGBA."""
     scale = target_w / 2550.0
     inward_x = max(3, int(cw * 0.03))
     inward_y = max(3, int(ch * 0.03))
@@ -238,9 +244,8 @@ def run(profile='vishnu_v6'):
             continue
         img = cv2.imread(str(scan_path))
         src_h, src_w = img.shape[:2]
-        # Never upscale — cap at MAX_W x MAX_H
-        target_w = min(src_w, MAX_W)
-        target_h = min(src_h, MAX_H)
+        # Always warp to 2550x3300 — native res cells are too small to extract from
+        target_w, target_h = MAX_W, MAX_H
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         corners = find_corners(gray)
         print(f"Page {pg}: {scan_path.name}  {src_w}x{src_h} -> warp {target_w}x{target_h}")
