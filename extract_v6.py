@@ -14,10 +14,10 @@ from PIL import Image
 ROOT = Path(__file__).parent
 
 SCAN_MAP = [
-    (ROOT / "profiles" / "IMG_3803.jpeg", 1),  # lowercase a-o
-    (ROOT / "profiles" / "IMG_3802.jpeg", 2),  # lowercase p-z
-    (ROOT / "profiles" / "IMG_3805.jpeg", 3),  # uppercase A-Z
-    (ROOT / "profiles" / "IMG_3804.jpeg", 4),  # digits+punct+bigrams
+    (ROOT / "profiles" / "IMG_3807.jpeg", 1),  # lowercase a-o
+    (ROOT / "profiles" / "IMG_3806.jpeg", 2),  # lowercase p-z
+    (ROOT / "profiles" / "IMG_3809.jpeg", 3),  # uppercase A-Z
+    (ROOT / "profiles" / "IMG_3808.jpeg", 4),  # digits+punct+bigrams
 ]
 
 TGT_W, TGT_H = 2550, 3300
