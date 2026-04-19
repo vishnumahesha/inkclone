@@ -29,14 +29,24 @@ MARGIN_BOTTOM_RATIO = 0.45 / 11.0  # 0.0409
 # Never upscale beyond this
 MAX_W, MAX_H = 2550, 3300
 
-SMALL_CHARS = {'.', ',', "'", '"', '-', ':', ';', '!', '`', '*'}
+SMALL_CHARS = {'.', ',', "'", '"', '-', ':', ';', '!'}
 
 _PUNCT = {
     '.': 'period', ',': 'comma', '!': 'exclaim', '?': 'question',
     "'": 'apostrophe', '"': 'quote', '-': 'hyphen', ':': 'colon',
     ';': 'semicolon', '(': 'lparen', ')': 'rparen', '/': 'slash',
-    '@': 'atsign', '&': 'ampersand', '#': 'hash', '$': 'dollar',
+    '@': 'atsign', '&': 'ampersand', '#': 'hash',
 }
+
+# Only characters present in the v6 template
+VALID_V6_CHARS = (
+    set('abcdefghijklmnopqrstuvwxyz') |
+    set('ABCDEFGHIJKLMNOPQRSTUVWXYZ') |
+    set('0123456789') |
+    set('.,!?\'-:;()#@&/"') |
+    {'th', 'he', 'in', 'an', 'er', 'on', 'ed', 're', 'ou', 'es',
+     'ti', 'at', 'st', 'en', 'or', 'ng', 'ing', 'the', 'and', 'tion'}
+)
 
 
 def char_stem(c):
@@ -140,12 +150,37 @@ def extract_glyph(warped_gray, col, row, ml, mt, cw, ch,
     cell = warped_gray[y0:y1, x0:x1].copy()
     cell_h = cell.shape[0]
 
-    # Mask label zone (top 12% of cell)
-    label_mask_h = int(cell_h * 0.12)
+    # Mask label zone (top 15% of cell)
+    label_mask_h = int(cell_h * 0.15)
     cell[:label_mask_h, :] = 255
 
     # Otsu threshold per-cell
     _, binarized = cv2.threshold(cell, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+
+    # Remove thin horizontal guide lines (baseline guide appears at ~70% cell height)
+    cell_rows = binarized.shape[0]
+    cell_cols = binarized.shape[1]
+    for r in range(cell_rows):
+        row_ink = int(np.sum(binarized[r] > 0))
+        row_pct = row_ink / cell_cols
+        if row_pct > 0.60:
+            above = binarized[max(0, r - 3):r]
+            below = binarized[r + 1:min(cell_rows, r + 4)]
+            above_ink = int(np.sum(above > 0))
+            below_ink = int(np.sum(below > 0))
+            if above_ink < row_ink * 0.30 and below_ink < row_ink * 0.30:
+                binarized[r] = 0
+
+    # Specifically target baseline guide at ~60-80% cell height (wider band, lower threshold)
+    for r in range(int(cell_rows * 0.60), min(cell_rows, int(cell_rows * 0.82))):
+        row_ink = int(np.sum(binarized[r] > 0))
+        if row_ink > cell_cols * 0.35:
+            above = binarized[max(0, r - 4):r]
+            below = binarized[r + 1:min(cell_rows, r + 5)]
+            above_ink = int(np.sum(above > 0))
+            below_ink = int(np.sum(below > 0))
+            if above_ink < row_ink * 0.40 and below_ink < row_ink * 0.40:
+                binarized[r] = 0
 
     # Dilate to recover stroke edges at lower resolutions (<2040px wide)
     if scale < 0.8:
@@ -232,12 +267,68 @@ def run(profile='vishnu_v6'):
         print(f"  good={good}  empty={empty}  scale={target_w/2550:.2f}")
 
     saved = {}
+    skipped_invalid = 0
+    skipped_fake = 0
     for char, imgs in bank.items():
+        if char not in VALID_V6_CHARS:
+            skipped_invalid += len(imgs)
+            continue
         stem = char_stem(char)
         for vi, glyph_img in enumerate(imgs):
+            w, h = glyph_img.size
+            if w == 60 and h == 70:
+                skipped_fake += 1
+                continue
             fname = f"{stem}_{vi}.png"
             glyph_img.save(str(glyphs_dir / fname))
             saved.setdefault(char, []).append(f"glyphs/{fname}")
+
+    if skipped_invalid:
+        print(f"Skipped {skipped_invalid} glyphs for chars not in v6 template")
+    if skipped_fake:
+        print(f"Skipped {skipped_fake} fake 60×70px glyphs")
+
+    # Post-save: delete letter/digit glyphs that are horizontal lines (guide line leaked through)
+    HLINE_EXEMPT = {'.', ',', '-', "'", '"', ':', ';', '!', '?'}
+    deleted_hlines = 0
+    for char, paths in list(saved.items()):
+        if char in HLINE_EXEMPT:
+            continue
+        keep = []
+        for rel_path in paths:
+            png = profile_dir / rel_path
+            if png.exists():
+                img = Image.open(str(png))
+                w, h = img.size
+                if w > h * 3:
+                    png.unlink()
+                    deleted_hlines += 1
+                else:
+                    keep.append(rel_path)
+            else:
+                keep.append(rel_path)
+        saved[char] = keep
+    if deleted_hlines:
+        print(f"Deleted {deleted_hlines} horizontal-line glyphs (baseline guide leak)")
+    saved = {c: v for c, v in saved.items() if v}
+
+    # Verification pass
+    problems = []
+    for png in glyphs_dir.glob('*.png'):
+        img = Image.open(str(png))
+        w, h = img.size
+        if w == 60 and h == 70:
+            problems.append(f"FAKE 60x70: {png.name}")
+        if w < 10 or h < 10:
+            problems.append(f"TINY ({w}x{h}): {png.name}")
+        if w > h * 3:
+            problems.append(f"HLINE ({w}x{h}): {png.name}")
+    if problems:
+        print(f"\n=== {len(problems)} REMAINING PROBLEMS ===")
+        for p in problems:
+            print(f"  {p}")
+    else:
+        print("\nVerification: all checks passed (no lines, no fakes, no tiny glyphs)")
 
     total = sum(len(v) for v in saved.values())
     lc = sum(1 for c in saved if len(c) == 1 and c.islower())
