@@ -2,6 +2,12 @@
   "profile_id": "vishnu_v6",
   "created_at": "2026-04-19T02:11:03.736981+00:00",
   "source_method": "template_v6",
-  "total_variants": 205,
+  "character_coverage": {
+    "lowercase_pct": 100.0,
+    "uppercase_pct": 100.0,
+    "digits_pct": 100.0,
+    "total_variants": 238
+  },
+  "total_variants": 238,
   "usable": true
 }
