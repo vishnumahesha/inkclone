@@ -268,7 +268,7 @@ def _parse_glyph_stem(stem: str):
     return None
 
 
-def load_profile_glyphs(profile_dir, fallback_dummy=True):
+def load_profile_glyphs(profile_dir, fallback_dummy=False):
     """Load glyph PNGs from profiles/freeform_vishnu/glyphs/ directory.
 
     Filename conventions:
@@ -278,7 +278,7 @@ def load_profile_glyphs(profile_dir, fallback_dummy=True):
 
     Args:
         profile_dir: Path to profile directory (e.g. 'profiles/freeform_vishnu')
-        fallback_dummy: merge dummy bank for chars not in real set
+        fallback_dummy: merge dummy bank for chars not in real set (default False)
 
     Returns:
         dict: {char: [PIL.Image (RGBA), ...]}
@@ -335,6 +335,17 @@ def load_profile_glyphs(profile_dir, fallback_dummy=True):
         # Stroke-width normalization DISABLED — dilation makes thin glyphs
         # look artificial. The real fix is larger template cells (v5).
         # bank = _normalize_stroke_widths(bank)
+
+        # Log missing standard characters so the renderer knows to skip them
+        standard = (
+            list('abcdefghijklmnopqrstuvwxyz') +
+            list('ABCDEFGHIJKLMNOPQRSTUVWXYZ') +
+            list('0123456789') +
+            list('.,!?\'"-(: ;/@&#$'.replace(' ', ''))
+        )
+        for ch in standard:
+            if ch not in bank:
+                print(f"[glyph_loader] Skipping character '{ch}' — no glyph available")
 
     if fallback_dummy:
         dummy = create_dummy_glyph_bank()
