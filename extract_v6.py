@@ -2,7 +2,7 @@
 """extract_v6.py — Extract V6 template glyphs from camera photos.
 
 Finds 4 square corner markers, perspective warps, extracts cells as RGBA glyphs.
-Uses fixed threshold 130 (ink<=30, paper>=230, labels>=140).
+Fixed threshold 130, cc_min 50, 18% label mask.
 """
 import json, shutil, argparse
 from pathlib import Path
@@ -14,15 +14,17 @@ from PIL import Image
 ROOT = Path(__file__).parent
 
 SCAN_MAP = [
-    (ROOT / "profiles" / "IMG_3803.jpeg", 1),
-    (ROOT / "profiles" / "IMG_3802.jpeg", 2),
-    (ROOT / "profiles" / "IMG_3805.jpeg", 3),
-    (ROOT / "profiles" / "IMG_3804.jpeg", 4),
+    (ROOT / "profiles" / "IMG_3803.jpeg", 1),  # lowercase a-o
+    (ROOT / "profiles" / "IMG_3802.jpeg", 2),  # lowercase p-z
+    (ROOT / "profiles" / "IMG_3805.jpeg", 3),  # uppercase A-Z
+    (ROOT / "profiles" / "IMG_3804.jpeg", 4),  # digits+punct+bigrams
 ]
 
 TGT_W, TGT_H = 2550, 3300
 ML, MT, GW, GH = 150, 285, 2250, 2880
-INK_THRESHOLD = 130
+INK_THRESH = 130
+CC_MIN = 50
+LABEL_MASK_PCT = 0.18
 
 _PUNCT = {
     '.': 'period', ',': 'comma', '!': 'exclaim', '?': 'question',
@@ -72,10 +74,10 @@ def page_grid(pg):
 def find_corners(gray):
     """Find 4 corner markers as largest dark blob per quadrant."""
     _, binarized = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
-    n_components, _, stats, centroids = cv2.connectedComponentsWithStats(binarized, 8)
+    n_comp, _, stats, centroids = cv2.connectedComponentsWithStats(binarized, 8)
     h, w = gray.shape
     blobs = []
-    for i in range(1, n_components):
+    for i in range(1, n_comp):
         area = stats[i, cv2.CC_STAT_AREA]
         bw = stats[i, cv2.CC_STAT_WIDTH]
         bh = stats[i, cv2.CC_STAT_HEIGHT]
@@ -104,10 +106,13 @@ def find_corners(gray):
 
 def perspective_warp(img, corners):
     """Warp image to standard 2550x3300 using detected corners."""
-    src = np.array([corners['TL'], corners['TR'], corners['BR'], corners['BL']], np.float32)
-    dst = np.array([[0, 0], [TGT_W, 0], [TGT_W, TGT_H], [0, TGT_H]], np.float32)
+    src = np.array([corners['TL'], corners['TR'],
+                    corners['BR'], corners['BL']], np.float32)
+    dst = np.array([[0, 0], [TGT_W, 0],
+                    [TGT_W, TGT_H], [0, TGT_H]], np.float32)
     matrix = cv2.getPerspectiveTransform(src, dst)
-    return cv2.warpPerspective(img, matrix, (TGT_W, TGT_H), flags=cv2.INTER_LANCZOS4)
+    return cv2.warpPerspective(img, matrix, (TGT_W, TGT_H),
+                               flags=cv2.INTER_LANCZOS4)
 
 
 def extract_glyph(warped_gray, col, row, cw, ch):
@@ -120,14 +125,14 @@ def extract_glyph(warped_gray, col, row, cw, ch):
         return None
     cell = warped_gray[y0:y1, x0:x1].copy()
     cell_h = cell.shape[0]
-    # Mask label zone — top 12% contains the 7pt character label
-    cell[:int(cell_h * 0.12), :] = 255
-    # Otsu threshold: ink is dark (~0-30), paper is bright (~230-255)
-    _, binarized = cv2.threshold(cell, 0, 255, cv2.THRESH_BINARY_INV | cv2.THRESH_OTSU)
-    # Remove small noise components (< 20 pixels)
+    # Mask label zone (top 18%)
+    cell[:int(cell_h * LABEL_MASK_PCT), :] = 255
+    # Fixed threshold at 130
+    _, binarized = cv2.threshold(cell, INK_THRESH, 255, cv2.THRESH_BINARY_INV)
+    # Remove noise components < 50 pixels
     n_cc, labels, cc_stats, _ = cv2.connectedComponentsWithStats(binarized, 8)
     for i in range(1, n_cc):
-        if cc_stats[i, cv2.CC_STAT_AREA] < 20:
+        if cc_stats[i, cv2.CC_STAT_AREA] < CC_MIN:
             binarized[labels == i] = 0
     # Autocrop to ink bounding box with 4px padding
     ink_coords = np.argwhere(binarized > 0)
@@ -152,7 +157,6 @@ def run(profile='vishnu_v6'):
     profile_dir = ROOT / 'profiles' / profile
     glyphs_dir = profile_dir / 'glyphs'
     glyphs_dir.mkdir(parents=True, exist_ok=True)
-    # Clear old glyphs
     for old_file in glyphs_dir.glob('*.png'):
         try:
             old_file.unlink()
@@ -188,7 +192,6 @@ def run(profile='vishnu_v6'):
             good += 1
         print(f"  good={good}  empty={empty}")
 
-    # Save glyphs
     saved = {}
     for char, imgs in bank.items():
         stem = char_stem(char)
@@ -208,7 +211,6 @@ def run(profile='vishnu_v6'):
         print(f"Heights: min={min(all_heights)} max={max(all_heights)} "
               f"mean={sum(all_heights) // len(all_heights)}px")
 
-    # Write profile.json
     profile_meta = {
         'profile_id': profile,
         'created_at': datetime.now(timezone.utc).isoformat(),
@@ -219,7 +221,6 @@ def run(profile='vishnu_v6'):
     (profile_dir / 'profile.json').write_text(json.dumps(profile_meta, indent=2))
     print(f"Profile: {profile_dir / 'profile.json'}")
 
-    # Test render
     try:
         from glyph_loader import load_profile_glyphs
         from render_engine import HandwritingRenderer
