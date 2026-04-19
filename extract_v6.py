@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """extract_v6.py — Extract V6 template glyphs from camera photos.
 
-Finds 4 square corner markers, perspective warps, extracts cells as RGBA glyphs.
-Otsu threshold per-cell, cc_min 12, 18% label mask.
+Resolution-independent: warps to SOURCE native resolution (never upscales).
+All cell positions computed from template margin ratios, not hardcoded pixels.
 """
-import json, shutil, argparse
+import json, argparse
 from pathlib import Path
 from datetime import datetime, timezone
 import cv2
@@ -20,10 +20,15 @@ SCAN_MAP = [
     (ROOT / "profiles" / "IMG_3808.jpeg", 4),  # digits+punct+bigrams
 ]
 
-TGT_W, TGT_H = 2550, 3300
-ML, MT, GW, GH = 150, 285, 2250, 2880
-CC_MIN = 12
-LABEL_MASK_PCT = 0.18
+# Template margin ratios (8.5"x11" letter paper layout)
+MARGIN_LEFT_RATIO   = 0.5  / 8.5   # 0.0588
+MARGIN_TOP_RATIO    = 0.95 / 11.0  # 0.0864
+MARGIN_RIGHT_RATIO  = 0.5  / 8.5   # 0.0588
+MARGIN_BOTTOM_RATIO = 0.45 / 11.0  # 0.0409
+
+# Never upscale beyond this
+MAX_W, MAX_H = 2550, 3300
+
 SMALL_CHARS = {'.', ',', "'", '"', '-', ':', ';', '!', '`', '*'}
 
 _PUNCT = {
@@ -35,7 +40,6 @@ _PUNCT = {
 
 
 def char_stem(c):
-    """Convert character to filesystem-safe stem."""
     if c in _PUNCT:
         return _PUNCT[c]
     if len(c) > 1:
@@ -48,7 +52,6 @@ def char_stem(c):
 
 
 def page_cells(pg):
-    """Return ordered list of characters for each cell on the page."""
     if pg == 1:
         return [c for c in 'abcdefghijklmno' for _ in range(4)]
     if pg == 2:
@@ -64,11 +67,14 @@ def page_cells(pg):
     return cells
 
 
-def page_grid(pg):
-    """Return (cols, rows, cell_w, cell_h) for the page."""
-    if pg <= 3:
-        return 6, 10, GW / 6, GH / 10
-    return 8, 11, GW / 8, GH / 11
+def page_grid(pg, target_w, target_h):
+    """Return (cols, rows, margin_left, margin_top, cell_w, cell_h)."""
+    ml = int(target_w * MARGIN_LEFT_RATIO)
+    mt = int(target_h * MARGIN_TOP_RATIO)
+    gw = target_w - ml - int(target_w * MARGIN_RIGHT_RATIO)
+    gh = target_h - mt - int(target_h * MARGIN_BOTTOM_RATIO)
+    cols, rows = (6, 10) if pg <= 3 else (8, 11)
+    return cols, rows, ml, mt, gw / cols, gh / rows
 
 
 def find_corners(gray):
@@ -104,52 +110,73 @@ def find_corners(gray):
     return corners
 
 
-def perspective_warp(img, corners):
-    """Warp image to standard 2550x3300 using detected corners."""
+def perspective_warp(img, corners, target_w, target_h):
+    """Warp image to target dimensions using detected corners."""
     src = np.array([corners['TL'], corners['TR'],
                     corners['BR'], corners['BL']], np.float32)
-    dst = np.array([[0, 0], [TGT_W, 0],
-                    [TGT_W, TGT_H], [0, TGT_H]], np.float32)
+    dst = np.array([[0, 0], [target_w, 0],
+                    [target_w, target_h], [0, target_h]], np.float32)
     matrix = cv2.getPerspectiveTransform(src, dst)
-    return cv2.warpPerspective(img, matrix, (TGT_W, TGT_H),
-                               flags=cv2.INTER_LANCZOS4)
+    # Downscale: use area interpolation. Same size: use linear.
+    interp = cv2.INTER_AREA if (target_w < img.shape[1]) else cv2.INTER_LINEAR
+    return cv2.warpPerspective(img, matrix, (target_w, target_h), flags=interp)
 
 
-def extract_glyph(warped_gray, col, row, cw, ch, char_name=''):
-    """Extract one cell, threshold, autocrop, return RGBA or None."""
-    x0 = int(round(ML + col * cw)) + 10
-    y0 = int(round(MT + row * ch)) + 10
-    x1 = min(TGT_W, int(round(ML + (col + 1) * cw)) - 10)
-    y1 = min(TGT_H, int(round(MT + (row + 1) * ch)) - 10)
-    if x1 - x0 < 20 or y1 - y0 < 20:
+def extract_glyph(warped_gray, col, row, ml, mt, cw, ch,
+                  target_w, target_h, char_name=''):
+    """Extract one cell at native resolution, threshold, autocrop, return RGBA."""
+    scale = target_w / 2550.0
+    inward_x = max(3, int(cw * 0.03))
+    inward_y = max(3, int(ch * 0.03))
+    pad = max(2, int(4 * scale))
+
+    x0 = int(round(ml + col * cw)) + inward_x
+    y0 = int(round(mt + row * ch)) + inward_y
+    x1 = min(target_w, int(round(ml + (col + 1) * cw)) - inward_x)
+    y1 = min(target_h, int(round(mt + (row + 1) * ch)) - inward_y)
+    if x1 - x0 < 10 or y1 - y0 < 10:
         return None
+
     cell = warped_gray[y0:y1, x0:x1].copy()
     cell_h = cell.shape[0]
-    # Mask label zone (top 18%)
-    cell[:int(cell_h * LABEL_MASK_PCT), :] = 255
-    # Otsu's threshold per-cell
+
+    # Mask label zone (top 12% of cell)
+    label_mask_h = int(cell_h * 0.12)
+    cell[:label_mask_h, :] = 255
+
+    # Otsu threshold per-cell
     _, binarized = cv2.threshold(cell, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    # Recover stroke edges lost during 2.76x upscale (source ~925px -> warp 2550px)
-    binarized = cv2.dilate(binarized, np.ones((2, 2), np.uint8), iterations=1)
-    # Remove noise components < 12 pixels
+
+    # Dilate to recover stroke edges at lower resolutions (<2040px wide)
+    if scale < 0.8:
+        binarized = cv2.dilate(binarized, np.ones((2, 2), np.uint8), iterations=1)
+
+    # Remove noise — cc_min scales with resolution
+    cc_min = max(5, int(12 * scale))
     n_cc, labels, cc_stats, _ = cv2.connectedComponentsWithStats(binarized, 8)
     for i in range(1, n_cc):
-        if cc_stats[i, cv2.CC_STAT_AREA] < CC_MIN:
+        if cc_stats[i, cv2.CC_STAT_AREA] < cc_min:
             binarized[labels == i] = 0
-    # Autocrop to ink bounding box with 4px padding
+
+    # Autocrop to ink bounding box
     ink_coords = np.argwhere(binarized > 0)
-    min_ink = 15 if char_name in SMALL_CHARS else 35
+    min_ink_small = max(5, int(15 * scale))
+    min_ink = min_ink_small if char_name in SMALL_CHARS else max(10, int(35 * scale))
     if len(ink_coords) < min_ink:
         return None
+
     y_min, x_min = ink_coords.min(axis=0)
     y_max, x_max = ink_coords.max(axis=0)
-    y_min = max(0, y_min - 4)
-    x_min = max(0, x_min - 4)
-    y_max = min(binarized.shape[0] - 1, y_max + 4)
-    x_max = min(binarized.shape[1] - 1, x_max + 4)
+    y_min = max(0, y_min - pad)
+    x_min = max(0, x_min - pad)
+    y_max = min(binarized.shape[0] - 1, y_max + pad)
+    x_max = min(binarized.shape[1] - 1, x_max + pad)
     crop = binarized[y_min:y_max + 1, x_min:x_max + 1]
-    if crop.shape[0] < 8 or crop.shape[1] < 8:
+
+    min_crop = max(4, int(8 * scale))
+    if crop.shape[0] < min_crop or crop.shape[1] < min_crop:
         return None
+
     rgba = np.zeros((*crop.shape, 4), np.uint8)
     rgba[crop > 128] = [0, 0, 0, 240]
     return Image.fromarray(rgba, 'RGBA')
@@ -175,11 +202,18 @@ def run(profile='vishnu_v6'):
             print(f"MISSING: {scan_path.name}")
             continue
         img = cv2.imread(str(scan_path))
+        src_h, src_w = img.shape[:2]
+        # Never upscale — cap at MAX_W x MAX_H
+        target_w = min(src_w, MAX_W)
+        target_h = min(src_h, MAX_H)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         corners = find_corners(gray)
-        print(f"Page {pg}: {scan_path.name}  {img.shape[1]}x{img.shape[0]}")
-        warped = cv2.cvtColor(perspective_warp(img, corners), cv2.COLOR_BGR2GRAY)
-        cols, rows, cw, ch = page_grid(pg)
+        print(f"Page {pg}: {scan_path.name}  {src_w}x{src_h} -> warp {target_w}x{target_h}")
+        warped = cv2.cvtColor(
+            perspective_warp(img, corners, target_w, target_h),
+            cv2.COLOR_BGR2GRAY
+        )
+        cols, rows, ml, mt, cw, ch = page_grid(pg, target_w, target_h)
         cells = page_cells(pg)
         good = empty = 0
         for idx, char in enumerate(cells):
@@ -187,14 +221,15 @@ def run(profile='vishnu_v6'):
             row = idx // cols
             if row >= rows:
                 break
-            glyph = extract_glyph(warped, col, row, cw, ch, char_name=char)
+            glyph = extract_glyph(warped, col, row, ml, mt, cw, ch,
+                                   target_w, target_h, char_name=char)
             if glyph is None:
                 empty += 1
                 continue
             bank.setdefault(char, []).append(glyph)
             all_heights.append(glyph.size[1])
             good += 1
-        print(f"  good={good}  empty={empty}")
+        print(f"  good={good}  empty={empty}  scale={target_w/2550:.2f}")
 
     saved = {}
     for char, imgs in bank.items():
