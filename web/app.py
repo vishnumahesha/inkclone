@@ -1257,6 +1257,19 @@ async def api_apply_style(request: ApplyStyleRequest):
     return JSONResponse({"success": True, "params": params})
 
 
+@app.delete("/api/glyph/{profile}/{filename}")
+async def delete_glyph(profile: str, filename: str):
+    """Delete a single glyph PNG from a profile."""
+    if "/" in filename or "\\" in filename or ".." in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    path = _PROFILES_DIR / profile / "glyphs" / filename
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Glyph not found")
+    path.unlink()
+    _GLYPH_BANKS.pop(profile, None)
+    return JSONResponse({"success": True})
+
+
 # ── Entry point ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     uvicorn.run(app, host="127.0.0.1", port=8000)

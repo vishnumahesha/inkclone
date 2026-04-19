@@ -46,7 +46,9 @@
   /* ── Grid ── */
   .grid-wrap { padding: 16px 20px; }
   .glyph-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-  .glyph-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; transition: border-color .15s; cursor: default; }
+  .glyph-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 10px; text-align: center; transition: border-color .15s; cursor: default; position: relative; }
+  .delete-btn { position: absolute; top: 4px; right: 4px; background: transparent; border: none; color: var(--bad); font-size: 12px; cursor: pointer; padding: 2px 5px; border-radius: 3px; line-height: 1; opacity: 0.55; transition: opacity .15s, background .15s; }
+  .delete-btn:hover { opacity: 1; background: rgba(255,68,68,.12); }
   .glyph-card:hover { border-color: #4a4a6a; }
   .glyph-card.rejected { border-color: var(--bad); opacity: .55; }
   .glyph-card.warning  { border-color: var(--warn); }
@@ -230,6 +232,7 @@ function render() {
     const label  = g.char.length > 1 ? `"${g.char}"` : `'${g.char}'`;
 
     card.innerHTML = `
+      <button class="delete-btn" title="Delete this variant">✕</button>
       <div class="glyph-img-wrap">
         <img class="glyph-image" src="${g.image_url}" alt="${g.char}" loading="lazy">
       </div>
@@ -240,11 +243,29 @@ function render() {
       <div class="quality-label ${qClass}">${qIcon} ${cap(g.quality)}</div>
       ${g.quality_reason ? `<div class="quality-reason">${escHtml(g.quality_reason)}</div>` : ''}
     `;
+    card.querySelector('.delete-btn').addEventListener('click', () => deleteGlyph(g, card));
     grid.appendChild(card);
   }
 
   container.innerHTML = '';
   container.appendChild(grid);
+}
+
+async function deleteGlyph(g, card) {
+  if (!confirm('Delete this variant?')) return;
+  const profile = document.getElementById('profile-sel').value;
+  try {
+    const res = await fetch(`/api/glyph/${encodeURIComponent(profile)}/${encodeURIComponent(g.filename)}`, { method: 'DELETE' });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    allGlyphs = allGlyphs.filter(x => x.filename !== g.filename);
+    card.remove();
+    const good     = allGlyphs.filter(x => x.quality === 'good').length;
+    const warnings = allGlyphs.filter(x => x.quality === 'warning').length;
+    const rejected = allGlyphs.filter(x => x.quality === 'rejected').length;
+    updateSummary({ total: allGlyphs.length, good, warnings, rejected });
+  } catch (e) {
+    alert('Failed to delete: ' + e.message);
+  }
 }
 
 function escHtml(s) {

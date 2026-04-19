@@ -1027,6 +1027,8 @@
         } else {
           applyPreset(btn.dataset.preset);
         }
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => generatePreview(), 500);
       });
     });
 
@@ -1064,8 +1066,25 @@
       });
     });
 
+    // ── Auto-preview on slider / preset change ───────────────────────────────────
+    let debounceTimer;
+    document.querySelectorAll('.realism-slider').forEach(slider => {
+      slider.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => generatePreview(), 500);
+      });
+    });
+
     // ── Generate ────────────────────────────────────────────────────────────────
-    generateBtn.addEventListener('click', async () => {
+    async function generatePreview() {
+      const text = textInput.value.trim();
+      if (!text) { textInput.focus(); return; }
+      await _doGenerate();
+    }
+
+    generateBtn.addEventListener('click', () => generatePreview());
+
+    async function _doGenerate() {
       const text = textInput.value.trim();
       if (!text) { textInput.focus(); return; }
 
@@ -1124,7 +1143,7 @@
         generateBtn.classList.remove('loading');
         btnText.textContent = 'Generate';
       }
-    });
+    }
 
     // ── Clear ───────────────────────────────────────────────────────────────────
     clearBtn.addEventListener('click', () => {
