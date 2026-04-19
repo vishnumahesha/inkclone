@@ -129,7 +129,9 @@ def extract_glyph(warped_gray, col, row, cw, ch, char_name=''):
     cell[:int(cell_h * LABEL_MASK_PCT), :] = 255
     # Otsu's threshold per-cell
     _, binarized = cv2.threshold(cell, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-    # Remove noise components < 50 pixels
+    # Recover stroke edges lost during 2.76x upscale (source ~925px -> warp 2550px)
+    binarized = cv2.dilate(binarized, np.ones((2, 2), np.uint8), iterations=1)
+    # Remove noise components < 12 pixels
     n_cc, labels, cc_stats, _ = cv2.connectedComponentsWithStats(binarized, 8)
     for i in range(1, n_cc):
         if cc_stats[i, cv2.CC_STAT_AREA] < CC_MIN:
