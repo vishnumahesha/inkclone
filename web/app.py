@@ -357,7 +357,7 @@ async def list_profiles():
     if not _PROFILES_DIR.exists():
         return JSONResponse([])
 
-    _SKIP = {"schema", "__pycache__", "glyphs"}
+    _SKIP = {"schema", "__pycache__", "glyphs", "improved_vishnu", "vishnu_v4"}
     results = []
     for entry in sorted(_PROFILES_DIR.iterdir()):
         if not entry.is_dir() or entry.name.startswith(".") or entry.name in _SKIP:
