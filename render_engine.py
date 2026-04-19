@@ -286,6 +286,27 @@ class HandwritingRenderer:
             return 0.0
         return float(np.median(widths)) * norm_scale
 
+    def _peek_word_width(self, word: str, char_height: int, inter_letter_mean: float) -> int:
+        """Estimate word pixel width without advancing the variant selector."""
+        total_w = 0
+        for char in word:
+            variants = self.glyph_bank.get(char, [])
+            if not variants:
+                alt = char.upper() if char.islower() else char.lower()
+                variants = self.glyph_bank.get(alt, [])
+            if variants:
+                target_h = char_height
+                if char.isupper() or char in 'bdfhklt':
+                    target_h = int(char_height * 1.4)
+                max_w = max(
+                    min(max(1, int(g.width * (target_h / max(g.height, 1)))), char_height * 3)
+                    for g in variants
+                )
+                total_w += max_w + int(inter_letter_mean)
+            else:
+                total_w += int(char_height * 0.3)
+        return total_w
+
     def _smart_line_break(self, words: list, word_idx: int, cursor_x: int,
                          page_width: int, margin_right: int, margin_left: int,
                          char_height: int, inter_letter_mean: float,
@@ -359,19 +380,21 @@ class HandwritingRenderer:
         crammed_start  = margin_left + 0.8 * (right_edge - margin_left)
 
         for word_i, word in enumerate(words):
-            if self._smart_line_break(words, word_i, cursor_x, page_width, margin_right,
-                                     margin_left, char_height, inter_letter_mean,
-                                     avg_char_width=float(avg_ink_width)):
-                if cursor_x > margin_left + 50:
-                    line_drift = min(line_idx * margin_drift_px / max(total_lines, 1), margin_left * 0.4)
-                    cursor_x   = margin_left + line_drift + self.rng.gauss(0, 2.0 * jitter_factor)
-                    line_idx  += 1
-                    if baseline_y_positions and line_idx < len(baseline_y_positions):
-                        cursor_y = baseline_y_positions[line_idx]
-                    else:
-                        cursor_y += int(line_height * line_spacing_mult)
+            # Estimate word pixel width without advancing the variant selector
+            word_pixel_width = self._peek_word_width(word, char_height, inter_letter_mean)
 
-            if cursor_y + char_height > page_height - 100:
+            # Wrap BEFORE placing this word if it won't fit on the current line
+            if cursor_x + word_pixel_width > right_edge and cursor_x > margin_left + 50:
+                line_drift = min(line_idx * margin_drift_px / max(total_lines, 1), margin_left * 0.4)
+                cursor_x   = margin_left + line_drift + self.rng.gauss(0, 2.0 * jitter_factor)
+                line_idx  += 1
+                if baseline_y_positions and line_idx < len(baseline_y_positions):
+                    cursor_y = baseline_y_positions[line_idx]
+                else:
+                    cursor_y += int(line_height * line_spacing_mult)
+
+            # Stop if we've gone past the bottom of the page
+            if cursor_y + char_height > page_height - margin_top:
                 break
 
             prog = self._page_progression(line_idx, total_lines)
@@ -402,19 +425,9 @@ class HandwritingRenderer:
                 if char.isupper() or char in 'bdfhklt':
                     target_h = int(char_height * 1.4)
                 scale = target_h / max(glyph.height, 1)
-                new_w = max(1, int(glyph.width * scale))
+                new_w = max(1, min(int(glyph.width * scale), char_height * 3))
                 glyph = glyph.resize((new_w, target_h), Image.LANCZOS)
                 new_h = target_h
-
-                # Line wrap: break before glyph overflows right margin
-                if cursor_x + new_w > right_edge:
-                    line_drift = min(line_idx * margin_drift_px / max(total_lines, 1), margin_left * 0.4)
-                    cursor_x   = margin_left + line_drift
-                    line_idx  += 1
-                    if baseline_y_positions and line_idx < len(baseline_y_positions):
-                        cursor_y = baseline_y_positions[line_idx]
-                    else:
-                        cursor_y += int(line_height * line_spacing_mult)
 
                 # Fatigue scale increases toward bottom of page
                 fatigue_scale = 1.0 + fatigue_factor * min(1.0, cursor_y / max(page_height, 1))
