@@ -43,7 +43,7 @@ PRESETS: Dict[str, Dict[str, int]] = {
         "pressure_variation": 10, "page_fatigue": 5, "ink_fading": 5, "ink_bleed": 8,
     },
     "natural_notes": {
-        "font_size": 50, "stroke_thickness": 50, "letter_spacing": 45, "word_spacing": 50,
+        "font_size": 50, "stroke_thickness": 50, "letter_spacing": 40, "word_spacing": 50,
         "slant": 55, "baseline_straightness": 75, "line_spacing": 50,
         "margin_consistency": 75, "line_end_behavior": 60,
         "size_variation": 25, "spacing_variation": 25, "angle_variation": 20,
@@ -86,7 +86,7 @@ def sliders_to_render_params(sliders: Dict[str, int], line_spacing_px: int) -> d
         # Character metrics
         "char_height":        int(_lerp(s["font_size"],               lsp * 0.30, lsp * 0.80)),
         "stroke_thickness":   int(_lerp(s.get("stroke_thickness", 50), -1, 3)),
-        "inter_letter_mean":  _lerp(s["letter_spacing"],              -2.0,  10.0),
+        "inter_letter_mean":  _lerp(s["letter_spacing"],              -2.0,   6.0),
         "inter_word_mean":    _lerp(s["word_spacing"],                lsp * 0.25, lsp * 1.2),
         "slant_deg":          _lerp(s["slant"],                       -12.0, 12.0),
         # Line layout
