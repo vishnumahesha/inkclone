@@ -161,7 +161,7 @@ def _is_valid_glyph(img: Image.Image, char: str) -> bool:
     if w < 8 or h < 8:
         return False
     ar = w / h
-    max_ar = 3.5 if char in WIDE_CHARS else 1.8
+    max_ar = 3.5 if char in WIDE_CHARS else 2.2
     if ar > max_ar or ar < 0.15:
         return False
     arr = np.array(img)
@@ -170,9 +170,6 @@ def _is_valid_glyph(img: Image.Image, char: str) -> bool:
     alpha = arr[:, :, 3]
     total_ink = int((alpha > 0).sum())
     if total_ink < 50:
-        return False
-    top_ink = int((alpha[:max(1, h // 4), :] > 0).sum())
-    if top_ink / total_ink > 0.20:
         return False
     ink_rows = np.where(np.any(alpha > 0, axis=1))[0]
     if len(ink_rows) == 0 or (int(ink_rows[-1]) - int(ink_rows[0])) < 15:

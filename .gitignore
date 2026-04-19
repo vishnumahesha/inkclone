@@ -38,3 +38,7 @@ profiles/*/source_images/
 !template_v4_scan_page2.png
 !template_v4_scan_page3.png
 
+
+!profiles/vishnu_v6/
+!profiles/vishnu_v6/glyphs/
+!profiles/vishnu_v6/**
