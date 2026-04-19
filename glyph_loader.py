@@ -291,18 +291,26 @@ def load_profile_glyphs(profile_dir, fallback_dummy=True):
             raw_bank.setdefault(char, []).append(img)
 
         total_rejected = 0
+        total_good_count = 0
+        total_warnings_skipped = 0
         for char, variants in raw_bank.items():
             valid = [v for v in variants if _is_valid_glyph(v, char)]
             rejected = len(variants) - len(valid)
             total_rejected += rejected
-            if valid:
-                bank[char] = valid
-            else:
+
+            good = [v for v in valid if _ink_count(v) >= 150]
+            warn = [v for v in valid if _ink_count(v) < 150]
+
+            if good:
+                bank[char] = good
+                total_good_count += len(good)
+                total_warnings_skipped += len(warn)
+            elif warn:
+                bank[char] = [max(warn, key=_ink_count)]
+            elif variants:
                 bank[char] = [max(variants, key=_ink_count)]
 
-        total = sum(len(v) for v in bank.values())
-        print(f"[glyph_loader] Loaded {len(bank)} chars, {total} variants from {glyphs_dir} "
-              f"({total_rejected} rejected by quality gate)")
+        print(f"[glyph_loader] Loaded {profile_dir.name}: {total_good_count} good, {total_warnings_skipped} skipped")
 
         for char in bank:
             bank[char] = [_apply_ink_pooling(g) for g in bank[char]]
