@@ -365,10 +365,13 @@ async def list_profiles():
     if not _PROFILES_DIR.exists():
         return JSONResponse([])
 
-    _ALLOW = {"vishnu_v6"}
     results = []
     for entry in sorted(_PROFILES_DIR.iterdir()):
-        if not entry.is_dir() or entry.name not in _ALLOW:
+        if not entry.is_dir():
+            continue
+        # Skip non-profile directories (e.g. template photos)
+        glyphs_dir = entry / "glyphs"
+        if not glyphs_dir.exists():
             continue
 
         profile_json = entry / "profile.json"
@@ -423,10 +426,28 @@ async def get_contact_sheet(profile_id: str):
 
 # ── Profile creation ───────────────────────────────────────────────────────────
 
+
+@app.post("/api/extract-template")
+async def extract_template_api(
+    page1: UploadFile = File(None),
+    page2: UploadFile = File(None),
+    page3: UploadFile = File(None),
+    page4: UploadFile = File(None),
+    profile_name: str = Form("my_handwriting"),
+):
+    """Setup-page endpoint: accepts named page fields, returns format setup.html expects."""
+    images = [f for f in [page1, page2, page3, page4] if f is not None]
+    if not images:
+        raise HTTPException(status_code=400, detail="No images provided")
+
+    response = await create_profile(images, profile_name=profile_name)
+    return response
+
+
 @app.post("/profiles/create")
-async def create_profile(images: List[UploadFile] = File(...)):
+async def create_profile(images: List[UploadFile] = File(...), profile_name: str = Form("my_handwriting")):
     """
-    Accept 1–3 handwriting template photos, extract glyphs, build a profile.
+    Accept 1–4 handwriting template photos, extract glyphs, build a profile.
 
     Extraction pipeline:
     1. Save uploaded images to data/uploads/{timestamp}/
@@ -441,8 +462,8 @@ async def create_profile(images: List[UploadFile] = File(...)):
     """
     if not images:
         raise HTTPException(status_code=400, detail="No images provided")
-    if len(images) > 3:
-        raise HTTPException(status_code=400, detail="Maximum 3 images allowed")
+    if len(images) > 4:
+        raise HTTPException(status_code=400, detail="Maximum 4 images allowed")
 
     # ── 1. Save uploads ────────────────────────────────────────────────────────
     ts        = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -457,6 +478,11 @@ async def create_profile(images: List[UploadFile] = File(...)):
         dst.write_bytes(contents)
         saved_paths.append(dst)
 
+    # Use profile_name if provided, otherwise generate from timestamp
+    import re
+    safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', profile_name.strip()) if profile_name else ""
+    profile_id = safe_name if safe_name else f"profile_{ts}"
+
     # ── 1b. Image quality gate ─────────────────────────────────────────────────
     all_warnings: list[str] = []
     for idx, p in enumerate(saved_paths):
@@ -465,7 +491,6 @@ async def create_profile(images: List[UploadFile] = File(...)):
             all_warnings.append(f"Page {idx+1}: {w}" if len(saved_paths) > 1 else w)
 
     # ── 2-6. Extract glyphs ────────────────────────────────────────────────────
-    profile_id  = f"profile_{ts}"
     profile_dir = _PROFILES_DIR / profile_id
     glyphs_dir  = profile_dir / "glyphs"
     glyphs_dir.mkdir(parents=True, exist_ok=True)
@@ -526,9 +551,14 @@ async def create_profile(images: List[UploadFile] = File(...)):
     # Invalidate cache so next render picks up new profile
     _GLYPH_BANKS.pop(profile_id, None)
 
+    unique_characters = len(saved_chars)
+
     return JSONResponse({
+        "success":           True,
+        "profile":           profile_id,
         "profile_id":        profile_id,
         "total_glyphs":      total_glyphs,
+        "unique_characters": unique_characters,
         "coverage_pct":      coverage_pct,
         "uppercase_pct":     uppercase_pct,
         "digits_pct":        digits_pct,
