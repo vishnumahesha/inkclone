@@ -713,13 +713,15 @@ def _extract_glyphs_pipeline(image_paths: list, glyphs_dir: Path) -> dict:
         if img_cv is None:
             continue
 
-        gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+        # Red channel extraction: blue guide lines (R~166) are invisible
+        # at threshold 145, black ink (R~30) is captured, paper (R~240) ignored
+        red_ch = img_cv[:, :, 2]  # OpenCV BGR order: index 2 = Red
 
         # Mild denoise
-        gray = cv2.GaussianBlur(gray, (3, 3), 0)
+        gray = cv2.GaussianBlur(red_ch, (3, 3), 0)
 
-        # Otsu threshold → ink=255 (inverted)
-        _, binary = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+        # Fixed threshold on red channel (NOT Otsu — Otsu catches blue lines)
+        _, binary = cv2.threshold(gray, 145, 255, cv2.THRESH_BINARY_INV)
 
         # Morphological closing to connect broken strokes
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
@@ -858,13 +860,16 @@ def _extract_template_cells(gray, binary, img_cv) -> list:
             if y1 > H or x1 > W:
                 continue
 
-            cell_gray = gray[y0:y1, x0:x1]
-            if cell_gray.size == 0:
+            # Use red channel for per-cell thresholding (blue lines invisible)
+            cell_red = img_cv[y0:y1, x0:x1, 2]  # BGR index 2 = Red
+            if cell_red.size == 0:
                 continue
 
-            # Per-cell Otsu threshold handles uneven lighting across the page
+            cell_gray = gray[y0:y1, x0:x1]
+
+            # Fixed threshold on red channel — NOT Otsu (Otsu catches blue guide lines)
             _, cell_bin = cv2.threshold(
-                cell_gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU
+                cell_red, 145, 255, cv2.THRESH_BINARY_INV
             )
 
             quality = _score_cell_quality(cell_bin)
