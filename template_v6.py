@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-InkClone Handwriting Template v6 — Calligraphr Style
------------------------------------------------------
-Minimal design. Nothing in the cells except a tiny label.
-No guide lines. No writing zone backgrounds. No bullseyes.
-Simple square corner markers. Maximum empty space for writing.
+InkClone Handwriting Template v7 — Blue Guide Lines
+----------------------------------------------------
+All grid/guide lines printed in LIGHT BLUE (non-photo blue).
+Black ink has red channel ~30; blue lines have red channel ~166.
+Extraction uses red channel only — blue lines are invisible.
+Zero threshold tuning, zero ambiguity.
 
 4 pages, 238 characters total.
 """
@@ -26,11 +27,12 @@ GRID_Y_TOP = PAGE_H - MARGIN_TOP
 GRID_W = PAGE_W - MARGIN_LEFT - MARGIN_RIGHT
 GRID_H = GRID_Y_TOP - MARGIN_BOTTOM
 
-CELL_BORDER = Color(0.6, 0.6, 0.6)
-LABEL_COLOR = Color(0.55, 0.55, 0.55)
-MARKER_COLOR = Color(0.0, 0.0, 0.0)
-HEADER_COLOR = Color(0.15, 0.15, 0.15)
-FOOTER_COLOR = Color(0.5, 0.5, 0.5)
+# Blue guide lines: high blue, low red — invisible in red channel extraction
+CELL_BORDER = Color(0.65, 0.80, 0.95)       # RGB ~166, 204, 242
+LABEL_COLOR = Color(0.55, 0.55, 0.55)       # Labels stay gray (readable)
+MARKER_COLOR = Color(0.0, 0.0, 0.0)         # Corner markers stay black
+HEADER_COLOR = Color(0.15, 0.15, 0.15)      # Header stays dark
+FOOTER_COLOR = Color(0.5, 0.5, 0.5)         # Footer stays gray
 
 PAGE_CONFIGS = [
     {"cols": 6, "rows": 10,
@@ -162,14 +164,14 @@ def draw_page(c, page_num, total_pages, config, cells):
     c.setFont("Helvetica", 5.5)
     c.setFillColor(FOOTER_COLOR)
     c.drawCentredString(PAGE_W / 2, 0.2 * inch,
-        "InkClone Template v6  |  BLACK ballpoint pen  |  "
-        "Write BIG in the center of each cell  |  Don't touch borders  |  "
+        "InkClone Template v7  |  BLACK ballpoint pen  |  "
+        "Blue lines vanish during extraction  |  Write BIG in center  |  "
         "Photograph flat with native camera, NOT CamScanner")
 
 
 def build_template(output_path):
     c = canvas.Canvas(output_path, pagesize=letter)
-    c.setTitle("InkClone Handwriting Template v6")
+    c.setTitle("InkClone Handwriting Template v7 — Blue Guide Lines")
     c.setAuthor("InkClone")
 
     total_pages = len(PAGE_CONFIGS)
@@ -183,7 +185,7 @@ def build_template(output_path):
 
     c.save()
 
-    print(f"Template v6 saved to: {output_path}")
+    print(f"Template v7 saved to: {output_path}")
     for i, config in enumerate(PAGE_CONFIGS):
         cols, rows = config["cols"], config["rows"]
         cw = GRID_W / cols
@@ -191,8 +193,8 @@ def build_template(output_path):
         cells = get_page_cells(i + 1)
         print(f"  Page {i+1}: {cols}x{rows}, cell {cw/inch:.2f}\" x {ch/inch:.2f}\", {len(cells)} cells")
     print(f"  Total: {total_cells} cells")
-    print(f"  Style: Calligraphr-minimal (no guides, no zones, tiny labels)")
+    print(f"  Style: Blue guide lines (non-photo blue) — invisible to red channel extraction")
 
 
 if __name__ == "__main__":
-    build_template("inkclone_template_v6.pdf")
+    build_template("inkclone_template_v7_blue.pdf")

@@ -134,8 +134,8 @@ def simulate_phone_photo(image: Image.Image,
 
 
 def simulate_clean(image: Image.Image) -> Image.Image:
-    """Return clean render (no artifacts)."""
-    return image.convert('RGB') if image.mode != 'RGB' else image.copy()
+    """Return clean render (no artifacts). Preserves RGBA if present."""
+    return image.copy()
 
 
 if __name__ == "__main__":

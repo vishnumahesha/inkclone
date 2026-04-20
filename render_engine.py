@@ -377,7 +377,7 @@ class HandwritingRenderer:
         chars_per_line = usable_width / (avg_ink_width + 2)
         total_lines    = max(1, len(text) / chars_per_line)
         right_edge     = page_width - margin_left
-        crammed_start  = margin_left + 0.8 * (right_edge - margin_left)
+        crammed_start  = margin_left + 0.65 * (right_edge - margin_left)
 
         for word_i, word in enumerate(words):
             # Estimate word pixel width without advancing the variant selector
@@ -385,8 +385,8 @@ class HandwritingRenderer:
 
             # Wrap BEFORE placing this word if it won't fit on the current line
             if cursor_x + word_pixel_width > right_edge and cursor_x > margin_left + 50:
-                line_drift = min(line_idx * margin_drift_px / max(total_lines, 1), margin_left * 0.4)
-                cursor_x   = margin_left + line_drift + self.rng.gauss(0, 2.0 * jitter_factor)
+                margin_jitter = self.rng.uniform(-margin_drift_px, margin_drift_px) if margin_drift_px > 0 else 0
+                cursor_x   = margin_left + margin_jitter + self.rng.gauss(0, 2.0 * jitter_factor)
                 line_idx  += 1
                 if baseline_y_positions and line_idx < len(baseline_y_positions):
                     cursor_y = baseline_y_positions[line_idx]
@@ -445,7 +445,7 @@ class HandwritingRenderer:
                 if pressure_range > 0:
                     alpha_mult *= max(0.35, 1.0 - self.rng.uniform(0, pressure_range) * fatigue_scale)
                 if ink_fade > 0:
-                    alpha_mult *= max(0.5, 1.0 - ink_fade * cursor_y / max(page_height, 1))
+                    alpha_mult *= max(0.25, 1.0 - ink_fade * cursor_y / max(page_height, 1))
                 arr[:, :, 3] = np.clip(arr[:, :, 3] * alpha_mult, 0, 255).astype(np.uint8)
 
                 if stroke_thickness != 0:
