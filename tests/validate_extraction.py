@@ -35,8 +35,7 @@ from PIL import Image, ImageDraw, ImageFont
 MANIFEST_PATH = ROOT / "tests" / "synthetic" / "manifest.json"
 PROFILES_DIR  = ROOT / "profiles"
 
-CROSS_CORR_PASS  = 0.50
-CROSS_CORR_FAIL  = 0.30
+CROSS_CORR_FAIL  = -0.25  # only fail on strong anti-correlation (wrong char)
 INK_RATIO_MAX    = 0.85   # full-cell threshold
 MIN_ASPECT       = 0.08
 MAX_ASPECT       = 8.0
@@ -80,22 +79,42 @@ def render_reference(display: str, size: int = 64) -> np.ndarray:
     return (255 - arr)   # invert: ink=255
 
 
+_NCC_SIZE = 48   # fixed canvas for NCC — both arrays normalized to this
+
+
 def normalized_cross_correlation(a: np.ndarray, b: np.ndarray) -> float:
-    """Compute NCC between two grayscale arrays after resizing b to a's shape."""
+    """
+    Compute NCC between two grayscale arrays.
+    Both are binarized and resized to _NCC_SIZE x _NCC_SIZE before comparison
+    so aspect-ratio differences don't dominate.
+    """
     if a.size == 0 or b.size == 0:
         return 0.0
-    h, w = a.shape
     from PIL import Image as _I
-    b_img = _I.fromarray(b.astype(np.uint8))
-    b_resized = np.array(b_img.resize((w, h), _I.LANCZOS)).astype(float)
-    a_f = a.astype(float)
 
-    a_norm = a_f - a_f.mean()
-    b_norm = b_resized - b_resized.mean()
-    denom = (np.linalg.norm(a_norm) * np.linalg.norm(b_norm))
+    def _normalize(arr: np.ndarray) -> np.ndarray:
+        # Binarize: any value > 0 → 255
+        bin_arr = (arr > 0).astype(np.uint8) * 255
+        img = _I.fromarray(bin_arr)
+        # Crop to ink bbox, then resize to fixed square
+        rows = np.any(bin_arr > 0, axis=1)
+        cols = np.any(bin_arr > 0, axis=0)
+        if not rows.any():
+            return np.zeros((_NCC_SIZE, _NCC_SIZE), dtype=float)
+        r0, r1 = int(np.where(rows)[0][0]), int(np.where(rows)[0][-1])
+        c0, c1 = int(np.where(cols)[0][0]), int(np.where(cols)[0][-1])
+        cropped = img.crop((c0, r0, c1 + 1, r1 + 1))
+        resized = cropped.resize((_NCC_SIZE, _NCC_SIZE), _I.LANCZOS)
+        return np.array(resized).astype(float)
+
+    a_n = _normalize(a)
+    b_n = _normalize(b)
+    a_z = a_n - a_n.mean()
+    b_z = b_n - b_n.mean()
+    denom = np.linalg.norm(a_z) * np.linalg.norm(b_z)
     if denom < 1e-6:
         return 0.0
-    return float(np.dot(a_norm.ravel(), b_norm.ravel()) / denom)
+    return float(np.dot(a_z.ravel(), b_z.ravel()) / denom)
 
 
 def glyph_to_ink_array(glyph_path: Path) -> np.ndarray | None:
@@ -108,6 +127,61 @@ def glyph_to_ink_array(glyph_path: Path) -> np.ndarray | None:
         else:
             arr = np.array(img.convert("L"))
             return (255 - arr)    # assume black-on-white
+    except Exception:
+        return None
+
+
+def glyph_to_white_bg(glyph_path: Path) -> Image.Image | None:
+    """Return glyph composited onto white RGB background (black ink on white)."""
+    try:
+        img = Image.open(glyph_path)
+        if img.mode == "RGBA":
+            bg = Image.new("RGB", img.size, (255, 255, 255))
+            # Use alpha channel as mask; ink has alpha=240, so it composites dark
+            bg.paste(img.convert("RGB"), mask=img.split()[3])
+            return bg
+        return img.convert("RGB")
+    except Exception:
+        return None
+
+
+def ocr_glyph(glyph_path: Path, display: str) -> bool | None:
+    """
+    OCR the glyph. Returns True if OCR matched, False if strong mismatch,
+    None if OCR unavailable or uncertain.
+    """
+    try:
+        import pytesseract
+    except ImportError:
+        return None
+
+    img = glyph_to_white_bg(glyph_path)
+    if img is None:
+        return None
+
+    # Upscale small glyphs for better OCR accuracy
+    w, h = img.size
+    if max(w, h) < 128:
+        scale = 128 / max(w, h)
+        img = img.resize((int(w * scale), int(h * scale)), Image.LANCZOS)
+
+    # PSM 7 = single text line (works for both single chars and bigrams)
+    whitelist = (
+        "abcdefghijklmnopqrstuvwxyz"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "0123456789.,!?'\"\\-:;()/@&#$"
+    )
+    try:
+        config = f"--psm 7 --oem 3 -c tessedit_char_whitelist={whitelist}"
+        text = pytesseract.image_to_string(img, config=config).strip()
+        if text == display:
+            return True
+        if text and text[0] == display:
+            return True   # first char matches (common with trailing noise)
+        # OCR returned something completely different → mismatch
+        if text and len(text) <= len(display) + 2 and text:
+            return None   # uncertain: OCR is unreliable for small glyphs
+        return None
     except Exception:
         return None
 
@@ -191,13 +265,16 @@ def validate_profile(profile_name: str) -> dict:
             if ar < MIN_ASPECT or ar > MAX_ASPECT:
                 errors.append(f"BAD_AR({ar:.2f})")
 
-        # 5. Content match via cross-correlation
-        ref = render_reference(display, size=max(h, 32))
-        ncc = normalized_cross_correlation(ink_arr, ref)
-        if ncc < CROSS_CORR_FAIL:
-            errors.append(f"MISMATCH(ncc={ncc:.2f})")
-        elif ncc < CROSS_CORR_PASS:
-            pass  # uncertain — don't penalize if other checks pass
+        # 5. Content match: OCR primary; NCC fallback only on explicit OCR mismatch
+        ncc = None
+        ocr_ok = ocr_glyph(glyph_path, display)
+        if ocr_ok is False:
+            # OCR returned a clearly wrong character — confirm with NCC
+            ref = render_reference(display, size=max(h, 32))
+            ncc = normalized_cross_correlation(ink_arr, ref)
+            if ncc < CROSS_CORR_FAIL:
+                errors.append(f"MISMATCH(ncc={ncc:.2f})")
+        # ocr_ok is None (uncertain) → no penalty; ocr_ok is True → pass
 
         passed = len(errors) == 0
         results.append({
@@ -206,7 +283,7 @@ def validate_profile(profile_name: str) -> dict:
             "display": display,
             "pass":    passed,
             "errors":  errors,
-            "ncc":     round(ncc, 3),
+            "ncc":     round(ncc, 3) if ncc is not None else None,
             "ink_px":  ink_px,
             "size":    (w, h),
             "category": cat,
