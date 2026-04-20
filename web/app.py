@@ -714,14 +714,14 @@ def _extract_glyphs_pipeline(image_paths: list, glyphs_dir: Path) -> dict:
             continue
 
         # Red channel extraction: blue guide lines (R~166) are invisible
-        # at threshold 145, black ink (R~30) is captured, paper (R~240) ignored
+        # at threshold 155, black ink (R~30) is captured, paper (R~240) ignored
         red_ch = img_cv[:, :, 2]  # OpenCV BGR order: index 2 = Red
 
         # Mild denoise
         gray = cv2.GaussianBlur(red_ch, (3, 3), 0)
 
         # Fixed threshold on red channel (NOT Otsu — Otsu catches blue lines)
-        _, binary = cv2.threshold(gray, 145, 255, cv2.THRESH_BINARY_INV)
+        _, binary = cv2.threshold(gray, 155, 255, cv2.THRESH_BINARY_INV)
 
         # Morphological closing to connect broken strokes
         kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
@@ -869,7 +869,7 @@ def _extract_template_cells(gray, binary, img_cv) -> list:
 
             # Fixed threshold on red channel — NOT Otsu (Otsu catches blue guide lines)
             _, cell_bin = cv2.threshold(
-                cell_red, 145, 255, cv2.THRESH_BINARY_INV
+                cell_red, 155, 255, cv2.THRESH_BINARY_INV
             )
 
             quality = _score_cell_quality(cell_bin)
