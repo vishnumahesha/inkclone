@@ -442,68 +442,72 @@ async def extract_template_api(
     page4: UploadFile = File(None),
     profile_name: str = Form("my_handwriting"),
 ):
-    """Setup-page endpoint: accepts named page fields, returns format setup.html expects."""
-    images = [f for f in [page1, page2, page3, page4] if f is not None]
-    if not images:
+    """Setup-page endpoint: accepts named page files with known page identity."""
+    # Build list of (UploadFile, page_number) pairs preserving page identity
+    page_uploads = []
+    for pg_num, upload in [(1, page1), (2, page2), (3, page3), (4, page4)]:
+        if upload is not None:
+            page_uploads.append((upload, pg_num))
+    if not page_uploads:
         raise HTTPException(status_code=400, detail="No images provided")
 
-    response = await create_profile(images, profile_name=profile_name)
+    response = await create_profile(page_uploads=page_uploads, profile_name=profile_name)
     return response
 
 
 @app.post("/profiles/create")
-async def create_profile(images: List[UploadFile] = File(...), profile_name: str = Form("my_handwriting")):
+async def create_profile(
+    images: List[UploadFile] = File(None),
+    profile_name: str = Form("my_handwriting"),
+    page_uploads: list = None,
+):
     """
     Accept 1–4 handwriting template photos, extract glyphs, build a profile.
-
-    Extraction pipeline:
-    1. Save uploaded images to data/uploads/{timestamp}/
-    2. Preprocess each image (grayscale, denoise, Otsu threshold)
-    3. Detect template grid structure; extract glyph cells
-    4. Clean each cell: morph-close → crop tight → RGBA (ink=240, bg=0) → 128px height
-    5. Score quality (ink_density, bbox_fill); skip noise glyphs
-    6. Save glyphs to profiles/{id}/glyphs/
-    7. Write profile.json via migrate.py logic
-    8. Generate contact_sheet.png
-    9. Return profile stats
+    Uses extract_v6-style pipeline: warp to 2550×3300, red channel, threshold 160.
     """
-    if not images:
-        raise HTTPException(status_code=400, detail="No images provided")
-    if len(images) > 4:
-        raise HTTPException(status_code=400, detail="Maximum 4 images allowed")
+    import re
+
+    # Handle both calling conventions: page_uploads from /api/extract-template,
+    # or raw images list from /profiles/create
+    if page_uploads is None:
+        if not images:
+            raise HTTPException(status_code=400, detail="No images provided")
+        if len(images) > 4:
+            raise HTTPException(status_code=400, detail="Maximum 4 images allowed")
+        # Assume page order matches upload order
+        page_uploads = [(img, idx + 1) for idx, img in enumerate(images)]
 
     # ── 1. Save uploads ────────────────────────────────────────────────────────
-    ts        = datetime.now().strftime("%Y%m%d_%H%M%S")
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     upload_dir = _UPLOADS_DIR / ts
     upload_dir.mkdir(parents=True, exist_ok=True)
 
-    saved_paths = []
-    for img_file in images:
-        ext      = Path(img_file.filename or "image.jpg").suffix.lower() or ".jpg"
-        dst      = upload_dir / f"page_{len(saved_paths)+1}{ext}"
+    saved_pages: list[tuple[Path, int]] = []  # (file_path, page_number)
+    for img_file, pg_num in page_uploads:
+        ext = Path(img_file.filename or "image.jpg").suffix.lower() or ".jpg"
+        dst = upload_dir / f"page_{pg_num}{ext}"
         contents = await img_file.read()
         dst.write_bytes(contents)
-        saved_paths.append(dst)
+        saved_pages.append((dst, pg_num))
 
-    # Use profile_name if provided, otherwise generate from timestamp
-    import re
+    # Profile naming
     safe_name = re.sub(r'[^a-zA-Z0-9_-]', '_', profile_name.strip()) if profile_name else ""
     profile_id = safe_name if safe_name else f"profile_{ts}"
 
     # ── 1b. Image quality gate ─────────────────────────────────────────────────
     all_warnings: list[str] = []
-    for idx, p in enumerate(saved_paths):
-        page_warnings = _check_image_quality(p)
+    for path, pg_num in saved_pages:
+        page_warnings = _check_image_quality(path)
         for w in page_warnings:
-            all_warnings.append(f"Page {idx+1}: {w}" if len(saved_paths) > 1 else w)
+            all_warnings.append(f"Page {pg_num}: {w}" if len(saved_pages) > 1 else w)
 
-    # ── 2-6. Extract glyphs ────────────────────────────────────────────────────
+    # ── 2-6. Extract glyphs using v7 template pipeline ─────────────────────────
     profile_dir = _PROFILES_DIR / profile_id
-    glyphs_dir  = profile_dir / "glyphs"
+    glyphs_dir = profile_dir / "glyphs"
     glyphs_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        glyph_bank = _extract_glyphs_pipeline(saved_paths, glyphs_dir)
+        glyph_bank = _extract_v7_template(saved_pages)
     except Exception as exc:
         shutil.rmtree(profile_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=f"Extraction failed: {exc}")
@@ -517,20 +521,19 @@ async def create_profile(images: List[UploadFile] = File(...), profile_name: str
         )
 
     # ── 7. Save glyphs to disk + write profile.json ────────────────────────────
-    # glyph_bank: {char: [(PIL.Image, confidence, is_weak), ...]}
     saved_chars: dict[str, list] = {}
-    for char, variants in glyph_bank.items():
+    for char, glyph_imgs in glyph_bank.items():
         char_name = _char_to_stem(char)
-        for v_idx, (glyph_img, confidence, is_weak) in enumerate(variants):
+        for v_idx, glyph_img in enumerate(glyph_imgs):
             fname = f"{char_name}_{v_idx}.png"
             glyph_img.save(str(glyphs_dir / fname))
             saved_chars.setdefault(char, []).append({
-                "path":       f"glyphs/{fname}",
-                "confidence": confidence,
-                "is_weak":    is_weak,
+                "path": f"glyphs/{fname}",
+                "confidence": 1.0,
+                "is_weak": False,
             })
 
-    _write_profile_json(profile_dir, profile_id, saved_chars, saved_paths)
+    _write_profile_json(profile_dir, profile_id, saved_chars, [p for p, _ in saved_pages])
 
     # ── 8. Contact sheet ───────────────────────────────────────────────────────
     _generate_contact_sheet(profile_id)
@@ -576,7 +579,207 @@ async def create_profile(images: List[UploadFile] = File(...), profile_name: str
     })
 
 
-# ── Extraction pipeline ────────────────────────────────────────────────────────
+# ── Extraction pipeline (v7 template-aware) ───────────────────────────────────
+#
+# Mirrors extract_v6.py logic: warp to 2550×3300, red channel only,
+# fixed threshold 160, known page layouts and character mappings.
+
+_WARP_W, _WARP_H = 2550, 3300
+
+# Template margin ratios (8.5"×11" letter paper)
+_ML_RATIO = 0.5 / 8.5    # left margin
+_MT_RATIO = 0.95 / 11.0  # top margin
+_MR_RATIO = 0.5 / 8.5    # right margin
+_MB_RATIO = 0.45 / 11.0  # bottom margin
+
+_SMALL_CHARS = {'.', ',', "'", '"', '-', ':', ';', '!'}
+
+
+def _page_cells(pg: int) -> list[str]:
+    """Character sequence for each template page (matches extract_v6.py)."""
+    if pg == 1:
+        return [c for c in 'abcdefghijklmno' for _ in range(4)]
+    if pg == 2:
+        return [c for c in 'pqrstuvwxyz' for _ in range(4)]
+    if pg == 3:
+        return [c for c in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' for _ in range(2)]
+    # Page 4: digits + punctuation + bigrams
+    cells = [d for d in '0123456789' for _ in range(3)]
+    punct = ['.', ',', '!', '?', "'", '"', '-', ':', ';',
+             '(', ')', '/', '@', '&', '#', '$']
+    cells += [p for p in punct for _ in range(2)]
+    cells += ['th', 'he', 'in', 'an', 'er', 'on', 'ed', 're', 'ou', 'es',
+              'ti', 'at', 'st', 'en', 'or', 'ng', 'ing', 'the', 'and', 'tion']
+    return cells
+
+
+def _page_grid(pg: int) -> tuple:
+    """Return (cols, rows, margin_left, margin_top, cell_w, cell_h) at 2550×3300."""
+    ml = int(_WARP_W * _ML_RATIO)
+    mt = int(_WARP_H * _MT_RATIO)
+    gw = _WARP_W - ml - int(_WARP_W * _MR_RATIO)
+    gh = _WARP_H - mt - int(_WARP_H * _MB_RATIO)
+    cols, rows = (6, 10) if pg <= 3 else (8, 11)
+    return cols, rows, ml, mt, gw / cols, gh / rows
+
+
+def _find_corners(gray):
+    """Find 4 corner markers as largest dark blob per quadrant (from extract_v6)."""
+    import cv2
+    import numpy as np
+
+    _, binarized = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
+    n_comp, _, stats, centroids = cv2.connectedComponentsWithStats(binarized, 8)
+    h, w = gray.shape
+    blobs = []
+    for i in range(1, n_comp):
+        area = stats[i, cv2.CC_STAT_AREA]
+        bw = stats[i, cv2.CC_STAT_WIDTH]
+        bh = stats[i, cv2.CC_STAT_HEIGHT]
+        if area > 50 and bh > 0 and 0.3 < bw / bh < 3.0:
+            blobs.append((area, float(centroids[i, 0]), float(centroids[i, 1])))
+    mid_x, mid_y = w / 2, h / 2
+    quadrants = {
+        'TL': [b for b in blobs if b[1] < mid_x and b[2] < mid_y],
+        'TR': [b for b in blobs if b[1] >= mid_x and b[2] < mid_y],
+        'BL': [b for b in blobs if b[1] < mid_x and b[2] >= mid_y],
+        'BR': [b for b in blobs if b[1] >= mid_x and b[2] >= mid_y],
+    }
+    fallback = {
+        'TL': (w * .02, h * .02), 'TR': (w * .98, h * .02),
+        'BL': (w * .02, h * .98), 'BR': (w * .98, h * .98),
+    }
+    corners = {}
+    for q, qblobs in quadrants.items():
+        if qblobs:
+            best = max(qblobs, key=lambda x: x[0])
+            corners[q] = (best[1], best[2])
+        else:
+            corners[q] = fallback[q]
+    return corners
+
+
+def _perspective_warp(img, corners):
+    """Warp image to 2550×3300 using detected corners (from extract_v6)."""
+    import cv2
+    import numpy as np
+
+    src = np.array([corners['TL'], corners['TR'],
+                    corners['BR'], corners['BL']], np.float32)
+    dst = np.array([[0, 0], [_WARP_W, 0],
+                    [_WARP_W, _WARP_H], [0, _WARP_H]], np.float32)
+    matrix = cv2.getPerspectiveTransform(src, dst)
+    is_upscale = _WARP_W > img.shape[1]
+    interp = cv2.INTER_CUBIC if is_upscale else cv2.INTER_AREA
+    return cv2.warpPerspective(img, matrix, (_WARP_W, _WARP_H), flags=interp)
+
+
+def _extract_glyph_cell(warped_bgr, col, row, ml, mt, cw, ch, char_name=''):
+    """Extract one cell using RED CHANNEL — blue guide lines are invisible.
+    Matches extract_v6.extract_glyph exactly."""
+    import cv2
+    import numpy as np
+    from PIL import Image
+
+    scale = _WARP_W / 2550.0
+    inward_x = max(3, int(cw * 0.03))
+    inward_y = max(3, int(ch * 0.03))
+    pad = max(2, int(4 * scale))
+
+    x0 = int(round(ml + col * cw)) + inward_x
+    y0 = int(round(mt + row * ch)) + inward_y
+    x1 = min(_WARP_W, int(round(ml + (col + 1) * cw)) - inward_x)
+    y1 = min(_WARP_H, int(round(mt + (row + 1) * ch)) - inward_y)
+    if x1 - x0 < 10 or y1 - y0 < 10:
+        return None
+
+    cell = warped_bgr[y0:y1, x0:x1].copy()
+    cell_h = cell.shape[0]
+
+    # White out label zone (top 15% of cell)
+    label_mask_h = int(cell_h * 0.15)
+    cell[:label_mask_h, :] = [255, 255, 255]
+
+    # RED CHANNEL ONLY — threshold 160 (matches extract_v6)
+    red_channel = cell[:, :, 2]  # OpenCV BGR: index 2 = Red
+    _, binarized = cv2.threshold(red_channel, 160, 255, cv2.THRESH_BINARY_INV)
+
+    # Morphological open with 2×2 kernel to clean noise
+    binarized = cv2.morphologyEx(binarized, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
+
+    # Remove small connected components (noise)
+    cc_min = max(5, int(12 * scale))
+    n_cc, labels, cc_stats, _ = cv2.connectedComponentsWithStats(binarized, 8)
+    for i in range(1, n_cc):
+        if cc_stats[i, cv2.CC_STAT_AREA] < cc_min:
+            binarized[labels == i] = 0
+
+    # Autocrop to ink bounding box with 4px padding
+    ink_coords = np.argwhere(binarized > 0)
+    min_ink_small = max(5, int(15 * scale))
+    min_ink = min_ink_small if char_name in _SMALL_CHARS else max(10, int(35 * scale))
+    if len(ink_coords) < min_ink:
+        return None
+
+    y_min, x_min = ink_coords.min(axis=0)
+    y_max, x_max = ink_coords.max(axis=0)
+    y_min = max(0, y_min - pad)
+    x_min = max(0, x_min - pad)
+    y_max = min(binarized.shape[0] - 1, y_max + pad)
+    x_max = min(binarized.shape[1] - 1, x_max + pad)
+    crop = binarized[y_min:y_max + 1, x_min:x_max + 1]
+
+    min_crop = max(4, int(8 * scale))
+    if crop.shape[0] < min_crop or crop.shape[1] < min_crop:
+        return None
+
+    # RGBA: black ink on transparent background
+    rgba = np.zeros((*crop.shape, 4), np.uint8)
+    rgba[crop > 128] = [0, 0, 0, 240]
+    return Image.fromarray(rgba, 'RGBA')
+
+
+def _extract_v7_template(saved_pages: list) -> dict:
+    """
+    Main extraction pipeline for v7 blue templates.
+    Mirrors extract_v6.run() — warp to 2550×3300, red channel, known page layouts.
+
+    Args: saved_pages — list of (file_path, page_number) tuples
+    Returns: {char: [PIL.Image (RGBA), ...]}
+    """
+    import cv2
+    import numpy as np
+
+    bank: dict[str, list] = {}
+
+    for img_path, pg in saved_pages:
+        img_cv = cv2.imread(str(img_path))
+        if img_cv is None:
+            continue
+
+        # Corner detection on grayscale (only for warp — NOT for extraction)
+        gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
+        corners = _find_corners(gray)
+
+        # Warp color image to 2550×3300
+        warped = _perspective_warp(img_cv, corners)
+
+        # Get page-specific grid and character mapping
+        cols, rows, ml, mt, cw, ch = _page_grid(pg)
+        cells = _page_cells(pg)
+
+        for idx, char in enumerate(cells):
+            col = idx % cols
+            row = idx // cols
+            if row >= rows:
+                break
+            glyph = _extract_glyph_cell(warped, col, row, ml, mt, cw, ch,
+                                         char_name=char)
+            if glyph is not None:
+                bank.setdefault(char, []).append(glyph)
+
+    return bank
+
 
 def _check_image_quality(img_path: Path) -> list:
     """Return user-facing warning strings for sharpness, brightness, and aspect ratio."""
@@ -590,430 +793,21 @@ def _check_image_quality(img_path: Path) -> list:
     h, w = gray.shape
     warnings_out = []
 
-    # Sharpness: Laplacian variance < 50 → blurry
     lap_var = float(cv2.Laplacian(gray, cv2.CV_64F).var())
     if lap_var < 50:
         warnings_out.append("Photo is blurry — try holding steadier")
 
-    # Brightness: mean pixel value
     mean_val = float(gray.mean())
     if mean_val < 80:
         warnings_out.append("Photo is too dark")
     elif mean_val > 220:
         warnings_out.append("Photo is overexposed")
 
-    # Aspect ratio: letter paper portrait ≈ 8.5/11 = 0.773
     portrait_ratio = min(w, h) / max(w, h)
     if abs(portrait_ratio - 0.773) > 0.15:
         warnings_out.append("Photo may be cropped incorrectly")
 
     return warnings_out
-
-
-def _score_cell_quality(cell_bin: "np.ndarray") -> dict:
-    """
-    Score glyph quality from a binary cell crop.
-
-    Metrics (weights):
-      ink_density       0.20 — fill ratio within tight ink bbox
-      centering_score   0.15 — how centred the ink is in the cell
-      size_score        0.25 — ink bbox / cell area, ideal 0.2-0.7
-      noise_score       0.20 — penalises tiny disconnected fragments
-      stroke_continuity 0.20 — largest component / total ink
-
-    Returns confidence 0-1, component scores, and is_weak flag.
-    """
-    import cv2
-    import numpy as np
-
-    h, w = cell_bin.shape
-    cell_area = h * w
-    total_ink = int((cell_bin > 0).sum())
-
-    if total_ink == 0 or cell_area == 0:
-        return {"confidence": 0.0, "is_weak": True}
-
-    rows = np.any(cell_bin > 0, axis=1)
-    cols = np.any(cell_bin > 0, axis=0)
-    rmin = int(np.where(rows)[0][0]);  rmax = int(np.where(rows)[0][-1])
-    cmin = int(np.where(cols)[0][0]);  cmax = int(np.where(cols)[0][-1])
-    ink_bbox_area = (rmax - rmin + 1) * (cmax - cmin + 1)
-
-    # ink_density: fill ratio within tight ink bbox
-    tight_ink = int((cell_bin[rmin:rmax+1, cmin:cmax+1] > 0).sum())
-    ink_density = tight_ink / max(1, ink_bbox_area)
-
-    # centering_score: how close the ink centre is to the cell centre
-    center_r = (rmin + rmax) / 2.0 / max(1, h)
-    center_c = (cmin + cmax) / 2.0 / max(1, w)
-    centering_score = max(0.0, 1.0 - 2.0 * max(abs(center_r - 0.5), abs(center_c - 0.5)))
-
-    # size_score: ink bbox area / cell area, ideal 0.2-0.7
-    size_ratio = ink_bbox_area / max(1, cell_area)
-    if 0.2 <= size_ratio <= 0.7:
-        size_score = 1.0
-    elif size_ratio < 0.2:
-        size_score = size_ratio / 0.2
-    else:
-        size_score = max(0.0, 1.0 - (size_ratio - 0.7) / 0.3)
-
-    # Connected-component analysis
-    n_labels, _, stats, _ = cv2.connectedComponentsWithStats(cell_bin, connectivity=8)
-    if n_labels <= 1:
-        return {"confidence": 0.0, "is_weak": True}
-
-    comp_areas  = [int(stats[i, cv2.CC_STAT_AREA]) for i in range(1, n_labels)]
-    largest_area = max(comp_areas)
-    small_count  = sum(1 for a in comp_areas if a < max(1, total_ink) * 0.05)
-
-    noise_score       = max(0.0, 1.0 - small_count / max(1, len(comp_areas)))
-    stroke_continuity = largest_area / max(1, total_ink)
-
-    confidence = (
-        ink_density       * 0.20 +
-        centering_score   * 0.15 +
-        size_score        * 0.25 +
-        noise_score       * 0.20 +
-        stroke_continuity * 0.20
-    )
-    confidence = min(1.0, max(0.0, confidence))
-
-    return {
-        "confidence":        round(confidence, 3),
-        "is_weak":           confidence < 0.5,
-        "ink_density":       round(ink_density, 4),
-        "centering_score":   round(centering_score, 3),
-        "size_score":        round(size_score, 3),
-        "noise_score":       round(noise_score, 3),
-        "stroke_continuity": round(stroke_continuity, 3),
-    }
-
-
-def _extract_glyphs_pipeline(image_paths: list, glyphs_dir: Path) -> dict:
-    """
-    Main glyph extraction pipeline.
-
-    For each image:
-    - Preprocess to binary (Otsu)
-    - Detect if template (regular grid lines present)
-    - If template: extract cells at known grid positions
-    - If freeform: connected-component extraction with OCR labelling
-    - Clean each component: morph-close, crop, RGBA, resize 128px
-    - Score quality; discard noise
-    Returns: {char: [PIL.Image (RGBA), ...]}
-    """
-    import cv2
-    import numpy as np
-    from PIL import Image
-
-    bank: dict[str, list] = {}
-
-    for img_path in image_paths:
-        img_cv = cv2.imread(str(img_path))
-        if img_cv is None:
-            continue
-
-        # Red channel extraction: blue guide lines (R~166) are invisible
-        # at threshold 155, black ink (R~30) is captured, paper (R~240) ignored
-        red_ch = img_cv[:, :, 2]  # OpenCV BGR order: index 2 = Red
-
-        # Mild denoise
-        gray = cv2.GaussianBlur(red_ch, (3, 3), 0)
-
-        # Fixed threshold on red channel (NOT Otsu — Otsu catches blue lines)
-        _, binary = cv2.threshold(gray, 155, 255, cv2.THRESH_BINARY_INV)
-
-        # Morphological closing to connect broken strokes
-        kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
-        binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-
-        is_template = _detect_template_grid(binary)
-
-        if is_template:
-            extracted = _extract_template_cells(gray, binary, img_cv)
-        else:
-            extracted = _extract_freeform_components(gray, binary)
-
-        for char, glyph_rgba, confidence, is_weak in extracted:
-            bank.setdefault(char, []).append((glyph_rgba, confidence, is_weak))
-
-    return bank
-
-
-def _detect_template_grid(binary: "np.ndarray") -> bool:
-    """
-    Return True if the image contains a regular grid pattern
-    characteristic of the InkClone template.
-
-    Heuristic: detect long horizontal lines via Hough transform.
-    A template page has 10+ parallel horizontal lines.
-    """
-    import cv2
-    import numpy as np
-
-    h, w = binary.shape
-    # Erode vertically to isolate horizontal lines
-    h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (w // 8, 1))
-    h_lines  = cv2.morphologyEx(binary, cv2.MORPH_OPEN, h_kernel)
-
-    # Count distinct horizontal line bands
-    col_sum  = h_lines.sum(axis=1)          # sum across each row
-    threshold = w * 0.3                      # line present if >30% of row is ink
-    line_rows = col_sum > threshold
-    # Count runs of True
-    runs = 0
-    in_run = False
-    for v in line_rows:
-        if v and not in_run:
-            runs += 1
-            in_run = True
-        elif not v:
-            in_run = False
-    return runs >= 6
-
-
-def _extract_template_cells(gray, binary, img_cv) -> list:
-    """
-    Extract glyph cells from a filled-in InkClone template photo.
-
-    Template layout (from template_generator_v2.py, letter paper at ~150 DPI):
-      Page 1: lowercase a-z, 5 cells per char → 130 cells, row-major
-      Cell: 1.2cm wide × 1.5cm tall
-      Margin: 1.5cm
-
-    We first auto-detect the usable region using the grid lines,
-    then divide into cells at computed positions.
-    """
-    import cv2
-    import numpy as np
-    from PIL import Image
-
-    H, W = gray.shape
-
-    # ── Find the grid bounding box from horizontal lines ──────────────────
-    h_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (W // 8, 1))
-    h_lines  = cv2.morphologyEx(binary, cv2.MORPH_OPEN, h_kernel)
-    col_sum  = h_lines.sum(axis=1)
-    threshold = W * 0.25
-    line_ys  = [i for i, v in enumerate(col_sum) if v > threshold]
-
-    if len(line_ys) < 4:
-        return _extract_freeform_components(gray, binary)  # fallback
-
-    top_y    = line_ys[0]
-    bottom_y = line_ys[-1]
-
-    # ── Estimate cell dimensions ──────────────────────────────────────────
-    # Group line_ys into distinct bands
-    bands = []
-    prev = line_ys[0]
-    band_start = prev
-    for y in line_ys[1:]:
-        if y - prev > 5:
-            bands.append((band_start + prev) // 2)
-            band_start = y
-        prev = y
-    bands.append((band_start + prev) // 2)
-
-    if len(bands) < 3:
-        return _extract_freeform_components(gray, binary)
-
-    cell_h = int(np.median([bands[i+1] - bands[i] for i in range(len(bands)-1)]))
-    if cell_h < 10:
-        return _extract_freeform_components(gray, binary)
-
-    # Estimate margin + cell width from vertical projection
-    v_kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (1, cell_h // 2))
-    v_lines  = cv2.morphologyEx(binary, cv2.MORPH_OPEN, v_kernel)
-    row_sum  = v_lines.sum(axis=0)
-    vthresh  = cell_h * 0.3
-    vline_xs = [i for i, v in enumerate(row_sum) if v > vthresh]
-
-    if vline_xs:
-        left_x  = vline_xs[0]
-        right_x = vline_xs[-1]
-    else:
-        left_x  = int(W * 0.05)
-        right_x = int(W * 0.95)
-
-    usable_w = right_x - left_x
-    # Estimate cells per row: for template ~15 cells/row at typical phone photo res
-    cell_w = max(10, usable_w // 15)
-
-    # ── Build cell map for lowercase a-z (Page 1) ─────────────────────────
-    CHARS_PAGE1 = list("abcdefghijklmnopqrstuvwxyz")
-    CELLS_PER_CHAR = 5
-    cells_per_row = max(1, usable_w // cell_w)
-
-    extracted = []
-    cell_idx = 0
-    for char in CHARS_PAGE1:
-        for variant in range(CELLS_PER_CHAR):
-            row = cell_idx // cells_per_row
-            col = cell_idx % cells_per_row
-            x0 = left_x  + col * cell_w
-            y0 = top_y   + row * cell_h
-            x1 = min(W, x0 + cell_w)
-            y1 = min(H, y0 + cell_h)
-            cell_idx += 1
-
-            if y1 > H or x1 > W:
-                continue
-
-            # Use red channel for per-cell thresholding (blue lines invisible)
-            cell_red = img_cv[y0:y1, x0:x1, 2]  # BGR index 2 = Red
-            if cell_red.size == 0:
-                continue
-
-            cell_gray = gray[y0:y1, x0:x1]
-
-            # Fixed threshold on red channel — NOT Otsu (Otsu catches blue guide lines)
-            _, cell_bin = cv2.threshold(
-                cell_red, 155, 255, cv2.THRESH_BINARY_INV
-            )
-
-            quality = _score_cell_quality(cell_bin)
-            if quality["confidence"] < 0.3:
-                continue  # unusable — skip entirely
-
-            glyph = _cell_to_rgba(cell_bin, cell_gray)
-            if glyph is not None:
-                extracted.append((char, glyph, quality["confidence"], quality["is_weak"]))
-
-    return extracted
-
-
-def _extract_freeform_components(gray, binary) -> list:
-    """
-    Extract individual glyphs from a freeform handwriting image using
-    connected components + Tesseract OCR for character labelling.
-    """
-    import cv2
-    import numpy as np
-    from PIL import Image
-
-    try:
-        import pytesseract
-        ocr_available = True
-    except ImportError:
-        ocr_available = False
-
-    H, W = binary.shape
-    n_labels, labels, stats, _ = cv2.connectedComponentsWithStats(
-        binary, connectivity=8
-    )
-
-    extracted = []
-    for i in range(1, n_labels):
-        x, y, w, h, area = stats[i]
-
-        # Size filters
-        if area < 80:                               # too small → noise
-            continue
-        if w > W * 0.25 or h > H * 0.25:           # too large → not a single char
-            continue
-        if w < 6 or h < 10:                         # too skinny
-            continue
-        aspect = w / max(1, h)
-        if aspect > 3.5 or aspect < 0.08:           # weird aspect → not a letter
-            continue
-
-        pad  = max(4, min(w, h) // 8)
-        x0   = max(0, x - pad)
-        y0   = max(0, y - pad)
-        x1   = min(W, x + w + pad)
-        y1   = min(H, y + h + pad)
-
-        cell_bin  = binary[y0:y1, x0:x1]
-        cell_gray = gray[y0:y1, x0:x1]
-
-        # OCR to label the glyph
-        char = None
-        if ocr_available:
-            # Upscale for better OCR accuracy
-            scale    = max(1.0, 64.0 / max(w, h))
-            ocr_img  = cv2.resize(cell_bin, None, fx=scale, fy=scale,
-                                  interpolation=cv2.INTER_LINEAR)
-            whitelist = (
-                "abcdefghijklmnopqrstuvwxyz"
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                "0123456789.,!?'-:"
-            )
-            try:
-                raw = pytesseract.image_to_string(
-                    ocr_img,
-                    config=f"--psm 10 --oem 3 -c tessedit_char_whitelist={whitelist}"
-                ).strip()
-                if len(raw) == 1 and raw.isprintable() and not raw.isspace():
-                    char = raw
-            except Exception:
-                pass
-
-        if char is None:
-            continue
-
-        quality = _score_cell_quality(cell_bin)
-        if quality["confidence"] < 0.3:
-            continue
-
-        glyph = _cell_to_rgba(cell_bin, cell_gray)
-        if glyph is not None:
-            extracted.append((char, glyph, quality["confidence"], quality["is_weak"]))
-
-    return extracted
-
-
-def _cell_to_rgba(cell_bin, cell_gray) -> "PIL.Image | None":
-    """
-    Convert a binary cell crop to a clean RGBA glyph at 128px height.
-
-    Steps:
-    1. Find ink bounding box; skip if ink < 5% of cell
-    2. Crop tight with 3px padding
-    3. Build RGBA: ink pixels → (0,0,0,240), rest → transparent
-    4. Resize to 128px height preserving aspect ratio
-    """
-    import cv2
-    import numpy as np
-    from PIL import Image
-
-    h, w = cell_bin.shape
-    ink_pixels = cell_bin.sum() // 255
-    total_px   = h * w
-    if ink_pixels < total_px * 0.05:    # <5% ink → noise/empty cell
-        return None
-    if ink_pixels < 20:                 # absolute minimum
-        return None
-
-    # Tight crop
-    rows = np.any(cell_bin > 0, axis=1)
-    cols = np.any(cell_bin > 0, axis=0)
-    if not rows.any():
-        return None
-    rmin, rmax = np.where(rows)[0][[0, -1]]
-    cmin, cmax = np.where(cols)[0][[0, -1]]
-    pad  = 3
-    rmin = max(0, rmin - pad)
-    rmax = min(h - 1, rmax + pad)
-    cmin = max(0, cmin - pad)
-    cmax = min(w - 1, cmax + pad)
-    cropped = cell_bin[rmin:rmax+1, cmin:cmax+1]
-
-    ch, cw = cropped.shape
-
-    # Resize to 128px height
-    target_h = 128
-    scale    = target_h / max(1, ch)
-    target_w = max(1, int(round(cw * scale)))
-    resized  = cv2.resize(cropped, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
-
-    # RGBA: ink→black+alpha, background→transparent
-    ink_mask = resized > 128
-    arr = np.zeros((target_h, target_w, 4), dtype=np.uint8)
-    arr[ink_mask, 3] = 240       # alpha: ink is opaque
-    # RGB stays 0 (black ink)
-
-    return Image.fromarray(arr, "RGBA")
 
 
 # ── Contact sheet generation ───────────────────────────────────────────────────
@@ -1148,8 +942,8 @@ def _char_to_stem(char: str) -> str:
     _SPECIAL = {
         ".": "period", ",": "comma", "!": "exclaim", "?": "question",
         "'": "apostrophe", "-": "hyphen", ":": "colon", ";": "semicolon",
-        "(": "lparen", ")": "rparen", "#": "hash", "@": "at",
-        "&": "ampersand", "/": "slash", '"': "quote",
+        "(": "lparen", ")": "rparen", "#": "hash", "@": "atsign",
+        "&": "ampersand", "/": "slash", '"': "quote", "$": "dollar",
     }
     if char in _SPECIAL:
         return _SPECIAL[char]
