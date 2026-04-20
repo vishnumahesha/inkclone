@@ -1056,7 +1056,6 @@ def _generate_contact_sheet(profile_id: str):
             pass
 
         # Character label below thumbnail
-        from profiles.loader import _parse_glyph_stem  # noqa: reuse existing parser
         try:
             char = _parse_glyph_stem_local(png.stem)
         except Exception:
