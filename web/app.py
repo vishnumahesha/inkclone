@@ -1115,11 +1115,10 @@ async def delete_glyph(profile: str, filename: str):
 
 # ── Template extraction v2 (red-channel pipeline, no corner detection) ────────
 
-def _perspective_warp(img_cv: "np.ndarray") -> "np.ndarray":
+def _resize_warp(img_cv: "np.ndarray") -> "np.ndarray":
     """
     Resize input image to WARP_W×WARP_H with cubic interpolation, then sharpen.
-    No corner detection — pure resize. This is the only warp used in the
-    /api/extract-template pipeline.
+    No corner detection — pure resize. Used by /api/extract-template pipeline.
     """
     import cv2
     import numpy as np
@@ -1202,7 +1201,7 @@ def _extract_page_cells_v2(img_cv: "np.ndarray", page: int) -> list:
     """
     import numpy as np
 
-    warped = _perspective_warp(img_cv)
+    warped = _resize_warp(img_cv)
     binary = _red_channel_binary(warped)
 
     cols, rows = PAGE_GRIDS[page]
