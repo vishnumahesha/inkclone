@@ -1243,24 +1243,34 @@ def _extract_page_cells_v2(img_cv: "np.ndarray", page: int) -> list:
 
 @app.post("/api/extract-template")
 async def api_extract_template(
-    images: List[UploadFile] = File(...),
     profile_name: str = Form(...),
+    image1: Optional[UploadFile] = File(None),
+    image2: Optional[UploadFile] = File(None),
+    image3: Optional[UploadFile] = File(None),
+    image4: Optional[UploadFile] = File(None),
 ):
     """
-    Accept up to 4 template pages (in order: page 1–4), extract glyphs using
-    the red-channel pipeline, and save to profiles/{profile_name}/glyphs/.
+    Accept up to 4 template pages, extract glyphs using the red-channel
+    pipeline, and save to profiles/{profile_name}/glyphs/.
 
-    Field names:
-      images       — multipart file list (up to 4 files, page order)
-      profile_name — string (e.g. "synthetic_v1")
+    Field names (CDN-safe — distinct names avoid deduplication):
+      profile_name — string (e.g. "vishnu_blue_v1")
+      image1       — page 1 (lowercase a–o)
+      image2       — page 2 (lowercase p–z)
+      image3       — page 3 (uppercase A–Z)
+      image4       — page 4 (digits + punct + bigrams)
+    Also accepts repeated 'images' field for local/non-CDN use.
     """
     import cv2
     import numpy as np
 
+    # Collect pages in order; filter out missing slots
+    images = [img for img in [image1, image2, image3, image4] if img is not None]
+
+    print(f"[extract-template] image1={image1}, image2={image2}, image3={image3}, image4={image4}, n={len(images)}")
+
     if not images:
-        raise HTTPException(status_code=400, detail="No images provided")
-    if len(images) > 4:
-        raise HTTPException(status_code=400, detail="Maximum 4 pages")
+        raise HTTPException(status_code=400, detail=f"No images provided (i1={image1} i2={image2} i3={image3} i4={image4})")
     if not profile_name or "/" in profile_name or ".." in profile_name:
         raise HTTPException(status_code=400, detail="Invalid profile_name")
 
