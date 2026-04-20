@@ -64,7 +64,7 @@ PRESETS: Dict[str, Dict[str, int]] = {
         "pressure_variation": 78, "page_fatigue": 82, "ink_fading": 62, "ink_bleed": 68,
     },
 }
-PRESETS["custom"] = dict(PRESETS["natural_notes"])
+PRESETS["custom"] = {s: 50 for s in SLIDER_NAMES}  # All sliders at midpoint
 
 
 def _lerp(t: float, lo: float, hi: float) -> float:
@@ -92,16 +92,16 @@ def sliders_to_render_params(sliders: Dict[str, int], line_spacing_px: int) -> d
         # Line layout
         "baseline_wander_px": _lerp(100 - s["baseline_straightness"],  0.0,  10.0),
         "line_spacing_mult":  _lerp(s["line_spacing"],                 0.85,  2.0),
-        "margin_drift_px":    _lerp(100 - s["margin_consistency"],     0.0,  18.0),
-        "line_end_cramming":  _lerp(s["line_end_behavior"],            0.4,   1.0),
+        "margin_drift_px":    _lerp(100 - s["margin_consistency"],     0.0,  35.0),
+        "line_end_cramming":  _lerp(s["line_end_behavior"],            0.2,   1.0),
         # Per-glyph variation
         "size_jitter":        _lerp(s["size_variation"],               0.0,   0.35),
-        "spacing_jitter":     _lerp(s["spacing_variation"],            0.0,   0.6),
-        "angle_jitter_deg":   _lerp(s["angle_variation"],              0.0,   8.0),
+        "spacing_jitter":     _lerp(s["spacing_variation"],            0.0,   5.0),
+        "angle_jitter_deg":   _lerp(s["angle_variation"],              0.0,  12.0),
         "pressure_range":     _lerp(s["pressure_variation"],           0.0,   0.45),
         # Page-level effects
         "fatigue_factor":     _lerp(s["page_fatigue"],                 0.0,   0.6),
-        "ink_fade":           _lerp(s["ink_fading"],                   0.0,   0.35),
+        "ink_fade":           _lerp(s["ink_fading"],                   0.0,   0.6),
         "bleed_radius":       _lerp(s["ink_bleed"],                    0.0,   3.0),
     }
 

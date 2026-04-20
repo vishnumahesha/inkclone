@@ -167,6 +167,11 @@ async def generate_document(request: GenerateRequest):
     if request.artifact not in ARTIFACTS:
         raise HTTPException(status_code=400, detail=f"Invalid artifact type: {request.artifact}")
 
+    pid = request.profile_id or _DEFAULT_PROFILE
+    profile_path = _PROFILES_DIR / pid
+    if not profile_path.exists():
+        raise HTTPException(status_code=400, detail=f"Profile '{pid}' not found")
+
     try:
         PAGE_W, PAGE_H = 1200, 1600
         bank     = _get_glyph_bank(request.profile_id)

@@ -1,10 +1,17 @@
 #!/usr/bin/env python3
-"""extract_v6.py — Extract V6 template glyphs from camera photos.
+"""extract_v6.py — Extract glyphs from template photos using RED CHANNEL.
+
+Blue guide lines (v7 template) have red channel ~166, same as paper (~240).
+Black ink has red channel ~30. Threshold 160 cleanly separates ink from
+both guide lines and paper — no guide line removal needed.
+
+Also works on gray-template (v6) photos: gray guides have red=204, still
+above threshold 160.
 
 Always warps to 2550x3300 (letter @ 300 DPI) with sharpening after upscale.
 All cell positions computed from template margin ratios.
 """
-import json, argparse
+import json, argparse, glob
 from pathlib import Path
 from datetime import datetime, timezone
 import cv2
@@ -14,10 +21,10 @@ from PIL import Image
 ROOT = Path(__file__).parent
 
 SCAN_MAP = [
-    (ROOT / "profiles" / "IMG_3807.jpeg", 1),  # lowercase a-o
-    (ROOT / "profiles" / "IMG_3806.jpeg", 2),  # lowercase p-z
-    (ROOT / "profiles" / "IMG_3809.jpeg", 3),  # uppercase A-Z
-    (ROOT / "profiles" / "IMG_3808.jpeg", 4),  # digits+punct+bigrams
+    (ROOT / "profiles" / "IMG_38072.png", 1),  # lowercase a-o (blue template)
+    (ROOT / "profiles" / "IMG_38062.png", 2),  # lowercase p-z (blue template)
+    (ROOT / "profiles" / "IMG_38092.png", 3),  # uppercase A-Z (blue template)
+    (ROOT / "profiles" / "IMG_38082.png", 4),  # digits+punct+bigrams (blue template)
 ]
 
 # Template margin ratios (8.5"x11" letter paper layout)
@@ -138,9 +145,9 @@ def perspective_warp(img, corners, target_w, target_h):
     return warped
 
 
-def extract_glyph(warped_gray, col, row, ml, mt, cw, ch,
+def extract_glyph(warped_bgr, col, row, ml, mt, cw, ch,
                   target_w, target_h, char_name=''):
-    """Extract one cell, threshold, autocrop, return RGBA."""
+    """Extract one cell using RED CHANNEL — blue guide lines are invisible."""
     scale = target_w / 2550.0
     inward_x = max(3, int(cw * 0.03))
     inward_y = max(3, int(ch * 0.03))
@@ -153,40 +160,22 @@ def extract_glyph(warped_gray, col, row, ml, mt, cw, ch,
     if x1 - x0 < 10 or y1 - y0 < 10:
         return None
 
-    cell = warped_gray[y0:y1, x0:x1].copy()
+    cell = warped_bgr[y0:y1, x0:x1].copy()
     cell_h = cell.shape[0]
 
-    # Mask label zone (top 15% of cell)
+    # Mask label zone (top 15% of cell) — white out in all channels
     label_mask_h = int(cell_h * 0.15)
-    cell[:label_mask_h, :] = 255
+    cell[:label_mask_h, :] = [255, 255, 255]
 
-    # Otsu threshold per-cell
-    _, binarized = cv2.threshold(cell, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    # RED CHANNEL ONLY — blue guide lines have red~166 (invisible at threshold 160)
+    # Black ink has red~30 (captured). Paper has red~240 (ignored).
+    # Gap between ink and guides: 136px — impossible to miss.
+    red_channel = cell[:, :, 2]  # OpenCV BGR order: index 2 = Red
 
-    # Remove thin horizontal guide lines (baseline guide appears at ~70% cell height)
-    cell_rows = binarized.shape[0]
-    cell_cols = binarized.shape[1]
-    for r in range(cell_rows):
-        row_ink = int(np.sum(binarized[r] > 0))
-        row_pct = row_ink / cell_cols
-        if row_pct > 0.60:
-            above = binarized[max(0, r - 3):r]
-            below = binarized[r + 1:min(cell_rows, r + 4)]
-            above_ink = int(np.sum(above > 0))
-            below_ink = int(np.sum(below > 0))
-            if above_ink < row_ink * 0.30 and below_ink < row_ink * 0.30:
-                binarized[r] = 0
+    # Fixed threshold 160 — sits in the massive gap between ink (30) and guides (166)
+    _, binarized = cv2.threshold(red_channel, 160, 255, cv2.THRESH_BINARY_INV)
 
-    # Specifically target baseline guide at ~60-80% cell height (wider band, lower threshold)
-    for r in range(int(cell_rows * 0.60), min(cell_rows, int(cell_rows * 0.82))):
-        row_ink = int(np.sum(binarized[r] > 0))
-        if row_ink > cell_cols * 0.35:
-            above = binarized[max(0, r - 4):r]
-            below = binarized[r + 1:min(cell_rows, r + 5)]
-            above_ink = int(np.sum(above > 0))
-            below_ink = int(np.sum(below > 0))
-            if above_ink < row_ink * 0.40 and below_ink < row_ink * 0.40:
-                binarized[r] = 0
+    # No guide line removal needed — blue lines don't appear in red channel!
 
     # Dilate to recover stroke edges at lower resolutions (<2040px wide)
     if scale < 0.8:
@@ -223,6 +212,48 @@ def extract_glyph(warped_gray, col, row, ml, mt, cw, ch,
     return Image.fromarray(rgba, 'RGBA')
 
 
+def normalize_glyph_heights(output_dir):
+    """Scale all glyphs in each category to median height, preserving aspect ratio."""
+    _PUNCT_NAMES = {"period", "comma", "exclaim", "question", "apostrophe",
+                    "quote", "hyphen", "colon", "semicolon", "lparen",
+                    "rparen", "slash", "atsign", "ampersand", "hash", "dollar"}
+    categories = {
+        'lowercase': [], 'uppercase': [], 'digits': [],
+        'punctuation': [], 'bigrams': [],
+    }
+    for f in glob.glob(str(Path(output_dir) / '*.png')):
+        if '.fuse_hidden' in f:
+            continue
+        char = Path(f).stem.rsplit('_', 1)[0]
+        if char.startswith('upper_'):   categories['uppercase'].append(f)
+        elif char.startswith('digit_'): categories['digits'].append(f)
+        elif char in _PUNCT_NAMES:      categories['punctuation'].append(f)
+        elif len(char) > 1:             categories['bigrams'].append(f)
+        else:                           categories['lowercase'].append(f)
+
+    for cat_name, files in categories.items():
+        if not files:
+            continue
+        heights = [Image.open(f).size[1] for f in files]
+        target_h = int(sorted(heights)[len(heights) // 2])
+        height_range = max(heights) - min(heights)
+        if height_range < target_h * 0.2:
+            print(f"  {cat_name}: already consistent ({min(heights)}-{max(heights)}px), skip")
+            continue
+        print(f"  {cat_name}: normalizing {len(files)} glyphs to {target_h}px "
+              f"(was {min(heights)}-{max(heights)}px)")
+        for f in files:
+            img = Image.open(f)
+            w, h = img.size
+            if h == target_h:
+                continue
+            scale = target_h / h
+            new_w = max(1, int(w * scale))
+            resized = img.resize((new_w, target_h), Image.LANCZOS)
+            resized.save(f)
+    print("  Normalization complete")
+
+
 def run(profile='vishnu_v6'):
     """Main extraction pipeline."""
     profile_dir = ROOT / 'profiles' / profile
@@ -249,10 +280,8 @@ def run(profile='vishnu_v6'):
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         corners = find_corners(gray)
         print(f"Page {pg}: {scan_path.name}  {src_w}x{src_h} -> warp {target_w}x{target_h}")
-        warped = cv2.cvtColor(
-            perspective_warp(img, corners, target_w, target_h),
-            cv2.COLOR_BGR2GRAY
-        )
+        # Keep color (BGR) — we need the red channel for extraction
+        warped = perspective_warp(img, corners, target_w, target_h)
         cols, rows, ml, mt, cw, ch = page_grid(pg, target_w, target_h)
         cells = page_cells(pg)
         good = empty = 0
@@ -293,7 +322,9 @@ def run(profile='vishnu_v6'):
     if skipped_fake:
         print(f"Skipped {skipped_fake} fake 60×70px glyphs")
 
-    # Post-save: delete letter/digit glyphs that are horizontal lines (guide line leaked through)
+    # Post-filter: remove any glyph with extreme width:height ratio (>3:1)
+    # These are residual guide line captures from gray-template photos.
+    # Won't occur with blue-template photos.
     HLINE_EXEMPT = {'.', ',', '-', "'", '"', ':', ';', '!', '?'}
     deleted_hlines = 0
     for char, paths in list(saved.items()):
@@ -306,7 +337,10 @@ def run(profile='vishnu_v6'):
                 img = Image.open(str(png))
                 w, h = img.size
                 if w > h * 3:
-                    png.unlink()
+                    try:
+                        png.unlink()
+                    except OSError:
+                        pass
                     deleted_hlines += 1
                 else:
                     keep.append(rel_path)
@@ -314,7 +348,7 @@ def run(profile='vishnu_v6'):
                 keep.append(rel_path)
         saved[char] = keep
     if deleted_hlines:
-        print(f"Deleted {deleted_hlines} horizontal-line glyphs (baseline guide leak)")
+        print(f"Deleted {deleted_hlines} horizontal-line glyphs (residual from gray template)")
     saved = {c: v for c, v in saved.items() if v}
 
     # Verification pass
@@ -355,6 +389,10 @@ def run(profile='vishnu_v6'):
     }
     (profile_dir / 'profile.json').write_text(json.dumps(profile_meta, indent=2))
     print(f"Profile: {profile_dir / 'profile.json'}")
+
+    # Normalize glyph heights per category
+    print("\nNormalizing glyph heights...")
+    normalize_glyph_heights(str(glyphs_dir))
 
     try:
         from glyph_loader import load_profile_glyphs
