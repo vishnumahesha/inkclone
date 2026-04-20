@@ -210,6 +210,39 @@
     }
     .result-btn.secondary:hover { background: var(--surface-hover); color: var(--text); }
 
+    /* Upload slots */
+    .upload-slots { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+    .upload-slot {}
+    .slot-label { font-size: 12px; font-weight: 500; color: var(--text-dim); margin-bottom: 4px; display: block; }
+    .slot-zone {
+      border: 1px dashed var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: space-between;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .slot-zone:hover { border-color: var(--accent); background: rgba(124, 111, 224, 0.04); }
+    .slot-zone.has-file { border-color: rgba(100, 200, 120, 0.4); border-style: solid; }
+    .slot-status { font-size: 12px; color: var(--text-faint); }
+    .slot-zone.has-file .slot-status { color: var(--text-dim); }
+    .slot-input { display: none; }
+
+    .profile-name-row { margin-top: 14px; }
+    .profile-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--surface-hover);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .profile-input:focus { border-color: var(--accent); }
+
     .error-msg { color: #e07070; font-size: 12px; margin-top: 12px; display: none; }
     .error-msg.visible { display: block; }
 
@@ -271,7 +304,7 @@
             <li>Shoot straight above the page — avoid angles</li>
             <li>Good, even lighting; avoid shadows across the page</li>
             <li>Keep the whole page in frame with a small border</li>
-            <li>Up to 3 pages supported</li>
+            <li>Up to 4 pages supported</li>
           </ul>
         </div>
       </div>
@@ -282,30 +315,53 @@
           <div class="step-title">Upload and process</div>
         </div>
         <div class="step-body">
-          <p>Upload your photos below. InkClone will extract your glyphs automatically and build a profile.</p>
+          <p>Upload a photo of each template page. InkClone will extract your glyphs automatically.</p>
         </div>
 
-        <div class="upload-zone" id="upload-zone">
-          <div class="upload-icon">
-            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-              <rect x="4" y="6" width="24" height="20" rx="3" stroke="#4a4850" stroke-width="1.5"/>
-              <circle cx="11" cy="13" r="2.5" stroke="#4a4850" stroke-width="1.2"/>
-              <path d="M4 22L10 16L14 20L19 15L28 22" stroke="#4a4850" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
+        <form id="extractForm" enctype="multipart/form-data">
+          <div class="upload-slots">
+            <div class="upload-slot">
+              <label class="slot-label">Page 1 — Lowercase a–o</label>
+              <div class="slot-zone" data-input="page1">
+                <span class="slot-status">No file selected</span>
+                <input type="file" name="page1" accept="image/*" capture="environment" class="slot-input">
+              </div>
+            </div>
+            <div class="upload-slot">
+              <label class="slot-label">Page 2 — Lowercase p–z</label>
+              <div class="slot-zone" data-input="page2">
+                <span class="slot-status">No file selected</span>
+                <input type="file" name="page2" accept="image/*" capture="environment" class="slot-input">
+              </div>
+            </div>
+            <div class="upload-slot">
+              <label class="slot-label">Page 3 — Uppercase A–Z</label>
+              <div class="slot-zone" data-input="page3">
+                <span class="slot-status">No file selected</span>
+                <input type="file" name="page3" accept="image/*" capture="environment" class="slot-input">
+              </div>
+            </div>
+            <div class="upload-slot">
+              <label class="slot-label">Page 4 — Digits + Punctuation</label>
+              <div class="slot-zone" data-input="page4">
+                <span class="slot-status">No file selected</span>
+                <input type="file" name="page4" accept="image/*" capture="environment" class="slot-input">
+              </div>
+            </div>
           </div>
-          <div class="upload-primary">Drop photos here or click to select</div>
-          <div class="upload-secondary">JPEG or PNG · up to 3 files · max 20 MB each</div>
-          <input type="file" id="file-input" accept="image/jpeg,image/png,image/webp" multiple>
-        </div>
 
-        <div class="file-list" id="file-list"></div>
+          <div class="profile-name-row">
+            <label class="slot-label">Profile name</label>
+            <input type="text" name="profile_name" class="profile-input" placeholder="my_handwriting" value="my_handwriting">
+          </div>
+        </form>
       </div>
 
     </div>
 
     <button class="submit-btn" id="submit-btn" disabled>
       <span class="btn-spinner"></span>
-      <span id="submit-text">Upload &amp; Create Profile</span>
+      <span id="submit-text">Extract My Handwriting</span>
     </button>
 
     <div class="error-msg" id="error-msg"></div>
@@ -325,81 +381,62 @@
   </div>
 
   <script>
-    const uploadZone  = document.getElementById('upload-zone');
-    const fileInput   = document.getElementById('file-input');
-    const fileList    = document.getElementById('file-list');
-    const submitBtn   = document.getElementById('submit-btn');
-    const submitText  = document.getElementById('submit-text');
-    const errorMsg    = document.getElementById('error-msg');
-    const resultCard  = document.getElementById('result-card');
+    const submitBtn  = document.getElementById('submit-btn');
+    const submitText = document.getElementById('submit-text');
+    const errorMsg   = document.getElementById('error-msg');
+    const resultCard = document.getElementById('result-card');
 
-    let files = [];
-
-    function refreshFileList() {
-      fileList.innerHTML = '';
-      files.forEach((f, i) => {
-        const item = document.createElement('div');
-        item.className = 'file-item';
-        item.innerHTML =
-          '<span class="file-item-name">' + f.name + '</span>' +
-          '<button class="file-remove" data-idx="' + i + '" title="Remove">&times;</button>';
-        fileList.appendChild(item);
+    // Wire up each slot-zone to trigger its hidden file input
+    document.querySelectorAll('.slot-zone').forEach(zone => {
+      const input = zone.querySelector('.slot-input');
+      const status = zone.querySelector('.slot-status');
+      zone.addEventListener('click', () => input.click());
+      input.addEventListener('change', () => {
+        if (input.files.length) {
+          status.textContent = input.files[0].name;
+          zone.classList.add('has-file');
+        } else {
+          status.textContent = 'No file selected';
+          zone.classList.remove('has-file');
+        }
+        updateSubmitState();
       });
-      submitBtn.disabled = files.length === 0;
-      fileList.querySelectorAll('.file-remove').forEach(btn => {
-        btn.addEventListener('click', () => {
-          files.splice(parseInt(btn.dataset.idx), 1);
-          refreshFileList();
-        });
-      });
-    }
-
-    function addFiles(newFiles) {
-      for (const f of newFiles) {
-        if (files.length >= 3) break;
-        if (!files.find(x => x.name === f.name)) files.push(f);
-      }
-      refreshFileList();
-    }
-
-    uploadZone.addEventListener('click', () => fileInput.click());
-    fileInput.addEventListener('change', () => addFiles(Array.from(fileInput.files)));
-
-    uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
-    uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
-    uploadZone.addEventListener('drop', e => {
-      e.preventDefault();
-      uploadZone.classList.remove('drag-over');
-      addFiles(Array.from(e.dataTransfer.files));
     });
 
+    function updateSubmitState() {
+      const hasAny = document.querySelectorAll('.slot-zone.has-file').length > 0;
+      submitBtn.disabled = !hasAny;
+    }
+
     submitBtn.addEventListener('click', async () => {
-      if (!files.length) return;
       submitBtn.disabled = true;
       submitBtn.classList.add('loading');
-      submitText.textContent = 'Processing…';
+      submitText.textContent = 'Extracting glyphs… this takes about 10 seconds';
       errorMsg.classList.remove('visible');
 
-      const form = new FormData();
-      files.forEach(f => form.append('images', f));
+      const formData = new FormData(document.getElementById('extractForm'));
 
       try {
-        const res  = await fetch('/profiles/create', { method: 'POST', body: form });
+        const res  = await fetch('/api/extract-template', { method: 'POST', body: formData });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.detail || 'Upload failed');
+        if (!res.ok) throw new Error(data.detail || data.error || 'Extraction failed');
 
-        document.getElementById('res-id').textContent       = data.profile_id;
-        document.getElementById('res-glyphs').textContent   = data.total_glyphs;
-        document.getElementById('res-coverage').textContent = data.coverage_pct + '%';
-        document.getElementById('res-generate-link').href   = '/?profile_id=' + encodeURIComponent(data.profile_id);
-        resultCard.classList.add('visible');
-        submitBtn.style.display = 'none';
+        if (data.success) {
+          document.getElementById('res-id').textContent     = data.profile;
+          document.getElementById('res-glyphs').textContent = data.total_glyphs;
+          document.getElementById('res-coverage').textContent = data.unique_characters + ' chars';
+          document.getElementById('res-generate-link').href = '/?profile_id=' + encodeURIComponent(data.profile);
+          resultCard.classList.add('visible');
+          submitBtn.style.display = 'none';
+        } else {
+          throw new Error(data.error || 'Extraction failed');
+        }
       } catch (err) {
         errorMsg.textContent = '\u26a0 ' + err.message;
         errorMsg.classList.add('visible');
         submitBtn.disabled = false;
         submitBtn.classList.remove('loading');
-        submitText.textContent = 'Upload & Create Profile';
+        submitText.textContent = 'Extract My Handwriting';
       }
     });
   </script>
