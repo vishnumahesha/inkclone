@@ -28,6 +28,13 @@ sys.path.insert(0, str(_ROOT))
 
 from render_engine import HandwritingRenderer, create_dummy_glyph_bank
 from glyph_loader import load_profile_glyphs
+from template_config import (
+    WARP_W, WARP_H,
+    MARGIN_LEFT, MARGIN_RIGHT, MARGIN_TOP, MARGIN_BOTTOM,
+    PAGE_GRIDS, CELL_INSET, RED_CHANNEL_THRESHOLD,
+    MORPH_KERNEL_SIZE, AUTOCROP_PADDING, MIN_INK_PIXELS,
+    cell_dims, label_to_display, PAGE_MAPS,
+)
 from paper_backgrounds import (generate_blank_paper, generate_college_ruled,
                                generate_wide_ruled, generate_graph_paper, generate_legal_pad,
                                generate_dot_grid, generate_sticky_note)
@@ -1271,6 +1278,210 @@ async def delete_glyph(profile: str, filename: str):
     path.unlink()
     _GLYPH_BANKS.pop(profile, None)
     return JSONResponse({"success": True})
+
+
+# ── Template extraction v2 (red-channel pipeline, no corner detection) ────────
+
+def _perspective_warp(img_cv: "np.ndarray") -> "np.ndarray":
+    """
+    Resize input image to WARP_W×WARP_H with cubic interpolation, then sharpen.
+    No corner detection — pure resize. This is the only warp used in the
+    /api/extract-template pipeline.
+    """
+    import cv2
+    import numpy as np
+    warped = cv2.resize(img_cv, (WARP_W, WARP_H), interpolation=cv2.INTER_CUBIC)
+    kernel = np.array(
+        [[-0.5, -1.0, -0.5],
+         [-1.0,  7.0, -1.0],
+         [-0.5, -1.0, -0.5]], dtype=np.float32
+    )
+    return cv2.filter2D(warped, -1, kernel)
+
+
+def _red_channel_binary(warped: "np.ndarray") -> "np.ndarray":
+    """
+    Extract ink mask from warped BGR image using red channel threshold.
+    Black ink: R≈0 → kept.  Blue grid lines: R≈170 > threshold → rejected.
+    White paper: R=255 → rejected.
+    """
+    import cv2
+    b, g, r = cv2.split(warped)
+    _, binary = cv2.threshold(r, RED_CHANNEL_THRESHOLD, 255, cv2.THRESH_BINARY_INV)
+    # Morphological close to reconnect broken strokes
+    kernel = cv2.getStructuringElement(
+        cv2.MORPH_ELLIPSE, (MORPH_KERNEL_SIZE, MORPH_KERNEL_SIZE)
+    )
+    return cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+
+
+def _cell_to_rgba_v2(cell_bin: "np.ndarray") -> "PIL.Image | None":
+    """
+    Convert binary cell crop to RGBA glyph at 128px height.
+    Uses AUTOCROP_PADDING and MIN_INK_PIXELS from template_config.
+    """
+    import cv2
+    import numpy as np
+    from PIL import Image
+
+    ink_pixels = int((cell_bin > 0).sum())
+    if ink_pixels < MIN_INK_PIXELS:
+        return None
+
+    # Tight crop to ink bbox
+    rows = np.any(cell_bin > 0, axis=1)
+    cols = np.any(cell_bin > 0, axis=0)
+    if not rows.any():
+        return None
+    rmin, rmax = int(np.where(rows)[0][0]),  int(np.where(rows)[0][-1])
+    cmin, cmax = int(np.where(cols)[0][0]),  int(np.where(cols)[0][-1])
+    h, w = cell_bin.shape
+    rmin = max(0, rmin - AUTOCROP_PADDING)
+    rmax = min(h - 1, rmax + AUTOCROP_PADDING)
+    cmin = max(0, cmin - AUTOCROP_PADDING)
+    cmax = min(w - 1, cmax + AUTOCROP_PADDING)
+    cropped = cell_bin[rmin:rmax + 1, cmin:cmax + 1]
+
+    # Reject if ink fills almost the entire crop (captured grid line)
+    ink_ratio = int((cropped > 0).sum()) / max(1, cropped.size)
+    if ink_ratio > 0.85:
+        return None
+
+    ch, cw = cropped.shape
+    if ch < 4 or cw < 4:
+        return None
+
+    target_h = 128
+    scale    = target_h / ch
+    target_w = max(1, int(round(cw * scale)))
+    resized  = cv2.resize(cropped, (target_w, target_h), interpolation=cv2.INTER_LANCZOS4)
+
+    arr = np.zeros((target_h, target_w, 4), dtype=np.uint8)
+    arr[resized > 128, 3] = 240   # ink → semi-opaque black
+    return Image.fromarray(arr, "RGBA")
+
+
+def _extract_page_cells_v2(img_cv: "np.ndarray", page: int) -> list:
+    """
+    Extract glyphs from one template page using fixed grid positions.
+
+    Returns list of (label, variant, glyph_rgba).
+    """
+    import numpy as np
+
+    warped = _perspective_warp(img_cv)
+    binary = _red_channel_binary(warped)
+
+    cols, rows = PAGE_GRIDS[page]
+    cw, ch     = cell_dims(page)
+    cells      = PAGE_MAPS[page]()
+
+    extracted = []
+    for idx, cell in enumerate(cells):
+        col = idx % cols
+        row = idx // cols
+        if row >= rows:
+            break
+
+        label   = cell["label"]
+        variant = cell["variant"]
+        if label is None:
+            continue
+
+        # Cell boundaries in warped space with inset
+        inward_x = int(cw * CELL_INSET)
+        inward_y = int(ch * CELL_INSET)
+        x0 = MARGIN_LEFT + int(col * cw) + inward_x
+        y0 = MARGIN_TOP  + int(row * ch) + inward_y
+        x1 = MARGIN_LEFT + int((col + 1) * cw) - inward_x
+        y1 = MARGIN_TOP  + int((row + 1) * ch) - inward_y
+        x1 = min(WARP_W, x1)
+        y1 = min(WARP_H, y1)
+
+        if x1 - x0 < 8 or y1 - y0 < 8:
+            continue
+
+        cell_bin = binary[y0:y1, x0:x1]
+        glyph    = _cell_to_rgba_v2(cell_bin)
+        if glyph is not None:
+            extracted.append((label, variant, glyph))
+
+    return extracted
+
+
+@app.post("/api/extract-template")
+async def api_extract_template(
+    images: List[UploadFile] = File(...),
+    profile_name: str = Form(...),
+):
+    """
+    Accept up to 4 template pages (in order: page 1–4), extract glyphs using
+    the red-channel pipeline, and save to profiles/{profile_name}/glyphs/.
+
+    Field names:
+      images       — multipart file list (up to 4 files, page order)
+      profile_name — string (e.g. "synthetic_v1")
+    """
+    import cv2
+    import numpy as np
+
+    if not images:
+        raise HTTPException(status_code=400, detail="No images provided")
+    if len(images) > 4:
+        raise HTTPException(status_code=400, detail="Maximum 4 pages")
+    if not profile_name or "/" in profile_name or ".." in profile_name:
+        raise HTTPException(status_code=400, detail="Invalid profile_name")
+
+    profile_dir = _PROFILES_DIR / profile_name
+    glyphs_dir  = profile_dir / "glyphs"
+    glyphs_dir.mkdir(parents=True, exist_ok=True)
+
+    saved: dict[str, list] = {}
+    errors: list[str] = []
+
+    for page_idx, upload in enumerate(images):
+        page = page_idx + 1   # 1-indexed
+        contents = await upload.read()
+        arr = np.frombuffer(contents, np.uint8)
+        img_cv = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        if img_cv is None:
+            errors.append(f"Page {page}: could not decode image")
+            continue
+
+        try:
+            extracted = _extract_page_cells_v2(img_cv, page)
+        except Exception as exc:
+            errors.append(f"Page {page}: extraction error — {exc}")
+            continue
+
+        for label, variant, glyph_rgba in extracted:
+            fname = f"{label}_{variant}.png"
+            glyph_rgba.save(str(glyphs_dir / fname))
+            saved.setdefault(label, []).append(variant)
+
+    total_glyphs = sum(len(v) for v in saved.values())
+    unique_chars  = len(saved)
+
+    # Write minimal profile.json
+    (profile_dir / "profile.json").write_text(
+        json.dumps({
+            "profile_id":    profile_name,
+            "created_at":    datetime.now(timezone.utc).isoformat(),
+            "source_method": "template_v2_red_channel",
+            "total_variants": total_glyphs,
+            "usable":        total_glyphs > 0,
+        }, indent=2)
+    )
+
+    # Invalidate cache
+    _GLYPH_BANKS.pop(profile_name, None)
+
+    return JSONResponse({
+        "profile_name":  profile_name,
+        "total_glyphs":  total_glyphs,
+        "unique_chars":  unique_chars,
+        "errors":        errors,
+    })
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
