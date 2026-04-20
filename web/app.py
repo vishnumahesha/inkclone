@@ -15,7 +15,7 @@ import base64
 from datetime import datetime, timezone
 from typing import List, Optional
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -1314,6 +1314,20 @@ async def api_extract_template(
         "unique_chars":  unique_chars,
         "errors":        errors,
     })
+
+
+@app.post("/api/debug-upload")
+async def debug_upload(request: Request):
+    """Temporary: echo raw form data to diagnose Railway multipart parsing."""
+    form = await request.form()
+    result = {}
+    for key in form:
+        val = form[key]
+        if hasattr(val, "filename"):
+            result[key] = f"FILE:{val.filename}:{val.content_type}"
+        else:
+            result[key] = str(val)
+    return JSONResponse({"fields": result, "count": len(form)})
 
 
 # ── Entry point ────────────────────────────────────────────────────────────────
