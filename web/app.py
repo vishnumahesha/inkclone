@@ -231,12 +231,16 @@ async def generate_document(request: GenerateRequest):
 @app.get("/api/profile-stats")
 async def get_profile_stats(profile_id: str = None):
     """Return glyph counts for a profile (used to populate the stats cards)."""
-    bank = _get_glyph_bank(profile_id)
-    total_variants = sum(len(v) for v in bank.values())
-    unique_chars   = len(bank)
+    from glyph_loader import _parse_glyph_stem
+    pid = profile_id or _DEFAULT_PROFILE
+    glyphs_dir = _PROFILES_DIR / pid / "glyphs"
+    if not glyphs_dir.exists():
+        glyphs_dir = _PROFILES_DIR / _DEFAULT_PROFILE / "glyphs"
+    pngs = list(glyphs_dir.glob("*.png"))
+    chars = {_parse_glyph_stem(p.stem) for p in pngs if _parse_glyph_stem(p.stem) is not None}
     return JSONResponse({
-        "total_variants": total_variants,
-        "unique_chars":   unique_chars,
+        "total_variants": len(pngs),
+        "unique_chars":   len(chars),
         "papers":         len(PAPERS),
     })
 
