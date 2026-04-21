@@ -19,25 +19,9 @@ node_modules/
 real_glyphs/
 profiles/*/glyphs/
 profiles/*/source_images/
-!profiles/freeform_vishnu/
-!profiles/freeform_vishnu/glyphs/
-!profiles/freeform_vishnu/**
-!profiles/vishnu_v3/
-!profiles/vishnu_v3/glyphs/
-!profiles/vishnu_v3/**
-!profiles/vishnu_v4/
-!profiles/vishnu_v4/glyphs/
-!profiles/vishnu_v4/**
-!profiles/vishnu_v3_clean/
-!profiles/vishnu_v3_clean/glyphs/
-!profiles/vishnu_v3_clean/**
-!profiles/vishnu_v3_final/
-!profiles/vishnu_v3_final/glyphs/
-!profiles/vishnu_v3_final/**
 !template_v4_scan_page1.png
 !template_v4_scan_page2.png
 !template_v4_scan_page3.png
-
 
 !profiles/vishnu_v6/
 !profiles/vishnu_v6/glyphs/
