@@ -1,0 +1,218 @@
+[
+  {
+    "photo": "IMG_38062.png",
+    "page": 1,
+    "measurements": {
+      "A_resolution": {
+        "width_px": 913,
+        "height_px": 1100,
+        "effective_width": 913,
+        "level_idx": 4
+      },
+      "B_rotation": {
+        "angle_deg": 0.0,
+        "n_lines": 93,
+        "level_idx": 0
+      },
+      "C_lighting": {
+        "quadrant_means": {
+          "TL": 0.9755319761078275,
+          "TR": 0.9769274622918592,
+          "BL": 0.9835063795853269,
+          "BR": 0.9868277263561084
+        },
+        "overall_brightness": 0.981,
+        "brightness_factor": 0.981,
+        "level_idx": 0
+      },
+      "D_noise": {
+        "noise_std": 16.04,
+        "level_idx": 3
+      },
+      "E_jpeg": {
+        "jpeg_quality_estimate": 100,
+        "is_png": true,
+        "level_idx": 0
+      },
+      "F_ink_lightness": {
+        "ink_pixel_count": 6780,
+        "ink_median_red": 7.0,
+        "ink_lightness_fraction": 0.027,
+        "pct_captured_by_threshold": 1.0,
+        "level_idx": 0
+      }
+    },
+    "risk_scores": {
+      "A_resolution": 4,
+      "B_rotation": 0,
+      "C_lighting": 0,
+      "D_noise": 3,
+      "E_jpeg": 0,
+      "F_ink_lightness": 0
+    },
+    "primary_bottleneck": "A_resolution",
+    "secondary_bottleneck": "D_noise"
+  },
+  {
+    "photo": "IMG_38072.png",
+    "page": 2,
+    "measurements": {
+      "A_resolution": {
+        "width_px": 925,
+        "height_px": 1118,
+        "effective_width": 925,
+        "level_idx": 4
+      },
+      "B_rotation": {
+        "angle_deg": 0.0,
+        "n_lines": 115,
+        "level_idx": 0
+      },
+      "C_lighting": {
+        "quadrant_means": {
+          "TL": 0.9782999186555958,
+          "TR": 0.9776752246855924,
+          "BL": 0.979635716161024,
+          "BR": 0.979777338322247
+        },
+        "overall_brightness": 0.979,
+        "brightness_factor": 0.979,
+        "level_idx": 0
+      },
+      "D_noise": {
+        "noise_std": 16.61,
+        "level_idx": 3
+      },
+      "E_jpeg": {
+        "jpeg_quality_estimate": 100,
+        "is_png": true,
+        "level_idx": 0
+      },
+      "F_ink_lightness": {
+        "ink_pixel_count": 8074,
+        "ink_median_red": 7.0,
+        "ink_lightness_fraction": 0.027,
+        "pct_captured_by_threshold": 1.0,
+        "level_idx": 0
+      }
+    },
+    "risk_scores": {
+      "A_resolution": 4,
+      "B_rotation": 0,
+      "C_lighting": 0,
+      "D_noise": 3,
+      "E_jpeg": 0,
+      "F_ink_lightness": 0
+    },
+    "primary_bottleneck": "A_resolution",
+    "secondary_bottleneck": "D_noise"
+  },
+  {
+    "photo": "IMG_38082.png",
+    "page": 3,
+    "measurements": {
+      "A_resolution": {
+        "width_px": 901,
+        "height_px": 1102,
+        "effective_width": 901,
+        "level_idx": 4
+      },
+      "B_rotation": {
+        "angle_deg": 0.0,
+        "n_lines": 1632,
+        "level_idx": 0
+      },
+      "C_lighting": {
+        "quadrant_means": {
+          "TL": 0.943410507336631,
+          "TR": 0.9348789459244691,
+          "BL": 0.9161950899335334,
+          "BR": 0.9096949702573494
+        },
+        "overall_brightness": 0.926,
+        "brightness_factor": 0.926,
+        "level_idx": 0
+      },
+      "D_noise": {
+        "noise_std": 17.98,
+        "level_idx": 3
+      },
+      "E_jpeg": {
+        "jpeg_quality_estimate": 100,
+        "is_png": true,
+        "level_idx": 0
+      },
+      "F_ink_lightness": {
+        "ink_pixel_count": 620,
+        "ink_median_red": 87.5,
+        "ink_lightness_fraction": 0.343,
+        "pct_captured_by_threshold": 1.0,
+        "level_idx": 2
+      }
+    },
+    "risk_scores": {
+      "A_resolution": 4,
+      "B_rotation": 0,
+      "C_lighting": 0,
+      "D_noise": 3,
+      "E_jpeg": 0,
+      "F_ink_lightness": 2
+    },
+    "primary_bottleneck": "A_resolution",
+    "secondary_bottleneck": "D_noise"
+  },
+  {
+    "photo": "IMG_38092.png",
+    "page": 4,
+    "measurements": {
+      "A_resolution": {
+        "width_px": 926,
+        "height_px": 1129,
+        "effective_width": 926,
+        "level_idx": 4
+      },
+      "B_rotation": {
+        "angle_deg": 0.0,
+        "n_lines": 282,
+        "level_idx": 0
+      },
+      "C_lighting": {
+        "quadrant_means": {
+          "TL": 0.9573109295186297,
+          "TR": 0.9626541516228139,
+          "BL": 0.9269973904430175,
+          "BR": 0.9121990174154105
+        },
+        "overall_brightness": 0.94,
+        "brightness_factor": 0.94,
+        "level_idx": 0
+      },
+      "D_noise": {
+        "noise_std": 16.22,
+        "level_idx": 3
+      },
+      "E_jpeg": {
+        "jpeg_quality_estimate": 100,
+        "is_png": true,
+        "level_idx": 0
+      },
+      "F_ink_lightness": {
+        "ink_pixel_count": 2193,
+        "ink_median_red": 20.0,
+        "ink_lightness_fraction": 0.078,
+        "pct_captured_by_threshold": 1.0,
+        "level_idx": 1
+      }
+    },
+    "risk_scores": {
+      "A_resolution": 4,
+      "B_rotation": 0,
+      "C_lighting": 0,
+      "D_noise": 3,
+      "E_jpeg": 0,
+      "F_ink_lightness": 1
+    },
+    "primary_bottleneck": "A_resolution",
+    "secondary_bottleneck": "D_noise"
+  }
+]
