@@ -116,3 +116,81 @@ Period, comma, apostrophe, and similar characters occupy only a small area of th
 4. **Even lighting** — avoid shadows across the page. Natural daylight or a desk lamp positioned to the side works well. Flash can wash out light strokes.
 
 5. **Fill every cell** — empty cells produce `ink < MIN_INK_PIXELS` and are skipped, leaving gaps in your profile. The renderer falls back to substitutes for missing glyphs.
+
+---
+
+## Phase 1–4 Diagnostic (2026-04-20)
+
+### Phase 1 — Degradation test on synthetic templates
+
+Test: `tests/degradation_test.py` · 7 dimensions × 6 levels · direct extraction (bypass warp; synthetic has no corner markers).
+Baseline: **238/238** throughout.
+
+**Breakpoint table** (first level scoring < 200/238):
+
+| Dimension | Breakpoint level | Score |
+|---|---|---|
+| A: Resolution (px wide) | no breakpoint (238/238 even at 400px) | — |
+| B: Rotation (degrees) | no breakpoint (237/238 at 4°) | — |
+| C: Lighting (factor) | no breakpoint (238/238 at 0.25×) | — |
+| D: Noise (Gaussian std) | no breakpoint (238/238 at std=80) | — |
+| E: JPEG quality | no breakpoint (238/238 at Q=50) | — |
+| F: Ink lightness fraction | lv4 (0.7) → **0/238** (cliff: R crosses 160 threshold) | 0 |
+| G: Combined A3+B3+D3+F3 | 238/238 | — |
+
+**Key finding:** extraction is robust to all dimensions except ink fading past 70% — that is the cliff where the red-channel threshold fails completely.
+
+### Phase 2 — Real photo analysis
+
+Photos: `profiles/IMG_3806[6–9]2.png` (4 pages, ~910×1100 px each)
+
+| Dimension | Measurement | Phase 1 level | Risk |
+|---|---|---|---|
+| A: Resolution | ~910 px wide | level 4 (800px) | none — 238/238 at lv4 |
+| B: Rotation | 0.0° | level 0 | none |
+| C: Lighting | factor 0.93–0.98 | level 0 | none |
+| D: Noise | std ≈ 16 | level 3 (std=20) | none — 238/238 at lv3 |
+| E: JPEG | PNG (lossless) | level 0 | none |
+| F: Ink lightness | R median 7–87 | level 0–2 | none — all < 160 threshold |
+
+**PRIMARY bottleneck:** resolution (level 4, but safe)
+**SECONDARY bottleneck:** noise (level 3, but safe)
+**Root cause of extraction failures:** corner detection quality (not photo quality) — a pipeline-level factor unmeasured by the 6 dimensions.
+
+### Phase 3 — Preprocessing hardening
+
+Added to `web/app.py`:
+- `preprocess_photo()`: deskew → normalize_brightness → reduce_noise
+- `_auto_deskew`: Hough, corrects 0.5°–10° skew with ≥5 supporting lines
+- `_normalize_brightness`: Gaussian 101×101, normalizes to 255 (white background preserved)
+- `_reduce_noise`: bilateral filter d=5 σ40,40
+- `_enhance_red_channel`: CLAHE clipLimit=2.0 8×8 (applied post-warp)
+- `_sharpen`: unsharp mask after warp upscaling
+- Adaptive threshold fallback in `_extract_glyph_cell`: if fixed threshold finds <0.5% ink, retries with `adaptiveThreshold` on red channel
+
+**F_ink_lightness impact after Phase 3:**
+
+| Level | Value | Before | After |
+|---|---|---|---|
+| 4 | 0.7 | 0/238 | **238/238** (adaptive threshold rescues all) |
+| 5 | 0.9 | 0/238 | **113/238** (partial rescue) |
+
+Synthetic 238/238 baseline maintained throughout.
+
+### Phase 4 — Re-test and real-photo extraction
+
+- Synthetic baseline: **238/238** (floor maintained) ✓
+- Real photo extraction with preprocessing: 226/238 (same as without preprocessing)
+- Conclusion: preprocessing is neutral for already-good photos and extends robustness for future degraded photos (particularly faded ink).
+
+**Root cause ranking:**
+
+1. **Corner detection** — the un-measured primary limit; real photos need the printed template corner markers to be clearly visible and unobstructed.
+2. **Ink fading** — addressed by adaptive threshold fallback (Phase 3).
+3. **Resolution** — not a practical limit; extraction works down to 400px wide.
+
+**Requirements for reliable extraction (≥ 230/238):**
+- Photograph the template with all 4 corner markers visible and unoccluded.
+- Use a dark pen (black ballpoint, R < 90 in the captured image).
+- Avoid tilts > 10° — deskew corrects 0.5°–10°, larger tilts need manual correction.
+- Any resolution ≥ 400px wide is acceptable after preprocessing.
