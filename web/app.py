@@ -287,7 +287,9 @@ def _char_category(char: str) -> str:
     return 'punctuation'
 
 @app.get("/review", response_class=HTMLResponse)
-async def review_page():
+async def review_page(profile: str = None):
+    if profile and not (_PROFILES_DIR / profile / "glyphs").exists():
+        raise HTTPException(status_code=404, detail=f"Profile '{profile}' not found")
     with open(_WEB_DIR / "review.html", encoding="utf-8") as f:
         return f.read()
 
