@@ -622,18 +622,74 @@ def _page_grid(pg: int) -> tuple:
 
 
 def _find_corners(gray):
-    """Find 4 corner markers as largest dark blob per quadrant (from extract_v6)."""
+    """
+    Find 4 corners of the template content area.
+
+    Primary: Hough line detection on the printed cell grid.  The template's
+    outermost horizontal and vertical grid lines form a rectangle whose corners
+    we use directly.  This is more robust than blob-based corner marker
+    detection because the grid lines are long and clearly detectable even when
+    the small corner marker squares are faint or cropped.
+
+    Fallback: largest dark blob per image quadrant (original extract_v6 logic).
+    """
     import cv2
     import numpy as np
 
+    h, w = gray.shape
+
+    # ── Primary: Hough grid border ─────────────────────────────────────────
+    edges = cv2.Canny(gray, 30, 80)
+    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=80,
+                            minLineLength=max(50, int(w * 0.15)),
+                            maxLineGap=60)
+    h_ys: list[int] = []
+    v_xs: list[int] = []
+    if lines is not None:
+        for seg in lines:
+            x1, y1, x2, y2 = seg[0]
+            angle = abs(np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi)
+            if angle < 10 or angle > 170:          # near-horizontal
+                y = min(y1, y2)
+                if 0 < y < h - 1:
+                    h_ys.append(y)
+            elif 80 < angle < 100:                 # near-vertical
+                x = min(x1, x2)
+                if 0 < x < w - 1:
+                    v_xs.append(x)
+
+    if h_ys and v_xs and len(h_ys) >= 2 and len(v_xs) >= 2:
+        top_y  = float(min(h_ys))
+        bot_y  = float(max(h_ys))
+        left_x = float(min(v_xs))
+        rgt_x  = float(max(v_xs))
+        # Sanity: border must cover ≥50 % of image in each dimension
+        if (rgt_x - left_x) >= w * 0.50 and (bot_y - top_y) >= h * 0.50:
+            # Hough found cell-grid bounds, not full-page corners.
+            # Extrapolate to full-page corners using known margin ratios.
+            # Template: ml=150, mr=150, mt=285, mb=135 in 2550×3300 warp.
+            # Cell grid = warp content area [150:2400] × [285:3165].
+            grid_w = rgt_x - left_x
+            grid_h = bot_y  - top_y
+            px_x = grid_w / 2250.0   # image pixels per warp unit (x)
+            px_y = grid_h / 2880.0   # image pixels per warp unit (y)
+            tl_x = left_x - 150 * px_x
+            tl_y = top_y  - 285 * px_y
+            tr_x = rgt_x  + 150 * px_x
+            br_y = bot_y  + 135 * px_y
+            return {
+                'TL': (tl_x, tl_y), 'TR': (tr_x, tl_y),
+                'BL': (tl_x, br_y), 'BR': (tr_x, br_y),
+            }
+
+    # ── Fallback: largest dark blob per quadrant ───────────────────────────
     _, binarized = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
     n_comp, _, stats, centroids = cv2.connectedComponentsWithStats(binarized, 8)
-    h, w = gray.shape
     blobs = []
     for i in range(1, n_comp):
         area = stats[i, cv2.CC_STAT_AREA]
-        bw = stats[i, cv2.CC_STAT_WIDTH]
-        bh = stats[i, cv2.CC_STAT_HEIGHT]
+        bw   = stats[i, cv2.CC_STAT_WIDTH]
+        bh   = stats[i, cv2.CC_STAT_HEIGHT]
         if area > 50 and bh > 0 and 0.3 < bw / bh < 3.0:
             blobs.append((area, float(centroids[i, 0]), float(centroids[i, 1])))
     mid_x, mid_y = w / 2, h / 2
@@ -680,8 +736,8 @@ def _extract_glyph_cell(warped_bgr, col, row, ml, mt, cw, ch, char_name=''):
     from PIL import Image
 
     scale = _WARP_W / 2550.0
-    inward_x = max(3, int(cw * 0.03))
-    inward_y = max(3, int(ch * 0.03))
+    inward_x = max(3, int(cw * 0.08))
+    inward_y = max(3, int(ch * 0.08))
     pad = max(2, int(4 * scale))
 
     x0 = int(round(ml + col * cw)) + inward_x
@@ -698,12 +754,23 @@ def _extract_glyph_cell(warped_bgr, col, row, ml, mt, cw, ch, char_name=''):
     label_mask_h = int(cell_h * 0.15)
     cell[:label_mask_h, :] = [255, 255, 255]
 
-    # RED CHANNEL ONLY — threshold 160 (matches extract_v6)
-    red_channel = cell[:, :, 2]  # OpenCV BGR: index 2 = Red
-    _, binarized = cv2.threshold(red_channel, 160, 255, cv2.THRESH_BINARY_INV)
+    # Min-channel binarization: ink min(R,G,B)≈7-87; gray/blue lines min≈130+
+    # Works for both blue template lines (R=170) and gray photographed lines (R≈G≈B≈150)
+    red_channel = cell[:, :, 2]  # kept for adaptive fallback below
+    min_channel = np.min(cell, axis=2)
+    _, binarized = cv2.threshold(min_channel, 100, 255, cv2.THRESH_BINARY_INV)
 
     # Morphological open with 2×2 kernel to clean noise
     binarized = cv2.morphologyEx(binarized, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
+
+    # Remove horizontal/vertical template grid lines (photographed as gray, captured as ink)
+    _cell_inner_w = x1 - x0
+    _cell_inner_h = y1 - y0
+    _hk = cv2.getStructuringElement(cv2.MORPH_RECT, (max(1, int(_cell_inner_w * 0.60)), 1))
+    _vk = cv2.getStructuringElement(cv2.MORPH_RECT, (1, max(1, int(_cell_inner_h * 0.60))))
+    _h_lines = cv2.morphologyEx(binarized, cv2.MORPH_OPEN, _hk)
+    _v_lines = cv2.morphologyEx(binarized, cv2.MORPH_OPEN, _vk)
+    binarized = cv2.subtract(binarized, cv2.add(_h_lines, _v_lines))
 
     # Remove small connected components (noise)
     cc_min = max(5, int(12 * scale))
