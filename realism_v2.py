@@ -79,7 +79,10 @@ def sliders_to_render_params(sliders: Dict[str, int], line_spacing_px: int) -> d
     (e.g. 42 for college_ruled). Font size and word spacing are expressed
     as fractions of this spacing so the text fits within the lines.
     """
-    s   = {k: max(0, min(100, int(v))) for k, v in sliders.items()}
+    # Merge caller-supplied values onto natural_notes defaults so partial dicts never KeyError.
+    base = dict(PRESETS["natural_notes"])
+    base.update({k: v for k, v in sliders.items() if k in base})
+    s   = {k: max(0, min(100, int(v))) for k, v in base.items()}
     lsp = max(1, line_spacing_px)
 
     return {
