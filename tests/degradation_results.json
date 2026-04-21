@@ -75,9 +75,9 @@
     {
       "level_idx": 4,
       "level_value": 4,
-      "score": 237,
-      "correct_labels": 237,
-      "blank": 1
+      "score": 238,
+      "correct_labels": 238,
+      "blank": 0
     },
     {
       "level_idx": 5,
@@ -251,16 +251,16 @@
     {
       "level_idx": 4,
       "level_value": 0.7,
-      "score": 0,
-      "correct_labels": 0,
-      "blank": 238
+      "score": 238,
+      "correct_labels": 238,
+      "blank": 0
     },
     {
       "level_idx": 5,
       "level_value": 0.9,
-      "score": 0,
-      "correct_labels": 0,
-      "blank": 238
+      "score": 113,
+      "correct_labels": 113,
+      "blank": 125
     }
   ],
   "G_combined": [

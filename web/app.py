@@ -716,7 +716,27 @@ def _extract_glyph_cell(warped_bgr, col, row, ml, mt, cw, ch, char_name=''):
     min_ink_small = max(5, int(15 * scale))
     min_ink = min_ink_small if char_name in _SMALL_CHARS else max(10, int(35 * scale))
     if len(ink_coords) < min_ink:
-        return None
+        # Fallback: adaptive threshold on red channel for faded ink.
+        # Avoids blue guide lines (R≈170) by operating on the red channel only.
+        cell_area = max(1, (x1 - x0) * (y1 - y0))
+        if (binarized > 0).sum() / cell_area < 0.005:
+            binarized_ad = cv2.adaptiveThreshold(
+                red_channel, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                cv2.THRESH_BINARY_INV, 15, 8)
+            binarized_ad = cv2.morphologyEx(binarized_ad, cv2.MORPH_OPEN,
+                                             np.ones((2, 2), np.uint8))
+            n2, lbl2, st2, _ = cv2.connectedComponentsWithStats(binarized_ad, 8)
+            for j in range(1, n2):
+                if st2[j, cv2.CC_STAT_AREA] < cc_min:
+                    binarized_ad[lbl2 == j] = 0
+            ink_coords2 = np.argwhere(binarized_ad > 0)
+            if len(ink_coords2) >= min_ink:
+                binarized  = binarized_ad
+                ink_coords = ink_coords2
+            else:
+                return None
+        else:
+            return None
 
     y_min, x_min = ink_coords.min(axis=0)
     y_max, x_max = ink_coords.max(axis=0)
@@ -734,6 +754,90 @@ def _extract_glyph_cell(warped_bgr, col, row, ml, mt, cw, ch, char_name=''):
     rgba = np.zeros((*crop.shape, 4), np.uint8)
     rgba[crop > 128] = [0, 0, 0, 240]
     return Image.fromarray(rgba, 'RGBA')
+
+
+def _auto_deskew(img_bgr):
+    """
+    Correct image tilt using Hough line detection.
+    Only applies if |angle| is in (0.5°, 10°) and ≥5 lines support it.
+    BORDER_REPLICATE fills any new border pixels from rotation.
+    """
+    import cv2
+    import numpy as np
+
+    gray  = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+    edges = cv2.Canny(gray, 50, 150, apertureSize=3)
+    lines = cv2.HoughLines(edges, 1, np.pi / 180, threshold=150)
+    if lines is None or len(lines) < 5:
+        return img_bgr
+
+    angles = []
+    for line in lines:
+        rho, theta = line[0]
+        angle = np.degrees(theta) - 90.0
+        if 0.5 < abs(angle) < 10.0:
+            angles.append(angle)
+    if len(angles) < 5:
+        return img_bgr
+
+    skew = float(np.median(angles))
+    h, w = img_bgr.shape[:2]
+    M = cv2.getRotationMatrix2D((w / 2, h / 2), -skew, 1.0)
+    return cv2.warpAffine(img_bgr, M, (w, h), flags=cv2.INTER_CUBIC,
+                          borderMode=cv2.BORDER_REPLICATE)
+
+
+def _normalize_brightness(img_bgr):
+    """
+    Per-channel brightness normalization via large-kernel Gaussian blur.
+    Flattens uneven lighting without touching fine-grained ink detail.
+    """
+    import cv2
+    import numpy as np
+
+    blur = cv2.GaussianBlur(img_bgr.astype(np.float32), (101, 101), 0)
+    corrected = img_bgr.astype(np.float32) * 128.0 / (blur + 1e-6)
+    return np.clip(corrected, 0, 255).astype(np.uint8)
+
+
+def _reduce_noise(img_bgr):
+    """Bilateral filter: reduce sensor/scanner noise while keeping ink edges sharp."""
+    import cv2
+    return cv2.bilateralFilter(img_bgr, d=5, sigmaColor=40, sigmaSpace=40)
+
+
+def _enhance_red_channel(img_bgr):
+    """
+    CLAHE on the red channel to improve local contrast for ink vs. background.
+    Applied to the warped (2550×3300) image before cell extraction.
+    """
+    import cv2
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    result = img_bgr.copy()
+    result[:, :, 2] = clahe.apply(img_bgr[:, :, 2])  # BGR: index 2 = Red
+    return result
+
+
+def _sharpen(img_bgr):
+    """Unsharp mask to crisp ink edges after perspective warp upscaling."""
+    import cv2
+    blur = cv2.GaussianBlur(img_bgr, (0, 0), 2.0)
+    return cv2.addWeighted(img_bgr, 1.5, blur, -0.5, 0)
+
+
+def preprocess_photo(img_bgr):
+    """
+    Harden an uploaded template photo for the extraction pipeline.
+
+    Pipeline: deskew → normalize brightness → denoise.
+    Applied before _find_corners + _perspective_warp.
+    Post-warp steps (_enhance_red_channel, _sharpen) are applied inside
+    _extract_v7_template after the perspective transform.
+    """
+    img_bgr = _auto_deskew(img_bgr)
+    img_bgr = _normalize_brightness(img_bgr)
+    img_bgr = _reduce_noise(img_bgr)
+    return img_bgr
 
 
 def _extract_v7_template(saved_pages: list) -> dict:
@@ -754,12 +858,17 @@ def _extract_v7_template(saved_pages: list) -> dict:
         if img_cv is None:
             continue
 
+        # Pre-process: deskew, normalize brightness, reduce noise
+        img_cv = preprocess_photo(img_cv)
+
         # Corner detection on grayscale (only for warp — NOT for extraction)
         gray = cv2.cvtColor(img_cv, cv2.COLOR_BGR2GRAY)
         corners = _find_corners(gray)
 
-        # Warp color image to 2550×3300
+        # Warp color image to 2550×3300, then enhance and sharpen
         warped = _perspective_warp(img_cv, corners)
+        warped = _enhance_red_channel(warped)
+        warped = _sharpen(warped)
 
         # Get page-specific grid and character mapping
         cols, rows, ml, mt, cw, ch = _page_grid(pg)
