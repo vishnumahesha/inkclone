@@ -1,0 +1,124 @@
+======================================================================
+INKCLONE QA AUDIT SUMMARY
+Date: 2026-04-20
+Live Site: https://inkclone-production.up.railway.app
+======================================================================
+
+======================================================================
+PART 1A — PROFILE VALIDATION
+======================================================================
+
+Profiles on disk with glyphs/:
+  freeform_vishnu, improved_vishnu, vishnu_blue_v1, vishnu_v3,
+  vishnu_v3_clean, vishnu_v3_final, vishnu_v4, vishnu_v6,
+  vishnu_v6_new, vishnu_v7
+
+Validation Results (SCORE / 238 max):
+  freeform_vishnu   : 113/238  FAIL  (85.6% lower, 5.8% upper, 23.3% digit, 40.6% punct, 5.0% bigrams)
+  improved_vishnu   :   0/238  FAIL  (all glyphs MISSING — profile not populated)
+  vishnu_blue_v1    : 235/238  PASS  (98.1% lower, 98.1% upper, 100% digit, 100% punct, 100% bigrams)
+  vishnu_v3         : 236/238  PASS  (100% lower/upper/digit/bigrams, missing dollar_v0 & dollar_v1)
+  vishnu_v3_clean   : 229/238  FAIL  (missing some h/l/n variants, dollar, th/or bigrams)
+  vishnu_v3_final   : 229/238  FAIL  (same failures as vishnu_v3_clean)
+  vishnu_v4         : 235/238  PASS  (g_v1 BAD_AR=8.71, missing dollar)
+  vishnu_v6         : 232/238  PASS  (missing t_v2, v_v3, x_v3, y_v1, upper_M_v0; colon_v1 BAD_AR=21.58)
+  vishnu_v6_new     : 225/238  FAIL  (10 uppercase missing, 3 punct missing)
+  vishnu_v7         : 221/238  FAIL  (15 lowercase variants missing, dollar missing)
+
+PASSING profiles: vishnu_blue_v1, vishnu_v3, vishnu_v4, vishnu_v6
+FAILING profiles: freeform_vishnu, improved_vishnu, vishnu_v3_clean, vishnu_v3_final, vishnu_v6_new, vishnu_v7
+
+======================================================================
+PART 1C — GLYPH SIZE ANALYSIS (vishnu_v6)
+======================================================================
+
+Total glyphs: 233
+
+OVERALL:
+  Width:  min=44  max=4640  median=263.0  stdev=310.7
+  Height: min=174 max=231   median=215.0  stdev=21.8
+
+Per Category:
+  LOWER  (100): Width min=44  max=680  median=343.0  | Height all=231
+  UPPER   (51): Width min=54  max=467  median=174.0  | Height all=174
+  DIGIT   (30): Width min=59  max=305  median=254.5  | Height all=211
+  PUNCT   (32): Width min=121 max=4640 median=265.0  | Height all=215
+  BIGRAM  (20): Width min=175 max=307  median=258.0  | Height all=214
+
+OUTLIERS (4):
+  f_2:      WIDE_OUTLIER(680)
+  r_1:      WIDE_OUTLIER(677)
+  t_1:      WIDE_OUTLIER(679)
+  colon_1:  WIDE_OUTLIER(4640)  <-- severe; also flagged BAD_AR in validation
+
+Note: Heights are uniform within each category (all same value), which is expected.
+The colon_1 outlier at width=4640 is a significant data quality issue.
+
+======================================================================
+PART 4 — API ENDPOINT AUDIT
+======================================================================
+
+4.1  GET /profiles               200  6 profiles returned (3 on-disk profiles not served)
+4.2  GET /api/profile-stats      200  total_variants=185, unique_chars=98, papers=7
+4.3  GET /api/profile-glyphs     200  233 glyphs returned for vishnu_v6
+4.4  POST /generate (short)      200  1200x1600 PNG, 476KB decoded
+4.5  POST /generate (bad profile) 400 {"detail": "Profile '...' not found"}
+4.6  POST /generate (empty text)  400 {"detail": "Text cannot be empty"}
+4.7  POST /generate (500 words)   200 1200x1600 PNG, 773KB decoded
+4.8  GET /api/glyph-image         200 231x231 RGBA PNG, 6.7KB
+
+ISSUES:
+  - /profiles API serves only 6 of 10 on-disk profiles.
+    Not served: vishnu_blue_v1, vishnu_v6_new, vishnu_v7
+  - All generated images are fixed 1200x1600 regardless of content length.
+
+======================================================================
+PART 5 — PERFORMANCE TIMING
+======================================================================
+
+Page Loads (all under 2s threshold):
+  GET /       1.25s  200  56454B
+  GET /review 0.32s  200  14157B
+  GET /setup  1.15s  200  17632B
+
+Generate Requests (SLOW — both exceeded 2s threshold):
+  POST /generate (short, 2 words):  2.66s  *** SLOW ***
+  POST /generate (500 words):       3.14s  *** SLOW ***
+
+Glyph Image Loop (a-z):
+  min=0.17s  max=1.18s  median=0.18s  mean=0.25s
+  All 26 glyphs under 2s threshold.
+  Note: a_0.png was slowest at 1.18s (likely cold cache on first request).
+
+FLAGS:
+  - /generate endpoint exceeds 2s threshold for all text lengths tested.
+  - Page loads and glyph images are within acceptable bounds.
+
+======================================================================
+PART 6 — EDGE CASES
+======================================================================
+
+Input Handling Results:
+  unicode_special  "Hello™ Café résumé naïve"   → 200 SUCCESS  image=479791B  1.59s
+  emoji            "Hello 😀 World"              → 200 SUCCESS  image=567096B  1.78s
+  empty_string     ""                            → 400 REJECTED {"detail":"Text cannot be empty"}
+  spaces_only      "     "                       → 400 REJECTED {"detail":"Text cannot be empty"}
+  punct_only       "...!!???"                    → 200 SUCCESS  image=565062B  1.64s
+  digits_only      "1234567890"                  → 200 SUCCESS  image=548563B  1.63s
+  all_caps         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"  → 200 SUCCESS  image=567036B  2.19s  (slightly slow)
+  newline_tab      "Line 1\nLine 2\tTabbed"      → 200 SUCCESS  image=492190B  1.92s
+  long_word        "supercalifragilisticexp..."  → 200 SUCCESS  image=581519B  1.75s
+
+Review Page with Fake Profile:
+  GET /review?profile=fake_profile_xyz → 200 (page loads with error text inside)
+  Note: Returns HTTP 200 with error content in body — does not return 404.
+
+NOTABLE:
+  - Emoji input is accepted and processed (no error) — unclear if glyphs render or fallback.
+  - Unicode accented chars accepted — likely fallback to ASCII approximate or space.
+  - all_caps took 2.19s, above 2s threshold.
+  - Fake profile on /review returns HTTP 200 instead of 404/400.
+
+======================================================================
+END OF AUDIT SUMMARY
+======================================================================

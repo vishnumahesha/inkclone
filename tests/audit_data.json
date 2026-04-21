@@ -1,0 +1,332 @@
+{
+  "audit_date": "2026-04-20",
+  "live_site": "https://inkclone-production.up.railway.app",
+  "parts": {
+    "1a_profile_validation": {
+      "profiles_on_disk": [
+        "freeform_vishnu",
+        "improved_vishnu",
+        "vishnu_blue_v1",
+        "vishnu_v3",
+        "vishnu_v3_clean",
+        "vishnu_v3_final",
+        "vishnu_v4",
+        "vishnu_v6",
+        "vishnu_v6_new",
+        "vishnu_v7"
+      ],
+      "results": {
+        "freeform_vishnu": {
+          "score": "113/238",
+          "verdict": "FAIL",
+          "pct": 47.5
+        },
+        "improved_vishnu": {
+          "score": "0/238",
+          "verdict": "FAIL",
+          "pct": 0.0
+        },
+        "vishnu_blue_v1": {
+          "score": "235/238",
+          "verdict": "PASS",
+          "pct": 98.7
+        },
+        "vishnu_v3": {
+          "score": "236/238",
+          "verdict": "PASS",
+          "pct": 99.2
+        },
+        "vishnu_v3_clean": {
+          "score": "229/238",
+          "verdict": "FAIL",
+          "pct": 96.2
+        },
+        "vishnu_v3_final": {
+          "score": "229/238",
+          "verdict": "FAIL",
+          "pct": 96.2
+        },
+        "vishnu_v4": {
+          "score": "235/238",
+          "verdict": "PASS",
+          "pct": 98.7
+        },
+        "vishnu_v6": {
+          "score": "232/238",
+          "verdict": "PASS",
+          "pct": 97.5
+        },
+        "vishnu_v6_new": {
+          "score": "225/238",
+          "verdict": "FAIL",
+          "pct": 94.5
+        },
+        "vishnu_v7": {
+          "score": "221/238",
+          "verdict": "FAIL",
+          "pct": 92.9
+        }
+      },
+      "passing": [
+        "vishnu_blue_v1",
+        "vishnu_v3",
+        "vishnu_v4",
+        "vishnu_v6"
+      ],
+      "failing": [
+        "freeform_vishnu",
+        "improved_vishnu",
+        "vishnu_v3_clean",
+        "vishnu_v3_final",
+        "vishnu_v6_new",
+        "vishnu_v7"
+      ]
+    },
+    "1c_glyph_size_analysis": {
+      "profile": "vishnu_v6",
+      "total_glyphs": 233,
+      "overall": {
+        "width": {
+          "min": 44,
+          "max": 4640,
+          "median": 263.0,
+          "stdev": 310.7
+        },
+        "height": {
+          "min": 174,
+          "max": 231,
+          "median": 215.0,
+          "stdev": 21.8
+        }
+      },
+      "by_category": {
+        "lower": {
+          "count": 100,
+          "width_min": 44,
+          "width_max": 680,
+          "width_median": 343.0,
+          "height_fixed": 231
+        },
+        "upper": {
+          "count": 51,
+          "width_min": 54,
+          "width_max": 467,
+          "width_median": 174.0,
+          "height_fixed": 174
+        },
+        "digit": {
+          "count": 30,
+          "width_min": 59,
+          "width_max": 305,
+          "width_median": 254.5,
+          "height_fixed": 211
+        },
+        "punct": {
+          "count": 32,
+          "width_min": 121,
+          "width_max": 4640,
+          "width_median": 265.0,
+          "height_fixed": 215
+        },
+        "bigram": {
+          "count": 20,
+          "width_min": 175,
+          "width_max": 307,
+          "width_median": 258.0,
+          "height_fixed": 214
+        }
+      },
+      "outliers": [
+        {
+          "glyph": "f_2",
+          "issue": "WIDE_OUTLIER",
+          "width": 680
+        },
+        {
+          "glyph": "r_1",
+          "issue": "WIDE_OUTLIER",
+          "width": 677
+        },
+        {
+          "glyph": "t_1",
+          "issue": "WIDE_OUTLIER",
+          "width": 679
+        },
+        {
+          "glyph": "colon_1",
+          "issue": "WIDE_OUTLIER",
+          "width": 4640
+        }
+      ]
+    },
+    "4_api_endpoints": {
+      "profiles_served_by_api": [
+        "freeform_vishnu",
+        "vishnu_v3",
+        "vishnu_v3_clean",
+        "vishnu_v3_final",
+        "vishnu_v4",
+        "vishnu_v6"
+      ],
+      "profiles_on_disk_not_served": [
+        "vishnu_blue_v1",
+        "vishnu_v6_new",
+        "vishnu_v7"
+      ],
+      "endpoints": {
+        "GET /profiles": {
+          "status": 200,
+          "profiles_count": 6
+        },
+        "GET /api/profile-stats": {
+          "status": 200,
+          "total_variants": 185,
+          "unique_chars": 98,
+          "papers": 7
+        },
+        "GET /api/profile-glyphs": {
+          "status": 200,
+          "glyphs_returned": 233
+        },
+        "POST /generate (short)": {
+          "status": 200,
+          "image_size_px": "1200x1600",
+          "decoded_bytes": 475990
+        },
+        "POST /generate (bad profile)": {
+          "status": 400,
+          "error": "Profile not found"
+        },
+        "POST /generate (empty text)": {
+          "status": 400,
+          "error": "Text cannot be empty"
+        },
+        "POST /generate (500 words)": {
+          "status": 200,
+          "image_size_px": "1200x1600",
+          "decoded_bytes": 773265
+        },
+        "GET /api/glyph-image": {
+          "status": 200,
+          "format": "PNG",
+          "size_px": "231x231",
+          "mode": "RGBA"
+        }
+      }
+    },
+    "5_performance": {
+      "page_loads": {
+        "GET /": {
+          "time_s": 1.25,
+          "status": 200,
+          "slow": false
+        },
+        "GET /review": {
+          "time_s": 0.32,
+          "status": 200,
+          "slow": false
+        },
+        "GET /setup": {
+          "time_s": 1.15,
+          "status": 200,
+          "slow": false
+        }
+      },
+      "generate": {
+        "short_text": {
+          "time_s": 2.66,
+          "status": 200,
+          "slow": true
+        },
+        "long_text_500w": {
+          "time_s": 3.14,
+          "status": 200,
+          "slow": true
+        }
+      },
+      "glyph_images_az": {
+        "min_s": 0.17,
+        "max_s": 1.18,
+        "median_s": 0.18,
+        "mean_s": 0.25,
+        "any_slow": false
+      },
+      "threshold_s": 2.0,
+      "slow_endpoints": [
+        "POST /generate (short)",
+        "POST /generate (500 words)"
+      ]
+    },
+    "6_edge_cases": {
+      "results": {
+        "unicode_special": {
+          "input": "Hello\u2122 Caf\u00e9 r\u00e9sum\u00e9 na\u00efve",
+          "status": 200,
+          "outcome": "SUCCESS",
+          "image_bytes": 479791,
+          "time_s": 1.59
+        },
+        "emoji": {
+          "input": "Hello \ud83d\ude00 World",
+          "status": 200,
+          "outcome": "SUCCESS",
+          "image_bytes": 567096,
+          "time_s": 1.78
+        },
+        "empty_string": {
+          "input": "",
+          "status": 400,
+          "outcome": "REJECTED",
+          "error": "Text cannot be empty"
+        },
+        "spaces_only": {
+          "input": "     ",
+          "status": 400,
+          "outcome": "REJECTED",
+          "error": "Text cannot be empty"
+        },
+        "punct_only": {
+          "input": "...!!???",
+          "status": 200,
+          "outcome": "SUCCESS",
+          "image_bytes": 565062,
+          "time_s": 1.64
+        },
+        "digits_only": {
+          "input": "1234567890",
+          "status": 200,
+          "outcome": "SUCCESS",
+          "image_bytes": 548563,
+          "time_s": 1.63
+        },
+        "all_caps": {
+          "input": "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+          "status": 200,
+          "outcome": "SUCCESS",
+          "image_bytes": 567036,
+          "time_s": 2.19,
+          "slow": true
+        },
+        "newline_tab": {
+          "input": "Line 1\\nLine 2\\tTabbed",
+          "status": 200,
+          "outcome": "SUCCESS",
+          "image_bytes": 492190,
+          "time_s": 1.92
+        },
+        "long_word": {
+          "input": "supercalifragilisticexpialidocious",
+          "status": 200,
+          "outcome": "SUCCESS",
+          "image_bytes": 581519,
+          "time_s": 1.75
+        }
+      },
+      "fake_profile_review": {
+        "url": "/review?profile=fake_profile_xyz",
+        "status": 200,
+        "note": "Returns HTTP 200 with error text in body \u2014 no 404 returned"
+      }
+    }
+  }
+}

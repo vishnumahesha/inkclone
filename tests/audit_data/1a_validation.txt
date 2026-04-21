@@ -1,0 +1,411 @@
+=== PART 1A: PROFILE VALIDATION ===
+Date: Mon Apr 20 19:24:35 CDT 2026
+
+All profiles in profiles/:
+IMG_3802.jpeg
+IMG_3803.jpeg
+IMG_3804.jpeg
+IMG_3805.jpeg
+IMG_3806.jpeg
+IMG_38062.png
+IMG_3807.jpeg
+IMG_38072.png
+IMG_3808.jpeg
+IMG_38082.png
+IMG_3809.jpeg
+IMG_38092.png
+__pycache__
+freeform_vishnu
+glyph_metadata.json
+glyphs
+improved_vishnu
+loader.py
+metadata.json
+migrate.py
+schema
+source_v6_fullres
+vishnu_blue_v1
+vishnu_v3
+vishnu_v3_clean
+vishnu_v3_final
+vishnu_v4
+vishnu_v6
+vishnu_v6_new
+vishnu_v7
+
+Profiles with glyphs/ subdirectory:
+  freeform_vishnu
+  improved_vishnu
+  vishnu_blue_v1
+  vishnu_v3
+  vishnu_v3_clean
+  vishnu_v3_final
+  vishnu_v4
+  vishnu_v6
+  vishnu_v6_new
+  vishnu_v7
+
+============================================================
+VALIDATING PROFILE: freeform_vishnu
+============================================================
+
+============================================================
+Validating profile: freeform_vishnu
+============================================================
+
+FAILURES (125):
+  [lowercase ] c                    v2  MISSING
+  [lowercase ] c                    v3  MISSING
+  [lowercase ] g                    v3  MISSING
+  [lowercase ] i                    v1  MISSING
+  [lowercase ] j                    v2  MISSING
+  [lowercase ] j                    v3  MISSING
+  [lowercase ] k                    v3  MISSING
+  [lowercase ] m                    v3  MISSING
+  [lowercase ] q                    v2  MISSING
+  [lowercase ] q                    v3  MISSING
+  [lowercase ] v                    v2  MISSING
+  [lowercase ] v                    v3  MISSING
+  [lowercase ] x                    v3  MISSING
+  [lowercase ] z                    v2  MISSING
+  [lowercase ] z                    v3  MISSING
+  [uppercase ] upper_A              v0  MISSING
+  [uppercase ] upper_A              v1  MISSING
+  [uppercase ] upper_B              v0  MISSING
+  [uppercase ] upper_B              v1  MISSING
+  [uppercase ] upper_C              v0  MISSING
+  [uppercase ] upper_C              v1  MISSING
+  [uppercase ] upper_D              v0  MISSING
+  [uppercase ] upper_D              v1  MISSING
+  [uppercase ] upper_E              v0  MISSING
+  [uppercase ] upper_E              v1  MISSING
+  [uppercase ] upper_F              v0  MISSING
+  [uppercase ] upper_F              v1  MISSING
+  [uppercase ] upper_G              v0  MISSING
+  [uppercase ] upper_G              v1  MISSING
+  [uppercase ] upper_H              v0  MISSING
+  [uppercase ] upper_H              v1  MISSING
+  [uppercase ] upper_I              v0  MISSING
+  [uppercase ] upper_I              v1  MISSING
+  [uppercase ] upper_J              v0  MISSING
+  [uppercase ] upper_J              v1  MISSING
+  [uppercase ] upper_K              v0  MISSING
+  [uppercase ] upper_K              v1  MISSING
+  [uppercase ] upper_L              v0  MISSING
+  [uppercase ] upper_L              v1  MISSING
+  [uppercase ] upper_M              v0  MISSING
+  ... and 85 more
+
+PER-CATEGORY RESULTS:
+  lowercase :  89/104  (85.6%)
+  uppercase :   3/ 52  (5.8%)
+  digits    :   7/ 30  (23.3%)
+  punct     :  13/ 32  (40.6%)
+  bigrams   :   1/ 20  (5.0%)
+
+SCORE: 113/238
+VERDICT: FAIL
+============================================================
+
+
+============================================================
+VALIDATING PROFILE: improved_vishnu
+============================================================
+
+============================================================
+Validating profile: improved_vishnu
+============================================================
+
+FAILURES (238):
+  [lowercase ] a                    v0  MISSING
+  [lowercase ] a                    v1  MISSING
+  [lowercase ] a                    v2  MISSING
+  [lowercase ] a                    v3  MISSING
+  [lowercase ] b                    v0  MISSING
+  [lowercase ] b                    v1  MISSING
+  [lowercase ] b                    v2  MISSING
+  [lowercase ] b                    v3  MISSING
+  [lowercase ] c                    v0  MISSING
+  [lowercase ] c                    v1  MISSING
+  [lowercase ] c                    v2  MISSING
+  [lowercase ] c                    v3  MISSING
+  [lowercase ] d                    v0  MISSING
+  [lowercase ] d                    v1  MISSING
+  [lowercase ] d                    v2  MISSING
+  [lowercase ] d                    v3  MISSING
+  [lowercase ] e                    v0  MISSING
+  [lowercase ] e                    v1  MISSING
+  [lowercase ] e                    v2  MISSING
+  [lowercase ] e                    v3  MISSING
+  [lowercase ] f                    v0  MISSING
+  [lowercase ] f                    v1  MISSING
+  [lowercase ] f                    v2  MISSING
+  [lowercase ] f                    v3  MISSING
+  [lowercase ] g                    v0  MISSING
+  [lowercase ] g                    v1  MISSING
+  [lowercase ] g                    v2  MISSING
+  [lowercase ] g                    v3  MISSING
+  [lowercase ] h                    v0  MISSING
+  [lowercase ] h                    v1  MISSING
+  [lowercase ] h                    v2  MISSING
+  [lowercase ] h                    v3  MISSING
+  [lowercase ] i                    v0  MISSING
+  [lowercase ] i                    v1  MISSING
+  [lowercase ] i                    v2  MISSING
+  [lowercase ] i                    v3  MISSING
+  [lowercase ] j                    v0  MISSING
+  [lowercase ] j                    v1  MISSING
+  [lowercase ] j                    v2  MISSING
+  [lowercase ] j                    v3  MISSING
+  ... and 198 more
+
+PER-CATEGORY RESULTS:
+  lowercase :   0/104  (0.0%)
+  uppercase :   0/ 52  (0.0%)
+  digits    :   0/ 30  (0.0%)
+  punct     :   0/ 32  (0.0%)
+  bigrams   :   0/ 20  (0.0%)
+
+SCORE: 0/238
+VERDICT: FAIL
+============================================================
+
+
+============================================================
+VALIDATING PROFILE: vishnu_blue_v1
+============================================================
+
+============================================================
+Validating profile: vishnu_blue_v1
+============================================================
+
+FAILURES (3):
+  [lowercase ] q                    v2  MISSING
+  [lowercase ] q                    v3  MISSING
+  [uppercase ] upper_M              v1  MISSING
+
+PER-CATEGORY RESULTS:
+  lowercase : 102/104  (98.1%)
+  uppercase :  51/ 52  (98.1%)
+  digits    :  30/ 30  (100.0%)
+  punct     :  32/ 32  (100.0%)
+  bigrams   :  20/ 20  (100.0%)
+
+SCORE: 235/238
+VERDICT: PASS
+============================================================
+
+
+============================================================
+VALIDATING PROFILE: vishnu_v3
+============================================================
+
+============================================================
+Validating profile: vishnu_v3
+============================================================
+
+FAILURES (2):
+  [punct     ] dollar               v0  MISSING
+  [punct     ] dollar               v1  MISSING
+
+PER-CATEGORY RESULTS:
+  lowercase : 104/104  (100.0%)
+  uppercase :  52/ 52  (100.0%)
+  digits    :  30/ 30  (100.0%)
+  punct     :  30/ 32  (93.8%)
+  bigrams   :  20/ 20  (100.0%)
+
+SCORE: 236/238
+VERDICT: PASS
+============================================================
+
+
+============================================================
+VALIDATING PROFILE: vishnu_v3_clean
+============================================================
+
+============================================================
+Validating profile: vishnu_v3_clean
+============================================================
+
+FAILURES (9):
+  [lowercase ] h                    v3  MISSING
+  [lowercase ] l                    v2  MISSING
+  [lowercase ] l                    v3  MISSING
+  [lowercase ] n                    v2  MISSING
+  [lowercase ] n                    v3  MISSING
+  [punct     ] dollar               v0  MISSING
+  [punct     ] dollar               v1  MISSING
+  [bigrams   ] th                   v0  MISSING
+  [bigrams   ] or                   v0  MISSING
+
+PER-CATEGORY RESULTS:
+  lowercase :  99/104  (95.2%)
+  uppercase :  52/ 52  (100.0%)
+  digits    :  30/ 30  (100.0%)
+  punct     :  30/ 32  (93.8%)
+  bigrams   :  18/ 20  (90.0%)
+
+SCORE: 229/238
+VERDICT: FAIL
+============================================================
+
+
+============================================================
+VALIDATING PROFILE: vishnu_v3_final
+============================================================
+
+============================================================
+Validating profile: vishnu_v3_final
+============================================================
+
+FAILURES (9):
+  [lowercase ] h                    v3  MISSING
+  [lowercase ] l                    v2  MISSING
+  [lowercase ] l                    v3  MISSING
+  [lowercase ] n                    v2  MISSING
+  [lowercase ] n                    v3  MISSING
+  [punct     ] dollar               v0  MISSING
+  [punct     ] dollar               v1  MISSING
+  [bigrams   ] th                   v0  MISSING
+  [bigrams   ] or                   v0  MISSING
+
+PER-CATEGORY RESULTS:
+  lowercase :  99/104  (95.2%)
+  uppercase :  52/ 52  (100.0%)
+  digits    :  30/ 30  (100.0%)
+  punct     :  30/ 32  (93.8%)
+  bigrams   :  18/ 20  (90.0%)
+
+SCORE: 229/238
+VERDICT: FAIL
+============================================================
+
+
+============================================================
+VALIDATING PROFILE: vishnu_v4
+============================================================
+
+============================================================
+Validating profile: vishnu_v4
+============================================================
+
+FAILURES (3):
+  [lowercase ] g                    v1  BAD_AR(8.71)
+  [punct     ] dollar               v0  MISSING
+  [punct     ] dollar               v1  MISSING
+
+PER-CATEGORY RESULTS:
+  lowercase : 103/104  (99.0%)
+  uppercase :  52/ 52  (100.0%)
+  digits    :  30/ 30  (100.0%)
+  punct     :  30/ 32  (93.8%)
+  bigrams   :  20/ 20  (100.0%)
+
+SCORE: 235/238
+VERDICT: PASS
+============================================================
+
+
+============================================================
+VALIDATING PROFILE: vishnu_v6
+============================================================
+
+============================================================
+Validating profile: vishnu_v6
+============================================================
+
+FAILURES (6):
+  [lowercase ] t                    v2  MISSING
+  [lowercase ] v                    v3  MISSING
+  [lowercase ] x                    v3  MISSING
+  [lowercase ] y                    v1  MISSING
+  [uppercase ] upper_M              v0  MISSING
+  [punct     ] colon                v1  BAD_AR(21.58)
+
+PER-CATEGORY RESULTS:
+  lowercase : 100/104  (96.2%)
+  uppercase :  51/ 52  (98.1%)
+  digits    :  30/ 30  (100.0%)
+  punct     :  31/ 32  (96.9%)
+  bigrams   :  20/ 20  (100.0%)
+
+SCORE: 232/238
+VERDICT: PASS
+============================================================
+
+
+============================================================
+VALIDATING PROFILE: vishnu_v6_new
+============================================================
+
+============================================================
+Validating profile: vishnu_v6_new
+============================================================
+
+FAILURES (13):
+  [uppercase ] upper_A              v1  MISSING
+  [uppercase ] upper_B              v1  MISSING
+  [uppercase ] upper_C              v0  MISSING
+  [uppercase ] upper_C              v1  MISSING
+  [uppercase ] upper_F              v1  MISSING
+  [uppercase ] upper_G              v0  MISSING
+  [uppercase ] upper_G              v1  MISSING
+  [uppercase ] upper_I              v1  MISSING
+  [uppercase ] upper_L              v1  MISSING
+  [uppercase ] upper_V              v1  MISSING
+  [punct     ] apostrophe           v1  MISSING
+  [punct     ] quote                v1  MISSING
+  [punct     ] slash                v1  MISSING
+
+PER-CATEGORY RESULTS:
+  lowercase : 104/104  (100.0%)
+  uppercase :  42/ 52  (80.8%)
+  digits    :  30/ 30  (100.0%)
+  punct     :  29/ 32  (90.6%)
+  bigrams   :  20/ 20  (100.0%)
+
+SCORE: 225/238
+VERDICT: FAIL
+============================================================
+
+
+============================================================
+VALIDATING PROFILE: vishnu_v7
+============================================================
+
+============================================================
+Validating profile: vishnu_v7
+============================================================
+
+FAILURES (17):
+  [lowercase ] c                    v1  MISSING
+  [lowercase ] c                    v2  MISSING
+  [lowercase ] e                    v3  MISSING
+  [lowercase ] f                    v2  MISSING
+  [lowercase ] g                    v3  MISSING
+  [lowercase ] h                    v0  MISSING
+  [lowercase ] i                    v2  MISSING
+  [lowercase ] i                    v3  MISSING
+  [lowercase ] k                    v0  MISSING
+  [lowercase ] l                    v1  MISSING
+  [lowercase ] l                    v2  MISSING
+  [lowercase ] n                    v3  MISSING
+  [lowercase ] o                    v3  MISSING
+  [lowercase ] w                    v3  MISSING
+  [lowercase ] y                    v3  MISSING
+  [punct     ] dollar               v0  MISSING
+  [punct     ] dollar               v1  MISSING
+
+PER-CATEGORY RESULTS:
+  lowercase :  89/104  (85.6%)
+  uppercase :  52/ 52  (100.0%)
+  digits    :  30/ 30  (100.0%)
+  punct     :  30/ 32  (93.8%)
+  bigrams   :  20/ 20  (100.0%)
+
+SCORE: 221/238
+VERDICT: FAIL
+============================================================
+
+

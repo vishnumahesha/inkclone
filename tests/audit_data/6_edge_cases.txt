@@ -1,0 +1,35 @@
+=== PART 6: EDGE CASES ===
+Date: 2026-04-20 19:26:56
+Target: https://inkclone-production.up.railway.app
+
+
+[unicode_special] text='Hello™ Café résumé naïve'
+  Result: SUCCESS: HTTP=200 elapsed=1.59s image=479791B
+
+[emoji] text='Hello 😀 World'
+  Result: SUCCESS: HTTP=200 elapsed=1.78s image=567096B
+
+[empty_string] text=''
+  Result: RESPONSE: HTTP=400 elapsed=0.25s body={'detail': 'Text cannot be empty'}
+
+[spaces_only] text='     '
+  Result: RESPONSE: HTTP=400 elapsed=0.25s body={'detail': 'Text cannot be empty'}
+
+[punct_only] text='...!!???'
+  Result: SUCCESS: HTTP=200 elapsed=1.64s image=565062B
+
+[digits_only] text='1234567890'
+  Result: SUCCESS: HTTP=200 elapsed=1.63s image=548563B
+
+[all_caps] text='ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  Result: SUCCESS: HTTP=200 elapsed=2.19s image=567036B
+
+[newline_tab] text='Line 1\nLine 2\tTabbed'
+  Result: SUCCESS: HTTP=200 elapsed=1.92s image=492190B
+
+[long_word] text='supercalifragilisticexpialidocious'
+  Result: SUCCESS: HTTP=200 elapsed=1.75s image=581519B
+
+[fake_profile_review] GET /review?profile=fake_profile_xyz
+  Result: HTTP=200, size=14157B
+  Page contains error indicators: ['error', 'error']

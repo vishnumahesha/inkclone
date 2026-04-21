@@ -1,0 +1,89 @@
+=== PART 4: API ENDPOINT AUDIT ===
+Date: Mon Apr 20 19:25:00 CDT 2026
+Live site: https://inkclone-production.up.railway.app
+
+------------------------------------------------------------
+4.1  GET /profiles
+------------------------------------------------------------
+HTTP Status: 200
+Response Type: JSON (array)
+Profile count: 6
+Profile IDs: freeform_vishnu, vishnu_v3, vishnu_v3_clean, vishnu_v3_final, vishnu_v4, vishnu_v6
+Notes: Only 6 profiles served by API — vishnu_blue_v1, vishnu_v6_new, vishnu_v7 are on disk but NOT in /profiles API.
+
+------------------------------------------------------------
+4.2  GET /api/profile-stats?profile_id=vishnu_v6
+------------------------------------------------------------
+HTTP Status: 200
+Response Type: JSON (object)
+total_variants: 185
+unique_chars: 98
+papers: 7
+
+------------------------------------------------------------
+4.3  GET /api/profile-glyphs?profile=vishnu_v6
+------------------------------------------------------------
+HTTP Status: 200
+Response Type: JSON (object with glyphs array)
+File size: 52628 bytes
+Glyphs returned: 233
+Sample glyph fields: filename, char, variant, width, height, aspect_ratio, ink_pixels, quality, quality_reason, category, image_url
+
+------------------------------------------------------------
+4.4  POST /generate - normal text ("hello world")
+------------------------------------------------------------
+HTTP Status: 200
+Response Type: JSON with base64 image
+Raw response size: 634819 bytes
+success: true
+image decoded size: 475990 bytes
+PIL open: OK
+Image size: 1200x1600 px
+Image mode: RGB
+
+------------------------------------------------------------
+4.5  POST /generate - nonexistent profile ("fake_nonexistent_profile_xyz")
+------------------------------------------------------------
+HTTP Status: 400
+Response Type: JSON error
+Body: {"detail": "Profile 'fake_nonexistent_profile_xyz' not found"}
+
+------------------------------------------------------------
+4.6  POST /generate - empty text ("")
+------------------------------------------------------------
+HTTP Status: 400
+Response Type: JSON error
+Body: {"detail": "Text cannot be empty"}
+
+------------------------------------------------------------
+4.7  POST /generate - 500-word text
+------------------------------------------------------------
+HTTP Status: 200
+Response Type: JSON with base64 image
+Raw response size: 1031183 bytes
+success: true
+image decoded size: 773265 bytes
+PIL open: OK
+Image size: 1200x1600 px
+Image mode: RGB
+Note: Same output dimensions as short text — layout wraps to fit page.
+
+------------------------------------------------------------
+4.8  GET /api/glyph-image/vishnu_v6/a_0.png
+------------------------------------------------------------
+HTTP Status: 200
+Response Type: PNG image (binary)
+File size: 6710 bytes
+PIL open: OK
+Image size: 231x231 px
+Image mode: RGBA
+Format: PNG
+
+------------------------------------------------------------
+SUMMARY
+------------------------------------------------------------
+- All tested endpoints return expected HTTP status codes.
+- /generate correctly rejects empty text (400) and unknown profiles (400).
+- Generated images are 1200x1600 px regardless of text length.
+- /profiles API exposes 6 out of 10 on-disk profiles (3 not served: vishnu_blue_v1, vishnu_v6_new, vishnu_v7).
+- Glyph images are returned as RGBA PNG at actual glyph dimensions.
