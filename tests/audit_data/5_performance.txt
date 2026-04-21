@@ -1,0 +1,43 @@
+=== PERFORMANCE TESTS ===
+Target: https://inkclone-production.up.railway.app
+Date: 2026-04-20 19:26:22
+
+--- Page Loads ---
+GET /: 1.25s  status=200  size=56454B
+GET /review: 0.32s  status=200  size=14157B
+GET /setup: 1.15s  status=200  size=17632B
+
+--- Generate Requests ---
+POST /generate (short): 2.66s  status=200  *** SLOW >2s ***
+POST /generate (500 words): 3.14s  status=200  *** SLOW >2s ***
+
+--- Glyph Image Loop (a-z) ---
+  GET glyph/a_0.png: 1.18s  status=200  size=6710B
+  GET glyph/b_0.png: 0.25s  status=200  size=10513B
+  GET glyph/c_0.png: 0.25s  status=200  size=7545B
+  GET glyph/d_0.png: 0.18s  status=200  size=3531B
+  GET glyph/e_0.png: 0.24s  status=200  size=13568B
+  GET glyph/f_0.png: 0.18s  status=200  size=6129B
+  GET glyph/g_0.png: 0.18s  status=200  size=9023B
+  GET glyph/h_0.png: 0.17s  status=200  size=2283B
+  GET glyph/i_0.png: 0.18s  status=200  size=7958B
+  GET glyph/j_0.png: 0.18s  status=200  size=1538B
+  GET glyph/k_0.png: 0.25s  status=200  size=7541B
+  GET glyph/l_0.png: 0.17s  status=200  size=5250B
+  GET glyph/m_0.png: 0.17s  status=200  size=5004B
+  GET glyph/n_0.png: 0.17s  status=200  size=2761B
+  GET glyph/o_0.png: 0.17s  status=200  size=7812B
+  GET glyph/p_0.png: 0.24s  status=200  size=16684B
+  GET glyph/q_0.png: 0.18s  status=200  size=4623B
+  GET glyph/r_0.png: 0.24s  status=200  size=14544B
+  GET glyph/s_0.png: 0.31s  status=200  size=17376B
+  GET glyph/t_0.png: 0.25s  status=200  size=12508B
+  GET glyph/u_0.png: 0.18s  status=200  size=4810B
+  GET glyph/v_0.png: 0.26s  status=200  size=10700B
+  GET glyph/w_0.png: 0.18s  status=200  size=10785B
+  GET glyph/x_0.png: 0.25s  status=200  size=8137B
+  GET glyph/y_0.png: 0.18s  status=200  size=7459B
+  GET glyph/z_0.png: 0.18s  status=200  size=8861B
+
+Glyph loop stats: min=0.17s  max=1.18s  median=0.18s  mean=0.25s
+No glyph requests exceeded 2s threshold.

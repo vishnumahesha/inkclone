@@ -1,0 +1,134 @@
+{
+  "2a_t1_pangram": {
+    "ok": true,
+    "time": 4.624483108520508
+  },
+  "2a_t2_hello": {
+    "ok": true,
+    "time": 4.95184588432312
+  },
+  "2a_t3_special": {
+    "ok": true,
+    "time": 3.5105221271514893
+  },
+  "2a_t4_long": {
+    "ok": true,
+    "time": 2.605578899383545
+  },
+  "2a_t5_mixed": {
+    "ok": true,
+    "time": 1.9343419075012207
+  },
+  "2b_preset_perfect_student": {
+    "ok": true,
+    "time": 1.704397201538086
+  },
+  "2b_preset_natural_notes": {
+    "ok": true,
+    "time": 1.7313649654388428
+  },
+  "2b_preset_rushed_homework": {
+    "ok": true,
+    "time": 1.7546629905700684
+  },
+  "2b_preset_messy_scrawl": {
+    "ok": true,
+    "time": 2.2728590965270996
+  },
+  "2c_paper_college_ruled": {
+    "ok": true,
+    "time": 1.638810157775879
+  },
+  "2c_paper_blank": {
+    "ok": true,
+    "time": 1.6224420070648193
+  },
+  "2c_paper_graph": {
+    "ok": true,
+    "time": 1.7827000617980957
+  },
+  "2c_paper_legal_pad": {
+    "ok": true,
+    "time": 1.7054109573364258
+  },
+  "2c_paper_dot_grid": {
+    "ok": false,
+    "time": 3.515962839126587
+  },
+  "2c_paper_sticky_note": {
+    "ok": false,
+    "time": 1.331146001815796
+  },
+  "2c_paper_wide_ruled": {
+    "ok": false,
+    "time": 0.30908894538879395
+  },
+  "2c_ink_black": {
+    "ok": false,
+    "time": 0.3125579357147217
+  },
+  "2c_ink_blue": {
+    "ok": false,
+    "time": 0.3765537738800049
+  },
+  "2c_ink_navy": {
+    "ok": false,
+    "time": 0.31180787086486816
+  },
+  "2c_ink_green": {
+    "ok": true,
+    "time": 1.653331995010376
+  },
+  "2c_ink_red": {
+    "ok": true,
+    "time": 1.3993651866912842
+  },
+  "2c_ink_pencil": {
+    "ok": true,
+    "time": 2.476365804672241
+  },
+  "2e_artifact_clean": {
+    "ok": true,
+    "time": 2.919293165206909
+  },
+  "2e_artifact_scan": {
+    "ok": true,
+    "time": 1.778656005859375
+  },
+  "2e_artifact_phone_photo": {
+    "ok": false,
+    "time": 0.24421095848083496
+  },
+  "2d_slider_font_min": {
+    "ok": false,
+    "time": 0.2451460361480713
+  },
+  "2d_slider_font_max": {
+    "ok": false,
+    "time": 0.17998886108398438
+  },
+  "2d_slider_spacing_min": {
+    "ok": false,
+    "time": 0.1754920482635498
+  },
+  "2d_slider_spacing_max": {
+    "ok": false,
+    "time": 0.17755794525146484
+  },
+  "2d_slider_slant_max": {
+    "ok": false,
+    "time": 0.18016791343688965
+  },
+  "2d_slider_baseline_min": {
+    "ok": false,
+    "time": 0.17344069480895996
+  },
+  "2d_slider_variation_max": {
+    "ok": false,
+    "time": 0.24302172660827637
+  },
+  "2d_slider_variation_min": {
+    "ok": false,
+    "time": 0.1736009120941162
+  }
+}
