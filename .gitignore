@@ -42,3 +42,6 @@ profiles/*/source_images/
 !profiles/vishnu_v6/
 !profiles/vishnu_v6/glyphs/
 !profiles/vishnu_v6/**
+!profiles/vishnu_blue_v1/
+!profiles/vishnu_blue_v1/glyphs/
+!profiles/vishnu_blue_v1/**
