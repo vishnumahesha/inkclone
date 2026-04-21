@@ -1067,8 +1067,12 @@
       });
     });
 
-    // ── Auto-preview on slider / preset change ───────────────────────────────────
+    // ── Auto-preview on text / slider / preset change ────────────────────────────
     let debounceTimer;
+    textInput.addEventListener('input', () => {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => generatePreview(), 500);
+    });
     document.querySelectorAll('.realism-slider').forEach(slider => {
       slider.addEventListener('input', () => {
         clearTimeout(debounceTimer);
