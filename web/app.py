@@ -7,13 +7,11 @@ import sys
 import os
 import json
 import shutil
-import time
-import uuid
 from pathlib import Path
 from io import BytesIO
 import base64
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List
 
 from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
