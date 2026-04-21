@@ -795,8 +795,11 @@ def _normalize_brightness(img_bgr):
     import cv2
     import numpy as np
 
+    # Divide by local mean, multiply by 255 so background stays white (not gray).
+    # This corrects uneven lighting while keeping blue lines (R≈170) above the
+    # red-channel threshold (160) and black ink well below it.
     blur = cv2.GaussianBlur(img_bgr.astype(np.float32), (101, 101), 0)
-    corrected = img_bgr.astype(np.float32) * 128.0 / (blur + 1e-6)
+    corrected = img_bgr.astype(np.float32) * 255.0 / (blur + 1e-6)
     return np.clip(corrected, 0, 255).astype(np.uint8)
 
 
