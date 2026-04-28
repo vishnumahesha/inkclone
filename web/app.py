@@ -26,6 +26,7 @@ sys.path.insert(0, str(_ROOT))
 
 from render_engine import HandwritingRenderer, create_dummy_glyph_bank
 from glyph_loader import load_profile_glyphs
+from extraction_core import extract_all_pages as _core_extract_all_pages
 from paper_backgrounds import (generate_blank_paper, generate_college_ruled,
                                generate_wide_ruled, generate_graph_paper, generate_legal_pad,
                                generate_dot_grid, generate_sticky_note)
@@ -498,18 +499,28 @@ async def create_profile(
         for w in page_warnings:
             all_warnings.append(f"Page {pg_num}: {w}" if len(saved_pages) > 1 else w)
 
-    # ── 2-6. Extract glyphs using v7 template pipeline ─────────────────────────
-    profile_dir = _PROFILES_DIR / profile_id
-    glyphs_dir = profile_dir / "glyphs"
-    glyphs_dir.mkdir(parents=True, exist_ok=True)
+    # ── 2-7. Extract glyphs using shared extraction_core ─────────────────────
+    import cv2
+    import numpy as np
+
+    page_images = {}
+    for img_path, pg_num in saved_pages:
+        img_cv = cv2.imread(str(img_path))
+        if img_cv is not None:
+            page_images[pg_num] = img_cv
+
+    if not page_images:
+        raise HTTPException(status_code=422, detail="No readable images provided.")
 
     try:
-        glyph_bank = _extract_v7_template(saved_pages)
+        result = _core_extract_all_pages(page_images, profile_id, str(_PROFILES_DIR))
     except Exception as exc:
+        profile_dir = _PROFILES_DIR / profile_id
         shutil.rmtree(profile_dir, ignore_errors=True)
         raise HTTPException(status_code=500, detail=f"Extraction failed: {exc}")
 
-    if not glyph_bank:
+    if not result.get('success') or result.get('total_glyphs', 0) == 0:
+        profile_dir = _PROFILES_DIR / profile_id
         shutil.rmtree(profile_dir, ignore_errors=True)
         raise HTTPException(
             status_code=422,
@@ -517,48 +528,31 @@ async def create_profile(
                    "Ensure good lighting, shoot straight above the page, and use a dark pen."
         )
 
-    # ── 7. Save glyphs to disk + write profile.json ────────────────────────────
-    saved_chars: dict[str, list] = {}
-    for char, glyph_imgs in glyph_bank.items():
-        char_name = _char_to_stem(char)
-        for v_idx, glyph_img in enumerate(glyph_imgs):
-            fname = f"{char_name}_{v_idx}.png"
-            glyph_img.save(str(glyphs_dir / fname))
-            saved_chars.setdefault(char, []).append({
-                "path": f"glyphs/{fname}",
-                "confidence": 1.0,
-                "is_weak": False,
-            })
-
-    _write_profile_json(profile_dir, profile_id, saved_chars, [p for p, _ in saved_pages])
-
     # ── 8. Contact sheet ───────────────────────────────────────────────────────
     _generate_contact_sheet(profile_id)
 
     # ── 9. Response ────────────────────────────────────────────────────────────
-    total_glyphs    = sum(len(v) for v in saved_chars.values())
-    lowercase_chars = sum(1 for c in saved_chars if c.islower())
-    uppercase_chars = sum(1 for c in saved_chars if c.isupper())
-    digit_chars     = sum(1 for c in saved_chars if c.isdigit())
+    total_glyphs = result['total_glyphs']
+    unique_characters = result['unique_characters']
 
-    coverage_pct  = round(lowercase_chars / 26 * 100, 1) if lowercase_chars else 0.0
-    uppercase_pct = round(uppercase_chars / 26 * 100, 1)
-    digits_pct    = round(digit_chars / 10 * 100, 1)
+    # Parse coverage from result
+    cov = result.get('coverage', {})
+    lc_str = cov.get('lowercase', '0/26')
+    uc_str = cov.get('uppercase', '0/26')
+    dg_str = cov.get('digits', '0/10')
 
-    weak_chars = sorted(
-        c for c, variants in saved_chars.items()
-        if any(v["is_weak"] for v in variants)
-    )
+    lc_count = int(lc_str.split('/')[0])
+    uc_count = int(uc_str.split('/')[0])
+    dg_count = int(dg_str.split('/')[0])
 
-    lc_label = f"{coverage_pct:.0f}%" if lowercase_chars else "auto-generated"
-    uc_label = f"{uppercase_pct:.0f}%" if uppercase_chars else "auto-generated"
-    dg_label = f"{digits_pct:.0f}%"    if digit_chars     else "auto-generated"
-    coverage_report = f"Lowercase: {lc_label} | Uppercase: {uc_label} | Digits: {dg_label}"
+    coverage_pct  = round(lc_count / 26 * 100, 1)
+    uppercase_pct = round(uc_count / 26 * 100, 1)
+    digits_pct    = round(dg_count / 10 * 100, 1)
+
+    coverage_report = f"Lowercase: {coverage_pct:.0f}% | Uppercase: {uppercase_pct:.0f}% | Digits: {digits_pct:.0f}%"
 
     # Invalidate cache so next render picks up new profile
     _GLYPH_BANKS.pop(profile_id, None)
-
-    unique_characters = len(saved_chars)
 
     return JSONResponse({
         "success":           True,
@@ -569,7 +563,7 @@ async def create_profile(
         "coverage_pct":      coverage_pct,
         "uppercase_pct":     uppercase_pct,
         "digits_pct":        digits_pct,
-        "weak_chars":        weak_chars,
+        "weak_chars":        [],
         "coverage_report":   coverage_report,
         "warnings":          all_warnings,
         "contact_sheet_url": f"/profiles/{profile_id}/contact_sheet.png",
