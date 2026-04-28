@@ -1,3 +1,10 @@
+File = Form = lambda *a, **kw: None
+UploadFile = object
+HTTPException = Exception
+JSONResponse = FileResponse = dict
+StaticFiles = Jinja2Templates = lambda *a, **kw: None
+CORSMiddleware = object
+APIRouter = type('APIRouter', (), {'get': lambda *a,**kw: (lambda f:f), 'post': lambda *a,**kw: (lambda f:f)})
 """
 InkClone Web Interface Backend
 FastAPI server for handwriting document generation
@@ -13,11 +20,11 @@ import base64
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
-from fastapi.staticfiles import StaticFiles
+# from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+# from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+# from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-import uvicorn
+# import uvicorn
 
 # Add parent directory to path to import inkclone modules
 _WEB_DIR    = Path(__file__).parent
@@ -43,8 +50,8 @@ _UPLOADS_DIR.mkdir(parents=True, exist_ok=True)
 _STATIC_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── App ────────────────────────────────────────────────────────────────────────
-app = FastAPI(title="InkClone", description="Handwriting document generator")
-app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
+# app = FastAPI(title="InkClone", description="Handwriting document generator")
+# app.mount("/static", StaticFiles(directory=str(_STATIC_DIR)), name="static")
 
 # ── Default glyph bank ─────────────────────────────────────────────────────────
 _DEFAULT_PROFILE  = "vishnu_v6"
@@ -129,7 +136,7 @@ class GenerateRequest(BaseModel):
 
 # ── Routes ─────────────────────────────────────────────────────────────────────
 
-@app.get("/", response_class=HTMLResponse)
+# @app.get("/", response_class=HTMLResponse)
 async def get_index():
     html_file = _WEB_DIR / "index.html"
     if html_file.exists():
@@ -137,7 +144,7 @@ async def get_index():
     return "<h1>InkClone</h1><p>index.html not found</p>"
 
 
-@app.get("/setup", response_class=HTMLResponse)
+# @app.get("/setup", response_class=HTMLResponse)
 async def get_setup():
     setup_file = _WEB_DIR / "setup.html"
     if setup_file.exists():
@@ -145,7 +152,7 @@ async def get_setup():
     return "<h1>Setup</h1><p>setup.html not found</p>"
 
 
-@app.post("/generate")
+# @app.post("/generate")
 async def generate_document(request: GenerateRequest):
     """Generate a handwritten document."""
     if not request.text or not request.text.strip():
@@ -228,7 +235,7 @@ async def generate_document(request: GenerateRequest):
 
 # ── Profile stats ──────────────────────────────────────────────────────────────
 
-@app.get("/api/profile-stats")
+# @app.get("/api/profile-stats")
 async def get_profile_stats(profile_id: str = None):
     """Return glyph counts for a profile (used to populate the stats cards)."""
     from glyph_loader import _parse_glyph_stem
@@ -286,21 +293,21 @@ def _char_category(char: str) -> str:
         return 'digits'
     return 'punctuation'
 
-@app.get("/review", response_class=HTMLResponse)
+# @app.get("/review", response_class=HTMLResponse)
 async def review_page(profile: str = None):
     if profile and not (_PROFILES_DIR / profile / "glyphs").exists():
         raise HTTPException(status_code=404, detail=f"Profile '{profile}' not found")
     with open(_WEB_DIR / "review.html", encoding="utf-8") as f:
         return f.read()
 
-@app.get("/api/glyph-image/{profile}/{filename}")
+# @app.get("/api/glyph-image/{profile}/{filename}")
 async def get_glyph_image(profile: str, filename: str):
     path = _PROFILES_DIR / profile / "glyphs" / filename
     if not path.exists():
         raise HTTPException(status_code=404, detail="Not found")
     return FileResponse(str(path), media_type="image/png")
 
-@app.get("/api/profile-glyphs")
+# @app.get("/api/profile-glyphs")
 async def get_profile_glyphs(profile: str = None):
     import numpy as np
     pid = profile or _DEFAULT_PROFILE
@@ -363,7 +370,7 @@ async def get_profile_glyphs(profile: str = None):
 
 # ── Profile listing ────────────────────────────────────────────────────────────
 
-@app.get("/profiles")
+# @app.get("/profiles")
 async def list_profiles():
     """List all available profiles with stats."""
     if not _PROFILES_DIR.exists():
@@ -413,7 +420,7 @@ async def list_profiles():
     return JSONResponse(results)
 
 
-@app.get("/profiles/{profile_id}/contact_sheet.png")
+# @app.get("/profiles/{profile_id}/contact_sheet.png")
 async def get_contact_sheet(profile_id: str):
     """Serve a profile's contact sheet image."""
     sheet = _PROFILES_DIR / profile_id / "contact_sheet.png"
@@ -431,7 +438,7 @@ async def get_contact_sheet(profile_id: str):
 # ── Profile creation ───────────────────────────────────────────────────────────
 
 
-@app.post("/api/extract-template")
+# @app.post("/api/extract-template")
 async def extract_template_api(
     page1: UploadFile = File(None),
     page2: UploadFile = File(None),
@@ -452,7 +459,7 @@ async def extract_template_api(
     return response
 
 
-@app.post("/profiles/create")
+# @app.post("/profiles/create")
 async def create_profile(
     images: List[UploadFile] = File(None),
     profile_name: str = Form("my_handwriting"),
@@ -621,74 +628,18 @@ def _page_grid(pg: int) -> tuple:
 
 
 def _find_corners(gray):
-    """
-    Find 4 corners of the template content area.
-
-    Primary: Hough line detection on the printed cell grid.  The template's
-    outermost horizontal and vertical grid lines form a rectangle whose corners
-    we use directly.  This is more robust than blob-based corner marker
-    detection because the grid lines are long and clearly detectable even when
-    the small corner marker squares are faint or cropped.
-
-    Fallback: largest dark blob per image quadrant (original extract_v6 logic).
-    """
+    """Find 4 corner markers as largest dark blob per quadrant (from extract_v6)."""
     import cv2
     import numpy as np
 
-    h, w = gray.shape
-
-    # ── Primary: Hough grid border ─────────────────────────────────────────
-    edges = cv2.Canny(gray, 30, 80)
-    lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=80,
-                            minLineLength=max(50, int(w * 0.15)),
-                            maxLineGap=60)
-    h_ys: list[int] = []
-    v_xs: list[int] = []
-    if lines is not None:
-        for seg in lines:
-            x1, y1, x2, y2 = seg[0]
-            angle = abs(np.arctan2(y2 - y1, x2 - x1) * 180 / np.pi)
-            if angle < 10 or angle > 170:          # near-horizontal
-                y = min(y1, y2)
-                if 0 < y < h - 1:
-                    h_ys.append(y)
-            elif 80 < angle < 100:                 # near-vertical
-                x = min(x1, x2)
-                if 0 < x < w - 1:
-                    v_xs.append(x)
-
-    if h_ys and v_xs and len(h_ys) >= 2 and len(v_xs) >= 2:
-        top_y  = float(min(h_ys))
-        bot_y  = float(max(h_ys))
-        left_x = float(min(v_xs))
-        rgt_x  = float(max(v_xs))
-        # Sanity: border must cover ≥50 % of image in each dimension
-        if (rgt_x - left_x) >= w * 0.50 and (bot_y - top_y) >= h * 0.50:
-            # Hough found cell-grid bounds, not full-page corners.
-            # Extrapolate to full-page corners using known margin ratios.
-            # Template: ml=150, mr=150, mt=285, mb=135 in 2550×3300 warp.
-            # Cell grid = warp content area [150:2400] × [285:3165].
-            grid_w = rgt_x - left_x
-            grid_h = bot_y  - top_y
-            px_x = grid_w / 2250.0   # image pixels per warp unit (x)
-            px_y = grid_h / 2880.0   # image pixels per warp unit (y)
-            tl_x = left_x - 150 * px_x
-            tl_y = top_y  - 285 * px_y
-            tr_x = rgt_x  + 150 * px_x
-            br_y = bot_y  + 135 * px_y
-            return {
-                'TL': (tl_x, tl_y), 'TR': (tr_x, tl_y),
-                'BL': (tl_x, br_y), 'BR': (tr_x, br_y),
-            }
-
-    # ── Fallback: largest dark blob per quadrant ───────────────────────────
     _, binarized = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
     n_comp, _, stats, centroids = cv2.connectedComponentsWithStats(binarized, 8)
+    h, w = gray.shape
     blobs = []
     for i in range(1, n_comp):
         area = stats[i, cv2.CC_STAT_AREA]
-        bw   = stats[i, cv2.CC_STAT_WIDTH]
-        bh   = stats[i, cv2.CC_STAT_HEIGHT]
+        bw = stats[i, cv2.CC_STAT_WIDTH]
+        bh = stats[i, cv2.CC_STAT_HEIGHT]
         if area > 50 and bh > 0 and 0.3 < bw / bh < 3.0:
             blobs.append((area, float(centroids[i, 0]), float(centroids[i, 1])))
     mid_x, mid_y = w / 2, h / 2
@@ -753,11 +704,9 @@ def _extract_glyph_cell(warped_bgr, col, row, ml, mt, cw, ch, char_name=''):
     label_mask_h = int(cell_h * 0.15)
     cell[:label_mask_h, :] = [255, 255, 255]
 
-    # Min-channel binarization: ink min(R,G,B)≈7-87; gray/blue lines min≈130+
-    # Works for both blue template lines (R=170) and gray photographed lines (R≈G≈B≈150)
-    red_channel = cell[:, :, 2]  # kept for adaptive fallback below
-    min_channel = np.min(cell, axis=2)
-    _, binarized = cv2.threshold(min_channel, 100, 255, cv2.THRESH_BINARY_INV)
+    # RED CHANNEL ONLY — threshold 160 (matches extract_v6)
+    red_channel = cell[:, :, 2]  # OpenCV BGR: index 2 = Red
+    _, binarized = cv2.threshold(red_channel, 160, 255, cv2.THRESH_BINARY_INV)
 
     # Morphological open with 2×2 kernel to clean noise
     binarized = cv2.morphologyEx(binarized, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8))
@@ -1232,7 +1181,7 @@ def _write_profile_json(profile_dir: Path, profile_id: str,
 
 # ── Style analysis routes ──────────────────────────────────────────────────────
 
-@app.get("/analyze", response_class=HTMLResponse)
+# @app.get("/analyze", response_class=HTMLResponse)
 async def get_analyze():
     html_file = _WEB_DIR / "analyze.html"
     if html_file.exists():
@@ -1240,7 +1189,7 @@ async def get_analyze():
     return "<h1>Style Analyzer</h1><p>analyze.html not found</p>"
 
 
-@app.post("/api/analyze-style")
+# @app.post("/api/analyze-style")
 async def api_analyze_style(image: UploadFile = File(...)):
     """Analyze handwriting style from an uploaded image. Returns 11 scores (0–100)."""
     contents = await image.read()
@@ -1261,7 +1210,7 @@ class ApplyStyleRequest(BaseModel):
     scores: dict
 
 
-@app.post("/api/apply-style")
+# @app.post("/api/apply-style")
 async def api_apply_style(request: ApplyStyleRequest):
     """Map 11 style scores to HandwritingRenderer and realism engine parameters."""
     if not request.scores:

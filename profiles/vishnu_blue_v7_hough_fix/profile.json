@@ -1,12 +1,12 @@
 {
-  "profile_id": "vishnu_blue_v1",
-  "created_at": "2026-04-21T00:00:31Z",
+  "profile_id": "vishnu_blue_v7_hough_fix",
+  "created_at": "2026-04-21T16:31:47Z",
   "source_method": "template",
   "source_images": [
-    "/Users/12-mac-alpha/Projects/inkclone/data/uploads/20260420_190030/page_1.jpeg",
-    "/Users/12-mac-alpha/Projects/inkclone/data/uploads/20260420_190030/page_2.jpeg",
-    "/Users/12-mac-alpha/Projects/inkclone/data/uploads/20260420_190030/page_3.jpeg",
-    "/Users/12-mac-alpha/Projects/inkclone/data/uploads/20260420_190030/page_4.jpeg"
+    "/Users/12-mac-alpha/Projects/inkclone/data/uploads/20260421_113146/page_1.jpeg",
+    "/Users/12-mac-alpha/Projects/inkclone/data/uploads/20260421_113146/page_2.jpeg",
+    "/Users/12-mac-alpha/Projects/inkclone/data/uploads/20260421_113146/page_3.jpeg",
+    "/Users/12-mac-alpha/Projects/inkclone/data/uploads/20260421_113146/page_4.jpeg"
   ],
   "character_coverage": {
     "lowercase_pct": 100.0,
@@ -14,7 +14,7 @@
     "digits_pct": 100.0,
     "punctuation_pct": 100.0,
     "total_characters": 98,
-    "total_variants": 234,
+    "total_variants": 212,
     "lowercase_complete": true,
     "uppercase_complete": true,
     "digits_complete": true
@@ -27,8 +27,8 @@
         "glyphs/a_2.png",
         "glyphs/a_3.png"
       ],
-      "avg_width": 219.25,
-      "avg_height": 201.0,
+      "avg_width": 288.0,
+      "avg_height": 195.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -40,8 +40,8 @@
         "glyphs/b_2.png",
         "glyphs/b_3.png"
       ],
-      "avg_width": 334.0,
-      "avg_height": 225.5,
+      "avg_width": 245.25,
+      "avg_height": 180.25,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -53,8 +53,8 @@
         "glyphs/c_2.png",
         "glyphs/c_3.png"
       ],
-      "avg_width": 243.0,
-      "avg_height": 202.0,
+      "avg_width": 239.75,
+      "avg_height": 175.75,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -62,38 +62,32 @@
     "d": {
       "variants": [
         "glyphs/d_0.png",
-        "glyphs/d_1.png",
         "glyphs/d_2.png",
         "glyphs/d_3.png"
       ],
-      "avg_width": 199.75,
-      "avg_height": 227.5,
+      "avg_width": 306.0,
+      "avg_height": 159.7,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "e": {
       "variants": [
-        "glyphs/e_0.png",
-        "glyphs/e_1.png",
-        "glyphs/e_2.png",
-        "glyphs/e_3.png"
+        "glyphs/e_0.png"
       ],
-      "avg_width": 201.5,
-      "avg_height": 161.75,
+      "avg_width": 315.0,
+      "avg_height": 136.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "f": {
       "variants": [
-        "glyphs/f_0.png",
-        "glyphs/f_1.png",
         "glyphs/f_2.png",
         "glyphs/f_3.png"
       ],
-      "avg_width": 319.0,
-      "avg_height": 204.25,
+      "avg_width": 304.5,
+      "avg_height": 134.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -105,34 +99,29 @@
         "glyphs/g_2.png",
         "glyphs/g_3.png"
       ],
-      "avg_width": 275.25,
-      "avg_height": 199.25,
+      "avg_width": 311.5,
+      "avg_height": 153.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "h": {
       "variants": [
-        "glyphs/h_0.png",
-        "glyphs/h_1.png",
         "glyphs/h_2.png",
         "glyphs/h_3.png"
       ],
-      "avg_width": 219.75,
-      "avg_height": 209.0,
+      "avg_width": 315.0,
+      "avg_height": 143.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "i": {
       "variants": [
-        "glyphs/i_0.png",
-        "glyphs/i_1.png",
-        "glyphs/i_2.png",
-        "glyphs/i_3.png"
+        "glyphs/i_1.png"
       ],
-      "avg_width": 275.25,
-      "avg_height": 210.5,
+      "avg_width": 315.0,
+      "avg_height": 122.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -144,8 +133,8 @@
         "glyphs/j_2.png",
         "glyphs/j_3.png"
       ],
-      "avg_width": 243.25,
-      "avg_height": 232.0,
+      "avg_width": 301.5,
+      "avg_height": 138.25,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -157,21 +146,20 @@
         "glyphs/k_2.png",
         "glyphs/k_3.png"
       ],
-      "avg_width": 351.0,
-      "avg_height": 191.25,
+      "avg_width": 278.75,
+      "avg_height": 151.25,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "l": {
       "variants": [
-        "glyphs/l_0.png",
         "glyphs/l_1.png",
         "glyphs/l_2.png",
         "glyphs/l_3.png"
       ],
-      "avg_width": 220.5,
-      "avg_height": 207.25,
+      "avg_width": 283.7,
+      "avg_height": 166.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -183,8 +171,8 @@
         "glyphs/m_2.png",
         "glyphs/m_3.png"
       ],
-      "avg_width": 338.5,
-      "avg_height": 234.75,
+      "avg_width": 258.25,
+      "avg_height": 136.75,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -193,11 +181,10 @@
       "variants": [
         "glyphs/n_0.png",
         "glyphs/n_1.png",
-        "glyphs/n_2.png",
         "glyphs/n_3.png"
       ],
-      "avg_width": 221.75,
-      "avg_height": 136.5,
+      "avg_width": 164.3,
+      "avg_height": 163.7,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -209,8 +196,8 @@
         "glyphs/o_2.png",
         "glyphs/o_3.png"
       ],
-      "avg_width": 304.25,
-      "avg_height": 185.75,
+      "avg_width": 189.25,
+      "avg_height": 173.25,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -222,8 +209,8 @@
         "glyphs/p_2.png",
         "glyphs/p_3.png"
       ],
-      "avg_width": 186.5,
-      "avg_height": 187.0,
+      "avg_width": 284.5,
+      "avg_height": 186.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -231,10 +218,12 @@
     "q": {
       "variants": [
         "glyphs/q_0.png",
-        "glyphs/q_1.png"
+        "glyphs/q_1.png",
+        "glyphs/q_2.png",
+        "glyphs/q_3.png"
       ],
-      "avg_width": 110.0,
-      "avg_height": 235.0,
+      "avg_width": 217.5,
+      "avg_height": 196.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -246,34 +235,30 @@
         "glyphs/r_2.png",
         "glyphs/r_3.png"
       ],
-      "avg_width": 250.0,
-      "avg_height": 154.5,
+      "avg_width": 261.75,
+      "avg_height": 165.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "s": {
       "variants": [
-        "glyphs/s_0.png",
-        "glyphs/s_1.png",
-        "glyphs/s_2.png",
-        "glyphs/s_3.png"
+        "glyphs/s_2.png"
       ],
-      "avg_width": 43.75,
-      "avg_height": 89.5,
+      "avg_width": 315.0,
+      "avg_height": 143.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "t": {
       "variants": [
-        "glyphs/t_0.png",
         "glyphs/t_1.png",
         "glyphs/t_2.png",
         "glyphs/t_3.png"
       ],
-      "avg_width": 350.5,
-      "avg_height": 172.0,
+      "avg_width": 258.7,
+      "avg_height": 173.7,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -282,37 +267,32 @@
       "variants": [
         "glyphs/u_0.png",
         "glyphs/u_1.png",
-        "glyphs/u_2.png",
-        "glyphs/u_3.png"
+        "glyphs/u_2.png"
       ],
-      "avg_width": 140.0,
-      "avg_height": 153.0,
+      "avg_width": 302.0,
+      "avg_height": 136.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "v": {
       "variants": [
-        "glyphs/v_0.png",
-        "glyphs/v_1.png",
-        "glyphs/v_2.png",
-        "glyphs/v_3.png"
+        "glyphs/v_0.png"
       ],
-      "avg_width": 220.0,
-      "avg_height": 134.75,
+      "avg_width": 315.0,
+      "avg_height": 166.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "w": {
       "variants": [
-        "glyphs/w_0.png",
         "glyphs/w_1.png",
         "glyphs/w_2.png",
         "glyphs/w_3.png"
       ],
-      "avg_width": 325.5,
-      "avg_height": 206.5,
+      "avg_width": 288.0,
+      "avg_height": 168.7,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -320,12 +300,10 @@
     "x": {
       "variants": [
         "glyphs/x_0.png",
-        "glyphs/x_1.png",
-        "glyphs/x_2.png",
-        "glyphs/x_3.png"
+        "glyphs/x_1.png"
       ],
-      "avg_width": 282.5,
-      "avg_height": 166.25,
+      "avg_width": 252.5,
+      "avg_height": 167.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -337,8 +315,8 @@
         "glyphs/y_2.png",
         "glyphs/y_3.png"
       ],
-      "avg_width": 271.25,
-      "avg_height": 123.0,
+      "avg_width": 166.75,
+      "avg_height": 134.75,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -350,8 +328,8 @@
         "glyphs/z_2.png",
         "glyphs/z_3.png"
       ],
-      "avg_width": 352.0,
-      "avg_height": 213.75,
+      "avg_width": 208.0,
+      "avg_height": 147.25,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -361,8 +339,8 @@
         "glyphs/upper_A_0.png",
         "glyphs/upper_A_1.png"
       ],
-      "avg_width": 74.5,
-      "avg_height": 131.5,
+      "avg_width": 309.5,
+      "avg_height": 202.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -372,8 +350,8 @@
         "glyphs/upper_B_0.png",
         "glyphs/upper_B_1.png"
       ],
-      "avg_width": 68.5,
-      "avg_height": 129.0,
+      "avg_width": 315.0,
+      "avg_height": 209.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -383,8 +361,8 @@
         "glyphs/upper_C_0.png",
         "glyphs/upper_C_1.png"
       ],
-      "avg_width": 52.0,
-      "avg_height": 106.5,
+      "avg_width": 315.0,
+      "avg_height": 208.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -394,8 +372,8 @@
         "glyphs/upper_D_0.png",
         "glyphs/upper_D_1.png"
       ],
-      "avg_width": 52.5,
-      "avg_height": 107.5,
+      "avg_width": 312.0,
+      "avg_height": 209.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -405,8 +383,8 @@
         "glyphs/upper_E_0.png",
         "glyphs/upper_E_1.png"
       ],
-      "avg_width": 73.5,
-      "avg_height": 117.0,
+      "avg_width": 315.0,
+      "avg_height": 192.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -416,8 +394,8 @@
         "glyphs/upper_F_0.png",
         "glyphs/upper_F_1.png"
       ],
-      "avg_width": 22.0,
-      "avg_height": 62.5,
+      "avg_width": 315.0,
+      "avg_height": 177.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -427,8 +405,8 @@
         "glyphs/upper_G_0.png",
         "glyphs/upper_G_1.png"
       ],
-      "avg_width": 69.5,
-      "avg_height": 124.0,
+      "avg_width": 313.5,
+      "avg_height": 209.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -438,8 +416,8 @@
         "glyphs/upper_H_0.png",
         "glyphs/upper_H_1.png"
       ],
-      "avg_width": 139.0,
-      "avg_height": 154.0,
+      "avg_width": 315.0,
+      "avg_height": 199.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -449,8 +427,8 @@
         "glyphs/upper_I_0.png",
         "glyphs/upper_I_1.png"
       ],
-      "avg_width": 114.5,
-      "avg_height": 139.5,
+      "avg_width": 163.5,
+      "avg_height": 113.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -460,8 +438,8 @@
         "glyphs/upper_J_0.png",
         "glyphs/upper_J_1.png"
       ],
-      "avg_width": 138.0,
-      "avg_height": 128.0,
+      "avg_width": 182.5,
+      "avg_height": 124.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -471,8 +449,8 @@
         "glyphs/upper_K_0.png",
         "glyphs/upper_K_1.png"
       ],
-      "avg_width": 161.5,
-      "avg_height": 148.0,
+      "avg_width": 163.0,
+      "avg_height": 117.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -482,18 +460,19 @@
         "glyphs/upper_L_0.png",
         "glyphs/upper_L_1.png"
       ],
-      "avg_width": 110.0,
-      "avg_height": 106.5,
+      "avg_width": 315.0,
+      "avg_height": 204.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "M": {
       "variants": [
-        "glyphs/upper_M_0.png"
+        "glyphs/upper_M_0.png",
+        "glyphs/upper_M_1.png"
       ],
-      "avg_width": 259.0,
-      "avg_height": 103.0,
+      "avg_width": 315.0,
+      "avg_height": 209.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -503,8 +482,8 @@
         "glyphs/upper_N_0.png",
         "glyphs/upper_N_1.png"
       ],
-      "avg_width": 181.5,
-      "avg_height": 104.5,
+      "avg_width": 315.0,
+      "avg_height": 202.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -514,8 +493,8 @@
         "glyphs/upper_O_0.png",
         "glyphs/upper_O_1.png"
       ],
-      "avg_width": 167.0,
-      "avg_height": 123.0,
+      "avg_width": 315.0,
+      "avg_height": 199.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -525,8 +504,8 @@
         "glyphs/upper_P_0.png",
         "glyphs/upper_P_1.png"
       ],
-      "avg_width": 147.5,
-      "avg_height": 139.5,
+      "avg_width": 315.0,
+      "avg_height": 208.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -536,19 +515,18 @@
         "glyphs/upper_Q_0.png",
         "glyphs/upper_Q_1.png"
       ],
-      "avg_width": 333.0,
-      "avg_height": 194.0,
+      "avg_width": 315.0,
+      "avg_height": 202.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "R": {
       "variants": [
-        "glyphs/upper_R_0.png",
         "glyphs/upper_R_1.png"
       ],
-      "avg_width": 318.0,
-      "avg_height": 201.0,
+      "avg_width": 315.0,
+      "avg_height": 145.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -558,8 +536,8 @@
         "glyphs/upper_S_0.png",
         "glyphs/upper_S_1.png"
       ],
-      "avg_width": 218.0,
-      "avg_height": 205.5,
+      "avg_width": 315.0,
+      "avg_height": 143.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -569,8 +547,8 @@
         "glyphs/upper_T_0.png",
         "glyphs/upper_T_1.png"
       ],
-      "avg_width": 333.0,
-      "avg_height": 234.0,
+      "avg_width": 315.0,
+      "avg_height": 188.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -580,8 +558,8 @@
         "glyphs/upper_U_0.png",
         "glyphs/upper_U_1.png"
       ],
-      "avg_width": 126.5,
-      "avg_height": 235.0,
+      "avg_width": 163.0,
+      "avg_height": 106.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -591,8 +569,8 @@
         "glyphs/upper_V_0.png",
         "glyphs/upper_V_1.png"
       ],
-      "avg_width": 67.0,
-      "avg_height": 91.0,
+      "avg_width": 315.0,
+      "avg_height": 197.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -602,8 +580,8 @@
         "glyphs/upper_W_0.png",
         "glyphs/upper_W_1.png"
       ],
-      "avg_width": 93.0,
-      "avg_height": 113.5,
+      "avg_width": 315.0,
+      "avg_height": 151.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -613,8 +591,8 @@
         "glyphs/upper_X_0.png",
         "glyphs/upper_X_1.png"
       ],
-      "avg_width": 82.5,
-      "avg_height": 86.0,
+      "avg_width": 315.0,
+      "avg_height": 209.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -624,8 +602,8 @@
         "glyphs/upper_Y_0.png",
         "glyphs/upper_Y_1.png"
       ],
-      "avg_width": 51.5,
-      "avg_height": 123.5,
+      "avg_width": 315.0,
+      "avg_height": 195.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -635,8 +613,8 @@
         "glyphs/upper_Z_0.png",
         "glyphs/upper_Z_1.png"
       ],
-      "avg_width": 82.0,
-      "avg_height": 115.0,
+      "avg_width": 189.0,
+      "avg_height": 121.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -647,8 +625,8 @@
         "glyphs/digit_0_1.png",
         "glyphs/digit_0_2.png"
       ],
-      "avg_width": 265.33,
-      "avg_height": 191.67,
+      "avg_width": 101.0,
+      "avg_height": 94.67,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -659,8 +637,8 @@
         "glyphs/digit_1_1.png",
         "glyphs/digit_1_2.png"
       ],
-      "avg_width": 265.0,
-      "avg_height": 209.33,
+      "avg_width": 31.0,
+      "avg_height": 74.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -671,8 +649,8 @@
         "glyphs/digit_2_1.png",
         "glyphs/digit_2_2.png"
       ],
-      "avg_width": 226.0,
-      "avg_height": 182.33,
+      "avg_width": 32.67,
+      "avg_height": 72.33,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -683,8 +661,8 @@
         "glyphs/digit_3_1.png",
         "glyphs/digit_3_2.png"
       ],
-      "avg_width": 223.0,
-      "avg_height": 195.0,
+      "avg_width": 54.0,
+      "avg_height": 72.67,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -695,8 +673,8 @@
         "glyphs/digit_4_1.png",
         "glyphs/digit_4_2.png"
       ],
-      "avg_width": 134.67,
-      "avg_height": 137.67,
+      "avg_width": 48.33,
+      "avg_height": 80.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -707,8 +685,8 @@
         "glyphs/digit_5_1.png",
         "glyphs/digit_5_2.png"
       ],
-      "avg_width": 142.33,
-      "avg_height": 168.0,
+      "avg_width": 91.0,
+      "avg_height": 105.33,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -719,8 +697,8 @@
         "glyphs/digit_6_1.png",
         "glyphs/digit_6_2.png"
       ],
-      "avg_width": 204.0,
-      "avg_height": 213.0,
+      "avg_width": 82.33,
+      "avg_height": 113.67,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -731,8 +709,8 @@
         "glyphs/digit_7_1.png",
         "glyphs/digit_7_2.png"
       ],
-      "avg_width": 75.67,
-      "avg_height": 109.0,
+      "avg_width": 172.33,
+      "avg_height": 121.67,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -743,8 +721,8 @@
         "glyphs/digit_8_1.png",
         "glyphs/digit_8_2.png"
       ],
-      "avg_width": 265.33,
-      "avg_height": 189.67,
+      "avg_width": 58.67,
+      "avg_height": 60.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -755,8 +733,8 @@
         "glyphs/digit_9_1.png",
         "glyphs/digit_9_2.png"
       ],
-      "avg_width": 265.33,
-      "avg_height": 204.33,
+      "avg_width": 114.67,
+      "avg_height": 152.33,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -766,8 +744,8 @@
         "glyphs/period_0.png",
         "glyphs/period_1.png"
       ],
-      "avg_width": 265.0,
-      "avg_height": 188.0,
+      "avg_width": 47.5,
+      "avg_height": 82.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -777,8 +755,8 @@
         "glyphs/comma_0.png",
         "glyphs/comma_1.png"
       ],
-      "avg_width": 88.5,
-      "avg_height": 54.5,
+      "avg_width": 126.0,
+      "avg_height": 106.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -788,8 +766,8 @@
         "glyphs/exclaim_0.png",
         "glyphs/exclaim_1.png"
       ],
-      "avg_width": 184.0,
-      "avg_height": 147.5,
+      "avg_width": 24.5,
+      "avg_height": 85.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -799,8 +777,8 @@
         "glyphs/question_0.png",
         "glyphs/question_1.png"
       ],
-      "avg_width": 245.5,
-      "avg_height": 188.5,
+      "avg_width": 30.0,
+      "avg_height": 69.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -810,8 +788,8 @@
         "glyphs/apostrophe_0.png",
         "glyphs/apostrophe_1.png"
       ],
-      "avg_width": 240.5,
-      "avg_height": 187.0,
+      "avg_width": 129.5,
+      "avg_height": 114.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -821,8 +799,8 @@
         "glyphs/quote_0.png",
         "glyphs/quote_1.png"
       ],
-      "avg_width": 186.0,
-      "avg_height": 130.0,
+      "avg_width": 235.0,
+      "avg_height": 192.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -832,18 +810,19 @@
         "glyphs/hyphen_0.png",
         "glyphs/hyphen_1.png"
       ],
-      "avg_width": 131.5,
-      "avg_height": 91.5,
+      "avg_width": 237.5,
+      "avg_height": 185.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     ":": {
       "variants": [
-        "glyphs/colon_0.png"
+        "glyphs/colon_0.png",
+        "glyphs/colon_1.png"
       ],
-      "avg_width": 168.0,
-      "avg_height": 212.0,
+      "avg_width": 126.0,
+      "avg_height": 97.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -853,8 +832,8 @@
         "glyphs/semicolon_0.png",
         "glyphs/semicolon_1.png"
       ],
-      "avg_width": 182.5,
-      "avg_height": 213.5,
+      "avg_width": 125.0,
+      "avg_height": 103.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -864,8 +843,8 @@
         "glyphs/lparen_0.png",
         "glyphs/lparen_1.png"
       ],
-      "avg_width": 265.0,
-      "avg_height": 127.0,
+      "avg_width": 132.5,
+      "avg_height": 162.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -875,19 +854,18 @@
         "glyphs/rparen_0.png",
         "glyphs/rparen_1.png"
       ],
-      "avg_width": 265.5,
-      "avg_height": 214.0,
+      "avg_width": 133.5,
+      "avg_height": 100.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     },
     "/": {
       "variants": [
-        "glyphs/slash_0.png",
-        "glyphs/slash_1.png"
+        "glyphs/slash_0.png"
       ],
-      "avg_width": 265.5,
-      "avg_height": 214.0,
+      "avg_width": 182.0,
+      "avg_height": 149.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -897,8 +875,8 @@
         "glyphs/atsign_0.png",
         "glyphs/atsign_1.png"
       ],
-      "avg_width": 265.0,
-      "avg_height": 195.5,
+      "avg_width": 126.0,
+      "avg_height": 158.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -908,8 +886,8 @@
         "glyphs/ampersand_0.png",
         "glyphs/ampersand_1.png"
       ],
-      "avg_width": 265.0,
-      "avg_height": 193.5,
+      "avg_width": 28.0,
+      "avg_height": 70.5,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -919,8 +897,8 @@
         "glyphs/hash_0.png",
         "glyphs/hash_1.png"
       ],
-      "avg_width": 265.5,
-      "avg_height": 214.0,
+      "avg_width": 54.0,
+      "avg_height": 60.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -930,8 +908,8 @@
         "glyphs/dollar_0.png",
         "glyphs/dollar_1.png"
       ],
-      "avg_width": 265.5,
-      "avg_height": 214.0,
+      "avg_width": 37.0,
+      "avg_height": 53.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -940,8 +918,8 @@
       "variants": [
         "glyphs/th_0.png"
       ],
-      "avg_width": 265.0,
-      "avg_height": 214.0,
+      "avg_width": 51.0,
+      "avg_height": 29.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -950,8 +928,8 @@
       "variants": [
         "glyphs/he_0.png"
       ],
-      "avg_width": 265.0,
-      "avg_height": 214.0,
+      "avg_width": 59.0,
+      "avg_height": 33.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -960,8 +938,8 @@
       "variants": [
         "glyphs/in_0.png"
       ],
-      "avg_width": 235.0,
-      "avg_height": 211.0,
+      "avg_width": 15.0,
+      "avg_height": 42.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -970,8 +948,8 @@
       "variants": [
         "glyphs/an_0.png"
       ],
-      "avg_width": 86.0,
-      "avg_height": 55.0,
+      "avg_width": 101.0,
+      "avg_height": 44.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -980,8 +958,8 @@
       "variants": [
         "glyphs/er_0.png"
       ],
-      "avg_width": 214.0,
-      "avg_height": 213.0,
+      "avg_width": 55.0,
+      "avg_height": 29.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -990,8 +968,8 @@
       "variants": [
         "glyphs/on_0.png"
       ],
-      "avg_width": 208.0,
-      "avg_height": 183.0,
+      "avg_width": 88.0,
+      "avg_height": 28.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1000,8 +978,8 @@
       "variants": [
         "glyphs/ed_0.png"
       ],
-      "avg_width": 256.0,
-      "avg_height": 213.0,
+      "avg_width": 93.0,
+      "avg_height": 31.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1010,8 +988,8 @@
       "variants": [
         "glyphs/re_0.png"
       ],
-      "avg_width": 92.0,
-      "avg_height": 74.0,
+      "avg_width": 65.0,
+      "avg_height": 48.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1020,8 +998,8 @@
       "variants": [
         "glyphs/ou_0.png"
       ],
-      "avg_width": 99.0,
-      "avg_height": 54.0,
+      "avg_width": 70.0,
+      "avg_height": 32.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1030,8 +1008,8 @@
       "variants": [
         "glyphs/es_0.png"
       ],
-      "avg_width": 157.0,
-      "avg_height": 187.0,
+      "avg_width": 15.0,
+      "avg_height": 19.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1040,8 +1018,8 @@
       "variants": [
         "glyphs/ti_0.png"
       ],
-      "avg_width": 265.0,
-      "avg_height": 153.0,
+      "avg_width": 46.0,
+      "avg_height": 53.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1050,8 +1028,8 @@
       "variants": [
         "glyphs/at_0.png"
       ],
-      "avg_width": 212.0,
-      "avg_height": 150.0,
+      "avg_width": 66.0,
+      "avg_height": 44.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1060,8 +1038,8 @@
       "variants": [
         "glyphs/st_0.png"
       ],
-      "avg_width": 261.0,
-      "avg_height": 214.0,
+      "avg_width": 78.0,
+      "avg_height": 69.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1070,8 +1048,8 @@
       "variants": [
         "glyphs/en_0.png"
       ],
-      "avg_width": 223.0,
-      "avg_height": 214.0,
+      "avg_width": 87.0,
+      "avg_height": 41.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1080,8 +1058,8 @@
       "variants": [
         "glyphs/or_0.png"
       ],
-      "avg_width": 111.0,
-      "avg_height": 69.0,
+      "avg_width": 64.0,
+      "avg_height": 32.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1090,8 +1068,8 @@
       "variants": [
         "glyphs/ng_0.png"
       ],
-      "avg_width": 215.0,
-      "avg_height": 147.0,
+      "avg_width": 65.0,
+      "avg_height": 29.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1100,8 +1078,8 @@
       "variants": [
         "glyphs/ing_0.png"
       ],
-      "avg_width": 147.0,
-      "avg_height": 128.0,
+      "avg_width": 14.0,
+      "avg_height": 24.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1110,8 +1088,8 @@
       "variants": [
         "glyphs/the_0.png"
       ],
-      "avg_width": 175.0,
-      "avg_height": 201.0,
+      "avg_width": 237.0,
+      "avg_height": 142.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1120,8 +1098,8 @@
       "variants": [
         "glyphs/and_0.png"
       ],
-      "avg_width": 265.0,
-      "avg_height": 187.0,
+      "avg_width": 175.0,
+      "avg_height": 190.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
@@ -1130,20 +1108,20 @@
       "variants": [
         "glyphs/tion_0.png"
       ],
-      "avg_width": 261.0,
-      "avg_height": 209.0,
+      "avg_width": 36.0,
+      "avg_height": 35.0,
       "confidence": 1.0,
       "is_weak": false,
       "extraction_method": "template_cell"
     }
   },
   "style_metrics": {
-    "avg_glyph_width": 211.66,
+    "avg_glyph_width": 211.86,
     "median_x_height": 128.0,
     "baseline_offset": 0.0,
     "slant_estimate_degrees": 0.0,
     "avg_stroke_width": 8.0,
-    "ink_density": 0.0773
+    "ink_density": 0.0541
   },
   "missing_characters": [],
   "weak_characters": [],

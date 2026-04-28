@@ -194,3 +194,77 @@ Synthetic 238/238 baseline maintained throughout.
 - Use a dark pen (black ballpoint, R < 90 in the captured image).
 - Avoid tilts > 10° — deskew corrects 0.5°–10°, larger tilts need manual correction.
 - Any resolution ≥ 400px wide is acceptable after preprocessing.
+
+---
+
+## Phase 5 — Grid-line contamination investigation & Hough fix (2026-04-21)
+
+### Problem
+
+Rendered text showed visible horizontal grid/baseline lines running through every glyph, making output look like graph paper. The validator reported 238/238 success — the contamination was invisible to structural checks.
+
+### Step 1 — Quantify contamination
+
+Script: `tests/line_contamination_report.py`
+Metric: glyphs with h_span > 0.60 (a single row covers >60% of glyph width = line artifact)
+
+| Profile | Contaminated / Total | % |
+|---|---|---|
+| vishnu_blue_v1 | 74 / 234 | 31.6% |
+| vishnu_v6 | 125 / 232 | 53.9% |
+
+By category (vishnu_blue_v1):
+- Digits: 73.3%
+- Punct: 74.2%
+- Lowercase: 17.6%
+
+Contact sheets: `tests/audit_screenshots/<profile>_contamination_sheet.png`
+
+### Step 2 — Root cause
+
+Three compounding failures in `_find_corners` + `_extract_glyph_cell`:
+
+**A. Corner detection was fundamentally wrong.** The blob-based corner finder located large interior blobs (handwriting, cell labels) rather than actual template corner markers. For pages 1-2, the detected "TL" blob sat at (269, 167) — deep inside the content area. The real template grid top was at y≈71; the true page TL was above the image frame at y≈-32. For pages 3-4, no corner blobs existed at all (fallback to image corners).
+
+Result: perspective warp was computing a wildly wrong transform, mapping content into wrong warp coordinates. Cells landed on template grid lines rather than within the cell bodies.
+
+**B. Cell inset was too small.** `cell_inset = 0.03` (3%) left 3% of each cell edge in every crop, including the printed grid line. CELL_INSET constant was already 0.08 (8%) — the code used 0.03.
+
+**C. Red-channel threshold captured gray grid lines.** Photographed grid lines appeared at R≈G≈B≈130-170. The red-channel threshold (R < 155) captured these as ink, since gray has R well below 155.
+
+### Step 3 — Fixes applied to `web/app.py`
+
+**Fix 1: Hough line corner detection**
+
+New `_find_corners()` primary path uses `cv2.HoughLinesP` on Canny edges to detect the outermost cell grid lines. For pages 1-2, Hough finds the grid reliably at y≈66-71 (top), y≈1094-1115 (bottom), x≈39-51 (left), x≈868-888 (right). These are the cell grid bounds, not full-page corners, so the function extrapolates back to full-page corners using known margin ratios:
+
+```
+px_x = grid_w / 2250.0   # pixels per warp unit (x); content width = 2400-150 = 2250
+px_y = grid_h / 2880.0   # pixels per warp unit (y); content height = 3165-285 = 2880
+tl_x = left_x - 150 * px_x
+tl_y = top_y  - 285 * px_y
+```
+
+Fallback (pages 3-4 or if Hough fails): original largest-blob-per-quadrant logic.
+Sanity check: Hough result only accepted if grid covers ≥50% of image in both dimensions.
+
+**Fix 2: Cell inset corrected**
+
+`inward_x = max(3, int(cw * 0.08))` and `inward_y = max(3, int(ch * 0.08))` — matching the CELL_INSET constant.
+
+**Fix 3: Min-channel binarization + morphological line removal**
+
+Replaced red-channel threshold with:
+```python
+min_channel = np.min(cell, axis=2)
+_, binarized = cv2.threshold(min_channel, 100, 255, cv2.THRESH_BINARY_INV)
+```
+Min-channel = 7-87 for ink (R,G,B all dark), ≈130+ for gray/blue lines → clean separation.
+
+Followed by morphological line removal: MORPH_OPEN with kernels covering 60% of cell width/height detects continuous grid lines; subtract from binarized image.
+
+### Step 4 — Verification
+
+Profile `vishnu_blue_v7_hough_fix`: 238/238 glyphs extracted. Visual inspection confirmed actual letter shapes (not diagonal artifacts) for the first time. Rendered "The quick brown fox jumps over the lazy dog" shows coherent handwritten characters.
+
+Render comparison: `tests/audit_screenshots/render_comparison_final.png`

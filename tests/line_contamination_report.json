@@ -1,0 +1,262 @@
+{
+  "vishnu_blue_v1": {
+    "profile": "vishnu_blue_v1",
+    "total_glyphs": 234,
+    "contaminated": 74,
+    "contamination_pct": 31.6,
+    "by_category": {
+      "lowercase": {
+        "total": 102,
+        "contaminated": 15,
+        "pct": 14.7,
+        "worst_files": [
+          "a_1.png",
+          "a_3.png",
+          "b_3.png",
+          "c_1.png",
+          "e_3.png"
+        ]
+      },
+      "uppercase": {
+        "total": 51,
+        "contaminated": 7,
+        "pct": 13.7,
+        "worst_files": [
+          "upper_A_0.png",
+          "upper_B_0.png",
+          "upper_C_0.png",
+          "upper_G_0.png",
+          "upper_J_0.png"
+        ]
+      },
+      "digits": {
+        "total": 30,
+        "contaminated": 22,
+        "pct": 73.3,
+        "worst_files": [
+          "digit_0_1.png",
+          "digit_0_2.png",
+          "digit_1_0.png",
+          "digit_1_1.png",
+          "digit_1_2.png"
+        ]
+      },
+      "punct": {
+        "total": 31,
+        "contaminated": 23,
+        "pct": 74.2,
+        "worst_files": [
+          "ampersand_0.png",
+          "ampersand_1.png",
+          "apostrophe_0.png",
+          "apostrophe_1.png",
+          "atsign_0.png"
+        ]
+      },
+      "bigrams": {
+        "total": 20,
+        "contaminated": 7,
+        "pct": 35.0,
+        "worst_files": [
+          "an_0.png",
+          "ed_0.png",
+          "en_0.png",
+          "er_0.png",
+          "he_0.png"
+        ]
+      }
+    },
+    "worst_10": [
+      {
+        "file": "ampersand_1.png",
+        "h_span": 1.0,
+        "v_span": 0.349,
+        "line_ratio": 0.403
+      },
+      {
+        "file": "atsign_0.png",
+        "h_span": 1.0,
+        "v_span": 0.633,
+        "line_ratio": 0.496
+      },
+      {
+        "file": "atsign_1.png",
+        "h_span": 1.0,
+        "v_span": 0.956,
+        "line_ratio": 0.697
+      },
+      {
+        "file": "digit_8_2.png",
+        "h_span": 1.0,
+        "v_span": 0.631,
+        "line_ratio": 0.515
+      },
+      {
+        "file": "digit_9_0.png",
+        "h_span": 1.0,
+        "v_span": 0.176,
+        "line_ratio": 0.535
+      },
+      {
+        "file": "digit_9_1.png",
+        "h_span": 1.0,
+        "v_span": 0.939,
+        "line_ratio": 0.537
+      },
+      {
+        "file": "digit_9_2.png",
+        "h_span": 1.0,
+        "v_span": 0.289,
+        "line_ratio": 0.516
+      },
+      {
+        "file": "dollar_0.png",
+        "h_span": 1.0,
+        "v_span": 0.972,
+        "line_ratio": 0.725
+      },
+      {
+        "file": "dollar_1.png",
+        "h_span": 1.0,
+        "v_span": 0.252,
+        "line_ratio": 0.575
+      },
+      {
+        "file": "lparen_0.png",
+        "h_span": 1.0,
+        "v_span": 0.171,
+        "line_ratio": 0.708
+      }
+    ]
+  },
+  "vishnu_v6": {
+    "profile": "vishnu_v6",
+    "total_glyphs": 232,
+    "contaminated": 125,
+    "contamination_pct": 53.9,
+    "by_category": {
+      "lowercase": {
+        "total": 100,
+        "contaminated": 30,
+        "pct": 30.0,
+        "worst_files": [
+          "a_1.png",
+          "a_3.png",
+          "b_3.png",
+          "c_1.png",
+          "d_3.png"
+        ]
+      },
+      "uppercase": {
+        "total": 51,
+        "contaminated": 21,
+        "pct": 41.2,
+        "worst_files": [
+          "upper_A_0.png",
+          "upper_A_1.png",
+          "upper_B_0.png",
+          "upper_B_1.png",
+          "upper_C_0.png"
+        ]
+      },
+      "digits": {
+        "total": 30,
+        "contaminated": 30,
+        "pct": 100.0,
+        "worst_files": [
+          "digit_0_0.png",
+          "digit_0_1.png",
+          "digit_0_2.png",
+          "digit_1_0.png",
+          "digit_1_1.png"
+        ]
+      },
+      "punct": {
+        "total": 31,
+        "contaminated": 27,
+        "pct": 87.1,
+        "worst_files": [
+          "ampersand_0.png",
+          "ampersand_1.png",
+          "apostrophe_0.png",
+          "apostrophe_1.png",
+          "atsign_0.png"
+        ]
+      },
+      "bigrams": {
+        "total": 20,
+        "contaminated": 17,
+        "pct": 85.0,
+        "worst_files": [
+          "an_0.png",
+          "and_0.png",
+          "ed_0.png",
+          "en_0.png",
+          "er_0.png"
+        ]
+      }
+    },
+    "worst_10": [
+      {
+        "file": "ampersand_1.png",
+        "h_span": 1.0,
+        "v_span": 0.372,
+        "line_ratio": 0.357
+      },
+      {
+        "file": "apostrophe_0.png",
+        "h_span": 1.0,
+        "v_span": 0.884,
+        "line_ratio": 0.566
+      },
+      {
+        "file": "atsign_0.png",
+        "h_span": 1.0,
+        "v_span": 0.884,
+        "line_ratio": 0.585
+      },
+      {
+        "file": "atsign_1.png",
+        "h_span": 1.0,
+        "v_span": 0.972,
+        "line_ratio": 0.71
+      },
+      {
+        "file": "digit_0_2.png",
+        "h_span": 1.0,
+        "v_span": 0.986,
+        "line_ratio": 0.433
+      },
+      {
+        "file": "digit_1_2.png",
+        "h_span": 1.0,
+        "v_span": 0.332,
+        "line_ratio": 0.403
+      },
+      {
+        "file": "digit_8_0.png",
+        "h_span": 1.0,
+        "v_span": 0.673,
+        "line_ratio": 0.506
+      },
+      {
+        "file": "digit_8_1.png",
+        "h_span": 1.0,
+        "v_span": 0.156,
+        "line_ratio": 0.657
+      },
+      {
+        "file": "digit_8_2.png",
+        "h_span": 1.0,
+        "v_span": 0.986,
+        "line_ratio": 0.579
+      },
+      {
+        "file": "digit_9_0.png",
+        "h_span": 1.0,
+        "v_span": 0.872,
+        "line_ratio": 0.513
+      }
+    ]
+  }
+}
