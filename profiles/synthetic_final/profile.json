@@ -1,0 +1,1144 @@
+{
+  "profile_id": "synthetic_final",
+  "created_at": "2026-04-28T17:30:08Z",
+  "source_method": "template",
+  "character_coverage": {
+    "lowercase_pct": 100.0,
+    "uppercase_pct": 100.0,
+    "digits_pct": 100.0,
+    "punctuation_pct": 94.1,
+    "total_characters": 98,
+    "total_variants": 238
+  },
+  "per_character": {
+    "!": {
+      "variants": [
+        "glyphs/exclaim_0.png",
+        "glyphs/exclaim_1.png"
+      ],
+      "avg_width": 33.0,
+      "avg_height": 113.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "\"": {
+      "variants": [
+        "glyphs/quote_0.png",
+        "glyphs/quote_1.png"
+      ],
+      "avg_width": 55.0,
+      "avg_height": 47.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "#": {
+      "variants": [
+        "glyphs/hash_0.png",
+        "glyphs/hash_1.png"
+      ],
+      "avg_width": 109.0,
+      "avg_height": 113.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "$": {
+      "variants": [
+        "glyphs/dollar_0.png",
+        "glyphs/dollar_1.png"
+      ],
+      "avg_width": 87.0,
+      "avg_height": 101.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "&": {
+      "variants": [
+        "glyphs/ampersand_0.png",
+        "glyphs/ampersand_1.png"
+      ],
+      "avg_width": 117.0,
+      "avg_height": 117.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "'": {
+      "variants": [
+        "glyphs/apostrophe_0.png",
+        "glyphs/apostrophe_1.png"
+      ],
+      "avg_width": 24.0,
+      "avg_height": 47.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "(": {
+      "variants": [
+        "glyphs/lparen_0.png",
+        "glyphs/lparen_1.png"
+      ],
+      "avg_width": 49.0,
+      "avg_height": 135.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    ")": {
+      "variants": [
+        "glyphs/rparen_0.png",
+        "glyphs/rparen_1.png"
+      ],
+      "avg_width": 49.0,
+      "avg_height": 135.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    ",": {
+      "variants": [
+        "glyphs/comma_0.png",
+        "glyphs/comma_1.png"
+      ],
+      "avg_width": 40.0,
+      "avg_height": 56.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "-": {
+      "variants": [
+        "glyphs/hyphen_0.png",
+        "glyphs/hyphen_1.png"
+      ],
+      "avg_width": 52.0,
+      "avg_height": 28.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    ".": {
+      "variants": [
+        "glyphs/period_0.png",
+        "glyphs/period_1.png"
+      ],
+      "avg_width": 33.0,
+      "avg_height": 35.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "/": {
+      "variants": [
+        "glyphs/slash_0.png",
+        "glyphs/slash_1.png"
+      ],
+      "avg_width": 59.0,
+      "avg_height": 127.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "0": {
+      "variants": [
+        "glyphs/digit_0_0.png",
+        "glyphs/digit_0_1.png",
+        "glyphs/digit_0_2.png"
+      ],
+      "avg_width": 94.0,
+      "avg_height": 117.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "1": {
+      "variants": [
+        "glyphs/digit_1_0.png",
+        "glyphs/digit_1_1.png",
+        "glyphs/digit_1_2.png"
+      ],
+      "avg_width": 82.0,
+      "avg_height": 113.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "2": {
+      "variants": [
+        "glyphs/digit_2_0.png",
+        "glyphs/digit_2_1.png",
+        "glyphs/digit_2_2.png"
+      ],
+      "avg_width": 85.0,
+      "avg_height": 115.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "3": {
+      "variants": [
+        "glyphs/digit_3_0.png",
+        "glyphs/digit_3_1.png",
+        "glyphs/digit_3_2.png"
+      ],
+      "avg_width": 87.0,
+      "avg_height": 117.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "4": {
+      "variants": [
+        "glyphs/digit_4_0.png",
+        "glyphs/digit_4_1.png",
+        "glyphs/digit_4_2.png"
+      ],
+      "avg_width": 96.0,
+      "avg_height": 113.67,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "5": {
+      "variants": [
+        "glyphs/digit_5_0.png",
+        "glyphs/digit_5_1.png",
+        "glyphs/digit_5_2.png"
+      ],
+      "avg_width": 87.0,
+      "avg_height": 115.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "6": {
+      "variants": [
+        "glyphs/digit_6_0.png",
+        "glyphs/digit_6_1.png",
+        "glyphs/digit_6_2.png"
+      ],
+      "avg_width": 91.0,
+      "avg_height": 117.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "7": {
+      "variants": [
+        "glyphs/digit_7_0.png",
+        "glyphs/digit_7_1.png",
+        "glyphs/digit_7_2.png"
+      ],
+      "avg_width": 87.0,
+      "avg_height": 113.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "8": {
+      "variants": [
+        "glyphs/digit_8_0.png",
+        "glyphs/digit_8_1.png",
+        "glyphs/digit_8_2.png"
+      ],
+      "avg_width": 90.0,
+      "avg_height": 117.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "9": {
+      "variants": [
+        "glyphs/digit_9_0.png",
+        "glyphs/digit_9_1.png",
+        "glyphs/digit_9_2.png"
+      ],
+      "avg_width": 91.0,
+      "avg_height": 117.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    ":": {
+      "variants": [
+        "glyphs/colon_0.png",
+        "glyphs/colon_1.png"
+      ],
+      "avg_width": 33.0,
+      "avg_height": 87.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    ";": {
+      "variants": [
+        "glyphs/semicolon_0.png",
+        "glyphs/semicolon_1.png"
+      ],
+      "avg_width": 39.0,
+      "avg_height": 108.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "?": {
+      "variants": [
+        "glyphs/question_0.png",
+        "glyphs/question_1.png"
+      ],
+      "avg_width": 72.0,
+      "avg_height": 113.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "@": {
+      "variants": [
+        "glyphs/atsign_0.png",
+        "glyphs/atsign_1.png"
+      ],
+      "avg_width": 132.0,
+      "avg_height": 134.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "A": {
+      "variants": [
+        "glyphs/upper_A_0.png",
+        "glyphs/upper_A_1.png"
+      ],
+      "avg_width": 128.0,
+      "avg_height": 125.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "B": {
+      "variants": [
+        "glyphs/upper_B_0.png",
+        "glyphs/upper_B_1.png"
+      ],
+      "avg_width": 102.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "C": {
+      "variants": [
+        "glyphs/upper_C_0.png",
+        "glyphs/upper_C_1.png"
+      ],
+      "avg_width": 106.0,
+      "avg_height": 127.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "D": {
+      "variants": [
+        "glyphs/upper_D_0.png",
+        "glyphs/upper_D_1.png"
+      ],
+      "avg_width": 116.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "E": {
+      "variants": [
+        "glyphs/upper_E_0.png",
+        "glyphs/upper_E_1.png"
+      ],
+      "avg_width": 89.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "F": {
+      "variants": [
+        "glyphs/upper_F_0.png",
+        "glyphs/upper_F_1.png"
+      ],
+      "avg_width": 88.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "G": {
+      "variants": [
+        "glyphs/upper_G_0.png",
+        "glyphs/upper_G_1.png"
+      ],
+      "avg_width": 118.0,
+      "avg_height": 127.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "H": {
+      "variants": [
+        "glyphs/upper_H_0.png",
+        "glyphs/upper_H_1.png"
+      ],
+      "avg_width": 111.0,
+      "avg_height": 125.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "I": {
+      "variants": [
+        "glyphs/upper_I_0.png",
+        "glyphs/upper_I_1.png"
+      ],
+      "avg_width": 37.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "J": {
+      "variants": [
+        "glyphs/upper_J_0.png",
+        "glyphs/upper_J_1.png"
+      ],
+      "avg_width": 32.0,
+      "avg_height": 50.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "K": {
+      "variants": [
+        "glyphs/upper_K_0.png",
+        "glyphs/upper_K_1.png"
+      ],
+      "avg_width": 210.0,
+      "avg_height": 125.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "L": {
+      "variants": [
+        "glyphs/upper_L_0.png",
+        "glyphs/upper_L_1.png"
+      ],
+      "avg_width": 89.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "M": {
+      "variants": [
+        "glyphs/upper_M_0.png",
+        "glyphs/upper_M_1.png"
+      ],
+      "avg_width": 136.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "N": {
+      "variants": [
+        "glyphs/upper_N_0.png",
+        "glyphs/upper_N_1.png"
+      ],
+      "avg_width": 111.0,
+      "avg_height": 125.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "O": {
+      "variants": [
+        "glyphs/upper_O_0.png",
+        "glyphs/upper_O_1.png"
+      ],
+      "avg_width": 126.0,
+      "avg_height": 127.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "P": {
+      "variants": [
+        "glyphs/upper_P_0.png",
+        "glyphs/upper_P_1.png"
+      ],
+      "avg_width": 102.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "Q": {
+      "variants": [
+        "glyphs/upper_Q_0.png",
+        "glyphs/upper_Q_1.png"
+      ],
+      "avg_width": 126.0,
+      "avg_height": 147.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "R": {
+      "variants": [
+        "glyphs/upper_R_0.png",
+        "glyphs/upper_R_1.png"
+      ],
+      "avg_width": 111.0,
+      "avg_height": 125.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "S": {
+      "variants": [
+        "glyphs/upper_S_0.png",
+        "glyphs/upper_S_1.png"
+      ],
+      "avg_width": 99.0,
+      "avg_height": 127.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "T": {
+      "variants": [
+        "glyphs/upper_T_0.png",
+        "glyphs/upper_T_1.png"
+      ],
+      "avg_width": 114.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "U": {
+      "variants": [
+        "glyphs/upper_U_0.png",
+        "glyphs/upper_U_1.png"
+      ],
+      "avg_width": 107.0,
+      "avg_height": 125.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "V": {
+      "variants": [
+        "glyphs/upper_V_0.png",
+        "glyphs/upper_V_1.png"
+      ],
+      "avg_width": 128.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "W": {
+      "variants": [
+        "glyphs/upper_W_0.png",
+        "glyphs/upper_W_1.png"
+      ],
+      "avg_width": 172.0,
+      "avg_height": 125.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "X": {
+      "variants": [
+        "glyphs/upper_X_0.png",
+        "glyphs/upper_X_1.png"
+      ],
+      "avg_width": 122.0,
+      "avg_height": 125.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "Y": {
+      "variants": [
+        "glyphs/upper_Y_0.png",
+        "glyphs/upper_Y_1.png"
+      ],
+      "avg_width": 124.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "Z": {
+      "variants": [
+        "glyphs/upper_Z_0.png",
+        "glyphs/upper_Z_1.png"
+      ],
+      "avg_width": 108.0,
+      "avg_height": 123.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "a": {
+      "variants": [
+        "glyphs/a_0.png",
+        "glyphs/a_1.png",
+        "glyphs/a_2.png",
+        "glyphs/a_3.png"
+      ],
+      "avg_width": 95.0,
+      "avg_height": 98.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "an": {
+      "variants": [
+        "glyphs/an_0.png"
+      ],
+      "avg_width": 189.0,
+      "avg_height": 91.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "and": {
+      "variants": [
+        "glyphs/and_0.png"
+      ],
+      "avg_width": 236.0,
+      "avg_height": 91.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "at": {
+      "variants": [
+        "glyphs/at_0.png"
+      ],
+      "avg_width": 164.0,
+      "avg_height": 111.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "b": {
+      "variants": [
+        "glyphs/b_0.png",
+        "glyphs/b_1.png",
+        "glyphs/b_2.png",
+        "glyphs/b_3.png"
+      ],
+      "avg_width": 101.0,
+      "avg_height": 130.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "c": {
+      "variants": [
+        "glyphs/c_0.png",
+        "glyphs/c_1.png",
+        "glyphs/c_2.png",
+        "glyphs/c_3.png"
+      ],
+      "avg_width": 84.0,
+      "avg_height": 98.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "d": {
+      "variants": [
+        "glyphs/d_0.png",
+        "glyphs/d_1.png",
+        "glyphs/d_2.png",
+        "glyphs/d_3.png"
+      ],
+      "avg_width": 101.0,
+      "avg_height": 130.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "e": {
+      "variants": [
+        "glyphs/e_0.png",
+        "glyphs/e_1.png",
+        "glyphs/e_2.png",
+        "glyphs/e_3.png"
+      ],
+      "avg_width": 100.0,
+      "avg_height": 98.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "ed": {
+      "variants": [
+        "glyphs/ed_0.png"
+      ],
+      "avg_width": 190.0,
+      "avg_height": 119.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "en": {
+      "variants": [
+        "glyphs/en_0.png"
+      ],
+      "avg_width": 190.0,
+      "avg_height": 91.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "er": {
+      "variants": [
+        "glyphs/er_0.png"
+      ],
+      "avg_width": 171.0,
+      "avg_height": 91.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "es": {
+      "variants": [
+        "glyphs/es_0.png"
+      ],
+      "avg_width": 179.0,
+      "avg_height": 91.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "f": {
+      "variants": [
+        "glyphs/f_0.png",
+        "glyphs/f_1.png",
+        "glyphs/f_2.png",
+        "glyphs/f_3.png"
+      ],
+      "avg_width": 75.0,
+      "avg_height": 128.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "g": {
+      "variants": [
+        "glyphs/g_0.png",
+        "glyphs/g_1.png",
+        "glyphs/g_2.png",
+        "glyphs/g_3.png"
+      ],
+      "avg_width": 101.0,
+      "avg_height": 130.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "h": {
+      "variants": [
+        "glyphs/h_0.png",
+        "glyphs/h_1.png",
+        "glyphs/h_2.png",
+        "glyphs/h_3.png"
+      ],
+      "avg_width": 95.0,
+      "avg_height": 130.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "he": {
+      "variants": [
+        "glyphs/he_0.png"
+      ],
+      "avg_width": 190.0,
+      "avg_height": 119.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "i": {
+      "variants": [
+        "glyphs/i_0.png",
+        "glyphs/i_1.png",
+        "glyphs/i_2.png",
+        "glyphs/i_3.png"
+      ],
+      "avg_width": 36.0,
+      "avg_height": 128.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "in": {
+      "variants": [
+        "glyphs/in_0.png"
+      ],
+      "avg_width": 136.0,
+      "avg_height": 117.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "ing": {
+      "variants": [
+        "glyphs/ing_0.png"
+      ],
+      "avg_width": 236.0,
+      "avg_height": 135.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "j": {
+      "variants": [
+        "glyphs/j_0.png",
+        "glyphs/j_1.png",
+        "glyphs/j_2.png",
+        "glyphs/j_3.png"
+      ],
+      "avg_width": 54.0,
+      "avg_height": 147.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "k": {
+      "variants": [
+        "glyphs/k_0.png",
+        "glyphs/k_1.png",
+        "glyphs/k_2.png",
+        "glyphs/k_3.png"
+      ],
+      "avg_width": 102.0,
+      "avg_height": 130.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "l": {
+      "variants": [
+        "glyphs/l_0.png",
+        "glyphs/l_1.png",
+        "glyphs/l_2.png",
+        "glyphs/l_3.png"
+      ],
+      "avg_width": 36.0,
+      "avg_height": 128.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "m": {
+      "variants": [
+        "glyphs/m_0.png",
+        "glyphs/m_1.png",
+        "glyphs/m_2.png",
+        "glyphs/m_3.png"
+      ],
+      "avg_width": 147.0,
+      "avg_height": 96.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "n": {
+      "variants": [
+        "glyphs/n_0.png",
+        "glyphs/n_1.png",
+        "glyphs/n_2.png",
+        "glyphs/n_3.png"
+      ],
+      "avg_width": 95.0,
+      "avg_height": 98.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "ng": {
+      "variants": [
+        "glyphs/ng_0.png"
+      ],
+      "avg_width": 190.0,
+      "avg_height": 120.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "o": {
+      "variants": [
+        "glyphs/o_0.png",
+        "glyphs/o_1.png",
+        "glyphs/o_2.png",
+        "glyphs/o_3.png"
+      ],
+      "avg_width": 103.0,
+      "avg_height": 98.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "on": {
+      "variants": [
+        "glyphs/on_0.png"
+      ],
+      "avg_width": 191.0,
+      "avg_height": 91.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "or": {
+      "variants": [
+        "glyphs/or_0.png"
+      ],
+      "avg_width": 172.0,
+      "avg_height": 91.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "ou": {
+      "variants": [
+        "glyphs/ou_0.png"
+      ],
+      "avg_width": 190.0,
+      "avg_height": 91.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "p": {
+      "variants": [
+        "glyphs/p_0.png",
+        "glyphs/p_1.png",
+        "glyphs/p_2.png",
+        "glyphs/p_3.png"
+      ],
+      "avg_width": 101.0,
+      "avg_height": 129.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "q": {
+      "variants": [
+        "glyphs/q_0.png",
+        "glyphs/q_1.png",
+        "glyphs/q_2.png",
+        "glyphs/q_3.png"
+      ],
+      "avg_width": 101.0,
+      "avg_height": 129.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "r": {
+      "variants": [
+        "glyphs/r_0.png",
+        "glyphs/r_1.png",
+        "glyphs/r_2.png",
+        "glyphs/r_3.png"
+      ],
+      "avg_width": 72.0,
+      "avg_height": 96.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "re": {
+      "variants": [
+        "glyphs/re_0.png"
+      ],
+      "avg_width": 194.0,
+      "avg_height": 93.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "s": {
+      "variants": [
+        "glyphs/s_0.png",
+        "glyphs/s_1.png",
+        "glyphs/s_2.png",
+        "glyphs/s_3.png"
+      ],
+      "avg_width": 86.0,
+      "avg_height": 98.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "st": {
+      "variants": [
+        "glyphs/st_0.png"
+      ],
+      "avg_width": 197.0,
+      "avg_height": 113.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "t": {
+      "variants": [
+        "glyphs/t_0.png",
+        "glyphs/t_1.png",
+        "glyphs/t_2.png",
+        "glyphs/t_3.png"
+      ],
+      "avg_width": 78.0,
+      "avg_height": 119.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "th": {
+      "variants": [
+        "glyphs/th_0.png"
+      ],
+      "avg_width": 166.0,
+      "avg_height": 117.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "the": {
+      "variants": [
+        "glyphs/the_0.png"
+      ],
+      "avg_width": 236.0,
+      "avg_height": 119.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "ti": {
+      "variants": [
+        "glyphs/ti_0.png"
+      ],
+      "avg_width": 178.0,
+      "avg_height": 119.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "tion": {
+      "variants": [
+        "glyphs/tion_0.png"
+      ],
+      "avg_width": 237.0,
+      "avg_height": 118.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "u": {
+      "variants": [
+        "glyphs/u_0.png",
+        "glyphs/u_1.png",
+        "glyphs/u_2.png",
+        "glyphs/u_3.png"
+      ],
+      "avg_width": 95.0,
+      "avg_height": 96.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "v": {
+      "variants": [
+        "glyphs/v_0.png",
+        "glyphs/v_1.png",
+        "glyphs/v_2.png",
+        "glyphs/v_3.png"
+      ],
+      "avg_width": 105.0,
+      "avg_height": 94.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "w": {
+      "variants": [
+        "glyphs/w_0.png",
+        "glyphs/w_1.png",
+        "glyphs/w_2.png",
+        "glyphs/w_3.png"
+      ],
+      "avg_width": 142.0,
+      "avg_height": 96.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "x": {
+      "variants": [
+        "glyphs/x_0.png",
+        "glyphs/x_1.png",
+        "glyphs/x_2.png",
+        "glyphs/x_3.png"
+      ],
+      "avg_width": 102.0,
+      "avg_height": 96.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "y": {
+      "variants": [
+        "glyphs/y_0.png",
+        "glyphs/y_1.png",
+        "glyphs/y_2.png",
+        "glyphs/y_3.png"
+      ],
+      "avg_width": 105.0,
+      "avg_height": 128.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    },
+    "z": {
+      "variants": [
+        "glyphs/z_0.png",
+        "glyphs/z_1.png",
+        "glyphs/z_2.png",
+        "glyphs/z_3.png"
+      ],
+      "avg_width": 85.0,
+      "avg_height": 94.0,
+      "confidence": 1.0,
+      "is_weak": false,
+      "extraction_method": "template_cell"
+    }
+  },
+  "style_metrics": {
+    "avg_glyph_width": 100.34,
+    "avg_glyph_height": 112.24,
+    "ink_density": 0.497
+  },
+  "missing_characters": [
+    "−"
+  ],
+  "usable": true
+}
