@@ -1,102 +1,48 @@
-# InkClone — Handwriting Replication Engine
+# InkClone
 
-Replicate any handwriting style from a single filled template. Generate handwritten documents on realistic paper backgrounds with 15 realism sliders and 5 presets.
+Convert your handwriting into a digital font. Upload photos of a filled template, extract character glyphs, and render any text in your handwriting.
 
-**Live**: [https://inkclone-production.up.railway.app](https://inkclone-production.up.railway.app)
+## What It Does
 
----
-
-## Features
-
-- **Profile extraction** — photograph a filled template, extract individual glyphs per character with perspective warp and morphological cleaning
-- **15-slider realism engine** — per-glyph size/angle/pressure/fade, per-line baseline wander/margin drift/cramming, per-page fatigue and ink bleed
-- **5 presets** — Perfect Student, Natural Notes, Rushed Homework, Messy Scrawl, Custom
-- **Paper backgrounds** — college ruled, blank, legal pad, graph, dot grid, sticky note
-- **Artifact simulation** — scan, phone photo, clean render
-- **Web UI** — FastAPI + single-file HTML frontend
-
----
-
-## Architecture
-
-```
-EXTRACTION                          RENDER
-extract_pipeline.py                 paper_backgrounds.py
-  └─ perspective warp               render_engine.py        ← 15 realism params
-  └─ morph line removal             realism_v2.py           ← sliders → params
-  └─ quality scoring                compositor.py
-  └─ profiles/{id}/glyphs/         artifact_simulator.py
-
-WEB
-web/app.py          (FastAPI, Railway)
-web/index.html      (single-file frontend)
-```
-
----
+InkClone transforms handwritten samples into reusable digital fonts. Fill out a template with your handwriting, scan or photograph it, and the tool extracts each character as a glyph. You can then render any text using your personal handwriting style.
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Language | Python 3.11 |
-| Web framework | FastAPI + Uvicorn |
-| Image processing | Pillow, OpenCV (headless), NumPy |
-| Hosting | Railway (1 GB RAM container) |
-| Containerization | Docker |
+- **Backend:** Python, FastAPI
+- **Image Processing:** OpenCV
+- **Deployment:** Railway
 
----
+## Features
 
-## Quick Start
+- Template-based character extraction
+- Glyph isolation and preprocessing
+- Text rendering in custom handwriting
+- Support for multiple character variants
+- Realistic spacing and kerning
+
+## Live Demo
+
+https://inkclone-production.up.railway.app
+
+## Getting Started
 
 ```bash
-git clone https://github.com/vishnumahesha/inkclone
-cd inkclone
-python3 -m venv venv && source venv/bin/activate
+# Install dependencies
 pip install -r requirements.txt
-uvicorn web.app:app --reload --port 8000
+
+# Generate a template
+python generate_template.py
+
+# Extract glyphs from filled template
+python extract_v6.py
+
+# Render text with your handwriting
+python cli.py render "Your text here"
 ```
 
-Open `http://localhost:8000`.
+## How It Works
 
----
-
-## Realism Sliders
-
-| Section | Sliders |
-|---------|---------|
-| Character | Font Size, Letter Spacing, Word Spacing, Slant |
-| Lines | Baseline Straightness, Line Spacing, Margin Consistency, Line End Behavior |
-| Variation | Size Variation, Spacing Variation, Angle Variation, Pressure Variation |
-| Page Effects | Page Fatigue, Ink Fading, Ink Bleed |
-
-Each slider is 0–100. Presets fill all 15 values at once. Any manual change switches to Custom.
-
----
-
-## Paper Types
-
-`college_ruled` · `blank` · `legal_pad` · `graph` · `dot_grid` · `sticky_note`
-
----
-
-## Creating a Handwriting Profile
-
-1. Upload a handwriting photo via the web UI (`+ New Profile`)
-2. The extraction pipeline detects the template grid, crops cells, scores quality, and saves glyphs to `profiles/{id}/glyphs/`
-3. Select the new profile from the dropdown and generate
-
----
-
-## Deployment
-
-Deployed on Railway. Push to `main` and Railway auto-deploys from the `Dockerfile`.
-
-```bash
-git push origin main   # triggers Railway deploy
-```
-
----
-
-## License
-
-Proprietary — All rights reserved
+1. **Template generation** - Creates a PDF grid with characters to fill in
+2. **Character extraction** - Isolates each handwritten character from the scanned template
+3. **Glyph processing** - Cleans, normalizes, and stores character images
+4. **Text rendering** - Composes glyphs into natural-looking handwritten text
